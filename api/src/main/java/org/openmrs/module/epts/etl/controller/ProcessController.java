@@ -66,6 +66,8 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	private EptsEtlLogger logger;
 	
+	private EtlDatabaseObject schemaInfoSrc;
+	
 	public ProcessController() {
 		this.progressInfo = new ProcessProgressInfo(this);
 	}
@@ -78,6 +80,15 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.logger = new EptsEtlLogger(ProcessController.class);
 		
 		init(configuration);
+	}
+	
+	public void setSchemaInfoSrc(EtlDatabaseObject schemaInfoSrc) {
+		this.schemaInfoSrc = schemaInfoSrc;
+	}
+	
+	@JsonIgnore
+	public EtlDatabaseObject getSchemaInfoSrc() {
+		return schemaInfoSrc;
 	}
 	
 	@JsonIgnore
@@ -638,11 +649,11 @@ public class ProcessController implements Controller, ControllerStarter {
 	public void onFinish() {
 		markAsFinished();
 		
-		if (getConfiguration().getFinalizerClazz() != null) {
+		if (getConfiguration().getFinalizer().getFinalizerClazz() != null) {
 			Class[] parameterTypes = { ProcessController.class };
 			
 			try {
-				Constructor<? extends ProcessFinalizer> a = getConfiguration().getFinalizerClazz()
+				Constructor<? extends ProcessFinalizer> a = getConfiguration().getFinalizer().getFinalizerClazz()
 				        .getConstructor(parameterTypes);
 				
 				ProcessFinalizer finalizer = a.newInstance(this);
@@ -1045,7 +1056,8 @@ public class ProcessController implements Controller, ControllerStarter {
 			sql += DBUtilities.generateTableVarcharField("parent_table", 50, notNullConstraint, conn) + endLineMarker;
 			sql += DBUtilities.generateTableVarcharField("parent_field", 50, notNullConstraint, conn) + endLineMarker;
 			sql += DBUtilities.generateTableBigIntField("src_parent_id", notNullConstraint, conn) + endLineMarker;
-			sql += DBUtilities.generateTableNumericField("inconsistent_parent", 1, notNullConstraint, -1, conn) + endLineMarker;
+			sql += DBUtilities.generateTableNumericField("inconsistent_parent", 1, notNullConstraint, -1, conn)
+			        + endLineMarker;
 			sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
 			
 			sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),

@@ -66,6 +66,8 @@ public class DynamicProcessStarter extends ProcessStarter implements ControllerS
 		
 		currentController = new ProcessController(this, this.etlConfig.cloneDynamic(src));
 		
+		currentController.setSchemaInfoSrc(src);
+		
 		logger.debug("ProcessController Initialized");
 		
 		return currentController;

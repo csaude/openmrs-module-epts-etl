@@ -25,7 +25,6 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessType;
 import org.openmrs.module.epts.etl.controller.ProcessController;
-import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -102,12 +101,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private final String stringLock = new String("LOCK_STRING");
 	
-	/**
-	 * The finalizer class
-	 */
-	private String finalizerFullClassName;
-	
-	private Class<? extends ProcessFinalizer> finalizerClazz;
+	private ProcessFinalizerConf finalizer;
 	
 	private Map<String, Integer> qtyLoadedTables;
 	
@@ -391,10 +385,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 		
 		this.processType = processType;
-	}
-	
-	public Class<? extends ProcessFinalizer> getFinalizerClazz() {
-		return finalizerClazz;
 	}
 	
 	@JsonIgnore
@@ -1047,11 +1037,12 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			}
 		}
 		
-		if (utilities.stringHasValue(this.getFinalizerFullClassName())) {
-			loadFinalizer();
+		if (this.hasFinalizer()) {
+			this.getFinalizer().loadFinalizer();
 			
-			if (this.finalizerClazz == null) {
-				errorMsg += ++errNum + ". The Finalizer class [" + this.getFinalizerFullClassName() + "] cannot be found\n";
+			if (this.getFinalizer().getFinalizerClazz() == null) {
+				errorMsg += ++errNum + ". The Finalizer class [" + this.getFinalizer().getFinalizerFullClassName()
+				        + "] cannot be found\n";
 			}
 		}
 		
@@ -1105,6 +1096,18 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 	}
 	
+	public boolean hasFinalizer() {
+		return this.getFinalizer() != null;
+	}
+	
+	public ProcessFinalizerConf getFinalizer() {
+		return finalizer;
+	}
+	
+	public void setFinalizer(ProcessFinalizerConf finalizer) {
+		this.finalizer = finalizer;
+	}
+	
 	private boolean hasOperation() {
 		return utilities.arrayHasElement(this.getOperations());
 	}
@@ -1145,27 +1148,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 		
 		return ok;
-	}
-	
-	public String getFinalizerFullClassName() {
-		return finalizerFullClassName;
-	}
-	
-	public void setFinalizerFullClassName(String finalizerFullClassName) {
-		this.finalizerFullClassName = finalizerFullClassName;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public <S extends ProcessFinalizer> void loadFinalizer() {
-		
-		try {
-			ClassLoader loader = ProcessFinalizer.class.getClassLoader();
-			
-			Class<S> c = (Class<S>) loader.loadClass(this.getFinalizerFullClassName());
-			
-			this.finalizerClazz = (Class<S>) c;
-		}
-		catch (ClassNotFoundException e) {}
 	}
 	
 	@Override
@@ -1614,7 +1596,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		clonedEtlConf.setDisabled(this.isDisabled());
 		clonedEtlConf.setModuleRootDirectory(this.getModuleRootDirectory());
 		clonedEtlConf.setSyncStageSchema(tryToLoadPlaceHolders(this.getSyncStageSchema(), schemaInfoSrc));
-		clonedEtlConf.setFinalizerFullClassName(this.getFinalizerFullClassName());
+		clonedEtlConf.setFinalizer(this.getFinalizer());
 		clonedEtlConf.setParams(tryToLoadPlaceHolders(getParams(), schemaInfoSrc));
 		clonedEtlConf.setClassPath(this.getClassPath());
 		clonedEtlConf.setDoNotTransformsPrimaryKeys(this.isDoNotTransformsPrimaryKeys());
