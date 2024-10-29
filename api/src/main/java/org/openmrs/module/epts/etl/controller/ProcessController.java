@@ -649,7 +649,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	public void onFinish() {
 		markAsFinished();
 		
-		if (getConfiguration().getFinalizer().getFinalizerClazz() != null) {
+		if (getConfiguration().hasFinalizer()) {
 			Class[] parameterTypes = { ProcessController.class };
 			
 			try {
