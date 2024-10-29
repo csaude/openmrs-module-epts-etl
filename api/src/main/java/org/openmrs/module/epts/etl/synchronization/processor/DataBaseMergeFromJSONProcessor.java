@@ -52,4 +52,9 @@ public class DataBaseMergeFromJSONProcessor extends TaskProcessor<EtlStageRecord
 		return (DataBaseMergeFromJSONSearchParams) super.getSearchParams();
 	}
 	
+	
+	@Override
+	public TaskProcessor<EtlStageRecordVO> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits) {
+		throw new ForbiddenOperationException("Forbiden Method");
+	}
 }

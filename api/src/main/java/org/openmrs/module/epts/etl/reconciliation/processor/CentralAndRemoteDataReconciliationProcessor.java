@@ -6,6 +6,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.reconciliation.controller.CentralAndRemoteDataReconciliationController;
@@ -33,7 +34,8 @@ public class CentralAndRemoteDataReconciliationProcessor extends TaskProcessor<E
 			        .logInfo("PERFORMING DATA RECONCILIATION ON " + etlObjects.size() + "' " + this.getMainSrcTableName());
 			
 			if (getMainSrcTableName().equalsIgnoreCase("users")) {
-				getTaskResultInfo().addAllToRecordsWithNoError(EtlOperationItemResult.parseFromEtlDatabaseObject(etlObjects));
+				getTaskResultInfo()
+				        .addAllToRecordsWithNoError(EtlOperationItemResult.parseFromEtlDatabaseObject(etlObjects));
 			} else if (getRelatedOperationController().isMissingRecordsDetector()) {
 				performeMissingRecordsCreation(etlObjects, srcConn, dstConn);
 			} else if (getRelatedOperationController().isOutdateRecordsDetector()) {
@@ -115,4 +117,8 @@ public class CentralAndRemoteDataReconciliationProcessor extends TaskProcessor<E
 		}
 	}
 	
+	@Override
+	public TaskProcessor<EtlDatabaseObject> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits) {
+		throw new ForbiddenOperationException("Forbiden Method");
+	}
 }

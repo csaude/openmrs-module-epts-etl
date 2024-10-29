@@ -245,13 +245,12 @@ public class EtlLoadHelper {
 	        throws ParentNotYetMigratedException, DBException {
 		
 		if (getActionType().isCreate() || getActionType().isUpdate()) {
-			
 			for (LoadRecord loadRec : this.getReadyRecordsAsLoadRecord(dstConf)) {
 				if (loadRec.hasParentsWithDefaultValues()) {
-					this.tryToReloadDefaultParents(loadRec, srcConn, dstConn);
-				} else {
-					loadRec.setStatus(LoadStatus.SUCCESS);
+					loadRec.saveRecordsWithDefaultsParents(srcConn, dstConn);
 				}
+				
+				loadRec.setStatus(LoadStatus.SUCCESS);
 			}
 		}
 	}
@@ -288,62 +287,6 @@ public class EtlLoadHelper {
 		}
 		
 		throw new ForbiddenOperationException("No record found for result");
-	}
-	
-	/**
-	 * @param srcConn
-	 * @param dstConn
-	 * @param loadRec
-	 * @throws ParentNotYetMigratedException
-	 * @throws DBException
-	 */
-	public void tryToReloadDefaultParents(LoadRecord loadRec, Connection srcConn, Connection dstConn)
-	        throws ParentNotYetMigratedException, DBException {
-		
-		String msg = "Reloading parents for dstRecord [" + loadRec.getDstConf().getFullTableDescription()
-		        + loadRec.getDstRecord() + "]";
-		
-		String tree = "";
-		
-		if (loadRec.hasParentLoadRecord()) {
-			LoadRecord parent = loadRec;
-			
-			while (parent != null) {
-				if (tree.isEmpty()) {
-					tree = parent.getDstRecord().toString();
-				} else {
-					tree = tree + " <<<< " + parent.getDstRecord().toString();
-				}
-				
-				parent = parent.getParentLoadRecord();
-			}
-			
-			msg += " Tree Info: [" + tree + "]";
-		}
-		
-		logTrace(msg);
-		
-		loadRec.reloadParentsWithDefaultValues(srcConn, dstConn);
-		
-		if (loadRec.getResultItem().hasUnresolvedInconsistences()) {
-			getProcessor().logDebug(
-			    "The dstRecord has inconsistence after reloading of default parent.  Removing it " + loadRec.getDstRecord());
-			loadRec.getDstRecord().remove(dstConn);
-			
-			loadRec.setStatus(LoadStatus.FAIL);
-			
-			this.tryToAddToResult(loadRec.getResultItem());
-			
-		} else {
-			try {
-				loadRec.getDstRecord().update(loadRec.getDstConf(), dstConn);
-			}
-			catch (DBException e) {
-				throw new DBException("Error reloading parents on transformation: " + loadRec, e);
-			}
-			
-			loadRec.setStatus(LoadStatus.SUCCESS);
-		}
 	}
 	
 	/**
@@ -446,45 +389,26 @@ public class EtlLoadHelper {
 		for (LoadRecord loadRecord : this.getAllRecordsAsLoadRecord(dstConf)) {
 			this.logTrace("Preparing the load of dstRecord " + loadRecord.getDstRecord());
 			
-			/*
-			boolean recursiveKeys = this.getProcessor().isRunningInConcurrency()
-			        ? loadRecord.hasUnresolvedRecursiveRelationship(srcConn, dstConn)
-			        : false;*/
-			
-			boolean recursiveKeys = loadRecord.hasUnresolvedRecursiveRelationship(srcConn, dstConn);
-			
-			if (recursiveKeys) {
-				this.logDebug("Record " + loadRecord.getDstRecord()
-				        + " has recursive relationship and will be skipped to avoid dedlocks!");
+			if (getActionType().isCreate() || getActionType().isUpdate()) {
 				
-				tryToAddToResult(
-				    EtlOperationItemResult.fastCreateRecordWithRecursiveRelationship(loadRecord.getDstRecord()));
+				loadRecord.loadDstParentInfo(srcConn, dstConn);
 				
-				loadRecord.getDstConf().saveSkippedRecord(loadRecord.getDstRecord(), srcConn);
-				
-				loadRecord.setStatus(LoadStatus.SKIP);
-			} else {
-				if (getActionType().isCreate() || getActionType().isUpdate()) {
+				if (!loadRecord.getResultItem().hasUnresolvedInconsistences()) {
+					loadRecord.setStatus(LoadStatus.READY);
 					
-					loadRecord.loadDstParentInfo(srcConn, dstConn);
-					
-					if (!loadRecord.getResultItem().hasUnresolvedInconsistences()) {
-						loadRecord.setStatus(LoadStatus.READY);
-						
-						if (loadRecord.getResultItem().hasInconsistences()) {
-							this.logTrace("Found inconsistences on dstRecord " + loadRecord.getDstRecord()
-							        + " but all were resolved!");
-						}
-					} else {
-						loadRecord.setStatus(LoadStatus.FAIL);
+					if (loadRecord.getResultItem().hasInconsistences()) {
+						this.logTrace(
+						    "Found inconsistences on dstRecord " + loadRecord.getDstRecord() + " but all were resolved!");
 					}
 				} else {
-					loadRecord.setStatus(LoadStatus.READY);
+					loadRecord.setStatus(LoadStatus.FAIL);
 				}
-				
-				tryToAddToResult(loadRecord.getResultItem());
-				
+			} else {
+				loadRecord.setStatus(LoadStatus.READY);
 			}
+			
+			tryToAddToResult(loadRecord.getResultItem());
+			
 		}
 		
 	}

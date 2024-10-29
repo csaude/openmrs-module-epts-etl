@@ -24,8 +24,7 @@ public class DatabaseIntegrityConsolidationProcessor extends TaskProcessor<EtlDa
 	}
 	
 	@Override
-	public void performeEtl(List<EtlDatabaseObject> records, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public void performeEtl(List<EtlDatabaseObject> records, Connection srcConn, Connection dstConn) throws DBException {
 		
 		throw new ForbiddenOperationException("Rever este metodo!");
 		
@@ -40,5 +39,10 @@ public class DatabaseIntegrityConsolidationProcessor extends TaskProcessor<EtlDa
 		}
 		
 		this.getMonitor().logInfo("INTEGRITY DATA FOR '"+syncRecords.size() + "' " + getSyncTableConfiguration().getTableName() + " CONSOLIDATED!");*/
+	}
+	
+	@Override
+	public TaskProcessor<EtlDatabaseObject> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits) {
+		throw new ForbiddenOperationException("Forbiden Method");
 	}
 }

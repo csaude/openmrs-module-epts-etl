@@ -26,6 +26,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
+import org.openmrs.module.epts.etl.model.pojo.generic.RecordWithDefaultParentInfo;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.EtlThreadFactory;
 import org.openmrs.module.epts.etl.utilities.concurrent.MonitoredOperation;
@@ -458,12 +459,16 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		logDebug("TRY TO PROCESS SKIPPED RECORDS ON INTERVAL " + iManager.getCurrentLimits());
 		
 		String originalExtraCondition = getSearchParams().getExtraCondition();
+		String originalExtraConditionForExtract = getSrcConf().getExtraConditionForExtract();
 		
-		getSearchParams().setExtraCondition(
-		    utilities.concatCondition(originalExtraCondition, getSrcConf().generateSkippedRecordInclusionClause()));
+		getSrcConf().setExtraConditionForExtract(null);
 		
-		TaskProcessor<T> taskProcessor = getController().initRelatedTaskProcessor(this,
-		    getThreadRecordIntervalsManager().getCurrentLimits(), false);
+		getSearchParams().setExtraCondition(getSrcConf().generateSkippedRecordInclusionClause());
+		
+		TaskProcessor<T> taskProcessor = getController()
+		        .initRelatedTaskProcessor(this, getThreadRecordIntervalsManager().getCurrentLimits(), false)
+		        .initReloadRecordsWithDefaultParentsTaskProcessor(iManager);
+		
 		taskProcessor.setProcessorId(this.getEngineId());
 		
 		boolean persistTheWork = this.getEtlConfiguration().hasTestingItem() ? false : true;
@@ -478,7 +483,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			OpenConnection srcConn = openSrcConn();
 			
 			try {
-				getSrcConf().deleteAllSkippedRecord(srcConn);
+				RecordWithDefaultParentInfo.deleteAllSuccessifulyProcessed(getSrcConf(), srcConn);
 				
 				srcConn.markAsSuccessifullyTerminated();
 			}
@@ -489,6 +494,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 			iManager.getCurrentLimits().markSkippedRecordsAsProcessed();
 			iManager.save();
 			
+			getSrcConf().setExtraConditionForExtract(originalExtraConditionForExtract);
 			getSearchParams().setExtraCondition(originalExtraCondition);
 		}
 	}

@@ -281,4 +281,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	}
 	
 	public abstract void performeEtl(List<T> records, Connection srcConn, Connection dstConn) throws DBException;
+	
+	public abstract TaskProcessor<T> initReloadRecordsWithDefaultParentsTaskProcessor(IntervalExtremeRecord limits);
+	
 }

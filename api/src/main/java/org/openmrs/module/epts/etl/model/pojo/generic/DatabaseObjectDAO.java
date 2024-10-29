@@ -562,6 +562,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 				logger.trace("Executing insertion of " + objects.size() + " " + tabConf.getTableName() + " Using query\n\n"
 				        + utilities.garantirXCaracteres(sql, 250));
 				
+				if (tabConf.getTableName().equals("location")) {
+					System.out.println("Stop");
+				}
+				
 				List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 				
 				if (utilities.arrayHasElement(ids) && objects.get(0).getObjectId().isSimpleId()

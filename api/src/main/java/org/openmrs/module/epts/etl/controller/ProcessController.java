@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
@@ -65,6 +66,8 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	private EptsEtlLogger logger;
 	
+	private EtlDatabaseObject schemaInfoSrc;
+	
 	public ProcessController() {
 		this.progressInfo = new ProcessProgressInfo(this);
 	}
@@ -77,6 +80,15 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.logger = new EptsEtlLogger(ProcessController.class);
 		
 		init(configuration);
+	}
+	
+	public void setSchemaInfoSrc(EtlDatabaseObject schemaInfoSrc) {
+		this.schemaInfoSrc = schemaInfoSrc;
+	}
+	
+	@JsonIgnore
+	public EtlDatabaseObject getSchemaInfoSrc() {
+		return schemaInfoSrc;
 	}
 	
 	@JsonIgnore
@@ -139,6 +151,14 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		if (!existsSkippedRecordsTable()) {
 			createSkippedRecordsTable();
+		}
+		
+		if (!existRelatedRecursiveRecordInfoTable()) {
+			logDebug("GENERATING RELATED RECURSIVE TABLE");
+			
+			createRecordWithDefaultParentInfoTable();
+			
+			logDebug("RELATEDRECURSIVE TABLE GENERATED");
 		}
 		
 		OpenConnection conn = getDefaultConnInfo().openConnection();
@@ -629,11 +649,11 @@ public class ProcessController implements Controller, ControllerStarter {
 	public void onFinish() {
 		markAsFinished();
 		
-		if (getConfiguration().getFinalizerClazz() != null) {
+		if (getConfiguration().hasFinalizer()) {
 			Class[] parameterTypes = { ProcessController.class };
 			
 			try {
-				Constructor<? extends ProcessFinalizer> a = getConfiguration().getFinalizerClazz()
+				Constructor<? extends ProcessFinalizer> a = getConfiguration().getFinalizer().getFinalizerClazz()
 				        .getConstructor(parameterTypes);
 				
 				ProcessFinalizer finalizer = a.newInstance(this);
@@ -815,6 +835,31 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 	}
 	
+	private boolean existRelatedRecursiveRecordInfoTable() {
+		OpenConnection conn = null;
+		
+		try {
+			String schema = getConfiguration().getSyncStageSchema();
+			String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+			String tabName = this.getConfiguration().getRecordWithDefaultParentInfoTableName();
+			
+			conn = openConnection();
+			
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			if (conn != null) {
+				conn.finalizeConnection();
+			}
+			
+		}
+	}
+	
 	public boolean existInconsistenceInfoTable() throws DBException {
 		OpenConnection conn = openConnection();
 		
@@ -986,6 +1031,58 @@ public class ProcessController implements Controller, ControllerStarter {
 		}
 		finally {
 			conn.finalizeConnection();
+		}
+	}
+	
+	private void createRecordWithDefaultParentInfoTable() {
+		OpenConnection conn = null;
+		
+		try {
+			conn = openConnection();
+			
+			String tableName = this.getConfiguration().getRecordWithDefaultParentInfoTableName();
+			
+			String sql = "";
+			String notNullConstraint = "NOT NULL";
+			String endLineMarker = ",\n";
+			
+			sql += "CREATE TABLE " + this.getConfiguration().generateFullRecursiveInfoTableName() + "(\n";
+			sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
+			        + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("table_name", 100, notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableBigIntField("src_rec_id", notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableBigIntField("dst_rec_id", notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("parent_table", 50, notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("parent_field", 50, notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableBigIntField("src_parent_id", notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableNumericField("inconsistent_parent", 1, notNullConstraint, -1, conn)
+			        + endLineMarker;
+			sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+			
+			sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+			    "src_rec_id, parent_table, parent_field", conn) + endLineMarker;
+			
+			sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
+			sql += ")";
+			
+			String indexName = tableName + "location_idx";
+			String indexFields = "record_origin_location_code";
+			
+			String idxDefinition = DBUtilities.generateIndexDefinition(
+			    this.getConfiguration().generateFullRecursiveInfoTableName(), indexName, indexFields, conn);
+			
+			BaseDAO.executeBatch(conn, sql, idxDefinition);
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		catch (DBException e) {
+			throw new EtlExceptionImpl(e);
+		}
+		finally {
+			if (conn != null) {
+				conn.finalizeConnection();
+			}
 		}
 	}
 	
