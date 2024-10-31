@@ -37,6 +37,7 @@ The process configuration file is the heart of the application. For each process
 - *syncStageSchema*: an optional token indicating the database name where the process data will be stored. If not present, the name "etl_stage_area" will be used.
 - *doNotTransformsPrimaryKeys*: indicates whether the primary keys in this process are transformed. If yes, the transformed records are given a new primary key; if no, the primary key in the source is the same in the destination.
 - *manualMapPrimaryKeyOnField*: if present, the value from this field will be mapped as a primary key for all tables that don't have a primary key but have a field with a name matching this field. This value will be overridden by the corresponding value in the ETL configuration session if present there.
+- *doNotResolveRelationship*: if true, the relationship between tables will not resolved on destination database. This usualy is applyed in situation like database copy were the table keys will not kept unchanged. 
 
 ## The Database configuration
 This section allowd the database configuration. The "srcConnConf" allows the configuration of source database and the "dstConnConf" allows the configuration of destination database. Each element allow bellows parameters: 
