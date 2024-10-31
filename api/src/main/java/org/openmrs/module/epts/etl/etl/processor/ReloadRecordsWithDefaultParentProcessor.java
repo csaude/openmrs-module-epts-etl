@@ -81,9 +81,14 @@ public class ReloadRecordsWithDefaultParentProcessor extends TaskProcessor<EtlDa
 			}
 			
 			for (EtlDatabaseObject etlObj : etlObjects) {
-				EtlDatabaseObject dstObject = reloadDefaultsParents(mainSrc, etlObj, srcConn, dstConn);
-				
-				dstObject.update((TableConfiguration) dstObject.getRelatedConfiguration(), dstConn);
+				try {
+					EtlDatabaseObject dstObject = reloadDefaultsParents(mainSrc, etlObj, srcConn, dstConn);
+					
+					dstObject.update((TableConfiguration) dstObject.getRelatedConfiguration(), dstConn);
+				}
+				catch (NullPointerException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		catch (Exception e) {
