@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -210,6 +211,17 @@ public class DBConnectionInfo {
 		this.setDataBaseUserPassword(tryToLoadPlaceHolders(this.getDataBaseUserPassword(), schemaInfoSrc));
 		this.setConnectionURI(tryToLoadPlaceHolders(this.getConnectionURI(), schemaInfoSrc));
 		this.setSchema(tryToLoadPlaceHolders(this.getSchema(), schemaInfoSrc));
+	}
+	
+	public void tryToLoadPlaceHolders(EtlConfiguration schemaInfoSrc) {
+		this.setDataBaseUserName(tryToLoadPlaceHolders(this.getDataBaseUserName(), schemaInfoSrc));
+		this.setDataBaseUserPassword(tryToLoadPlaceHolders(this.getDataBaseUserPassword(), schemaInfoSrc));
+		this.setConnectionURI(tryToLoadPlaceHolders(this.getConnectionURI(), schemaInfoSrc));
+		this.setSchema(tryToLoadPlaceHolders(this.getSchema(), schemaInfoSrc));
+	}
+	
+	private String tryToLoadPlaceHolders(String str, EtlConfiguration schemaInfoSrc) {
+		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
 	}
 	
 	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {

@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.datasource.SqlFunctionInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
@@ -1592,6 +1593,15 @@ public class DBUtilities {
 	}
 	
 	public static String tryToReplaceParamsInQuery(String query, EtlDatabaseObject paramSrc) {
+		return tryToReplaceParamsInQuery(query, null, paramSrc);
+	}
+	
+	public static String tryToReplaceParamsInQuery(String query, EtlConfiguration paramSrc) {
+		return tryToReplaceParamsInQuery(query, paramSrc, null);
+	}
+	
+	public static String tryToReplaceParamsInQuery(String query, EtlConfiguration etlConfParamSrc,
+	        EtlDatabaseObject etlObjectParamSrc) {
 		if (!utilities.stringHasValue(query))
 			return query;
 		
@@ -1604,7 +1614,17 @@ public class DBUtilities {
 			String paramName = matcher.group(1);
 			
 			try {
-				Object paramValue = paramSrc.getFieldValue(paramName);
+				
+				Object paramValue = null;
+				
+				if (etlObjectParamSrc != null) {
+					paramValue = etlObjectParamSrc.getFieldValue(paramName);
+				} else if (etlConfParamSrc != null) {
+					paramValue = etlConfParamSrc.getParamValue(paramName);
+				} else {
+					throw new ForbiddenOperationException("You need to specify the source of param");
+				}
+				
 				
 				if (paramValue != null && !paramValue.toString().isEmpty()) {
 					matcher.appendReplacement(result, paramValue.toString());

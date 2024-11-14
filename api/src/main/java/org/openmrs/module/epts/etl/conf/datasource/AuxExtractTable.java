@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
@@ -115,8 +116,13 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
+	public void setParentConf(EtlDataConfiguration parentConf) {
+		this.setMainExtractTable((MainJoiningEntity) parentConf);
+	}
+	
+	@Override
 	public EtlConfiguration getRelatedEtlConf() {
-		return getParentConf().getRelatedEtlConf();
+		return this.getParentConf().getRelatedEtlConf();
 	}
 	
 	@Override

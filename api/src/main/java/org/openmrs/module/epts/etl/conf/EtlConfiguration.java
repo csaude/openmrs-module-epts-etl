@@ -660,6 +660,17 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			this.recordWithDefaultParentsInfoTabConf = new EtlConfigurationTableConf(
 			        this.getRecordWithDefaultParentInfoTableName(), this);
 			
+			if (this.hasMainConnInfo()) {
+				this.getMainConnInfo().tryToLoadPlaceHolders(this);
+			}
+			if (this.hasSrcConnInfo()) {
+				this.getSrcConnInfo().tryToLoadPlaceHolders(this);
+			}
+			
+			if (this.hasDstConnInfo()) {
+				this.getDstConnInfo().tryToLoadPlaceHolders(this);
+			}
+			
 			for (EtlOperationConfig operation : this.getOperations()) {
 				if (operation.getMaxSupportedProcessors() == 1) {
 					operation.setUseSharedConnectionPerThread(false);
@@ -1302,7 +1313,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public boolean hasMainConnInfo() {
-		return getDstConnInfo() != null;
+		return getMainConnInfo() != null;
 	}
 	
 	public void finalizeAllApps() {
@@ -1312,6 +1323,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		if (hasDstConnInfo())
 			getDstConnInfo().finalize();
 		
+		if (hasMainConnInfo())
+			getMainConnInfo().finalize();
 	}
 	
 	@SuppressWarnings("rawtypes")

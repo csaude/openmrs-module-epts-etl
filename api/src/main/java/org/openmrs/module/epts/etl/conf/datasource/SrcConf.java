@@ -496,12 +496,14 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		if (this.hasAuxExtractTable()) {
 			for (AuxExtractTable tab : this.getAuxExtractTable()) {
+				tab.setParentConf(this);
 				tab.loadSchemaInfo(schemaInfoSrc, conn);
 			}
 		}
 		
 		if (this.hasExtraTableDataSourceConfig()) {
 			for (TableDataSourceConfig tab : this.getExtraTableDataSource()) {
+				tab.setParentConf(this);
 				tab.loadSchemaInfo(schemaInfoSrc, conn);
 			}
 		}

@@ -20,6 +20,8 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	private ObjectDataSource dataSource;
 	
+	private boolean applyNullValue;
+	
 	public DataSourceField() {
 	}
 	
@@ -29,6 +31,18 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	public ObjectDataSource getDataSource() {
 		return dataSource;
+	}
+	
+	public boolean applyNullValue() {
+		return applyNullValue;
+	}
+	
+	public boolean isApplyNullValue() {
+		return applyNullValue;
+	}
+	
+	public void setApplyNullValue(boolean applyNullValue) {
+		this.applyNullValue = applyNullValue;
 	}
 	
 	@Override
