@@ -50,7 +50,6 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	
 	@Override
 	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
-		
 		try {
 			EtlLoadHelper loadHelper = new EtlLoadHelper(this, this.getEtlItemConfiguration().getDstConf(),
 			        etlObjects.size(), LoadingType.PRINCIPAL);

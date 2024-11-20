@@ -18,7 +18,7 @@ public class StringTranformer implements EtlFieldTransformer {
 	
 	private static final String LOCK_STRING = "LOCK_STRING";
 	
-	private StringTranformer() {
+	public StringTranformer() {
 	}
 	
 	public static StringTranformer getInstance() {
@@ -43,7 +43,8 @@ public class StringTranformer implements EtlFieldTransformer {
 			throw new ForbiddenOperationException("Source value must be provided for String transformation.");
 		}
 		
-		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform());
+		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform())
+		        .toString();
 		
 		try {
 			return evaluateStringExpression(srcValueWithParamsReplaced);

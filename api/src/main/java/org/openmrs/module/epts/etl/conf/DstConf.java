@@ -560,7 +560,7 @@ public class DstConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public void loadOwnElements(Connection conn) throws DBException {
+	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		loadJoinFields(conn);
 		
 		loadDataSourceInfo(conn);
@@ -918,6 +918,7 @@ public class DstConf extends AbstractTableConfiguration {
 		this.setMapping(toCloneFrom.getMapping());
 		this.setPrefferredDataSource(toCloneFrom.getPrefferredDataSource());
 		this.setIgnoreUnmappedFields(toCloneFrom.isIgnoreUnmappedFields());
+		this.setIgnorableFields(toCloneFrom.getIgnorableFields());
 		this.setDstType(toCloneFrom.getDstType());
 		this.setTransformer(toCloneFrom.getTransformer());
 		this.setTransformerInstance(toCloneFrom.getTransformerInstance());

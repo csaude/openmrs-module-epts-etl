@@ -53,7 +53,7 @@ public class GenericTableConfiguration extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public void loadOwnElements(Connection conn) throws DBException {
+	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}

@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
+import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
@@ -26,6 +28,10 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 	String getJoinExtraCondition();
 	
 	JoinType getJoinType();
+	
+	ConditionClauseScope getJoinExtraConditionScope();
+	
+	void setJoinExtraConditionScope(ConditionClauseScope joinExtraConditionScope);
 	
 	boolean doNotUseAsDatasource();
 	
@@ -92,24 +98,36 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 			        + field.getDstField();
 		}
 		
-		if (this.getJoinExtraCondition() != null && !this.getJoinExtraCondition().isEmpty()) {
+		if (this.getJoinExtraConditionScope().isOnClause() && this.getJoinExtraCondition() != null && !this.getJoinExtraCondition().isEmpty()) {
 			conditionFields += " AND (" + this.getJoinExtraCondition() + ")";
 		}
 		
 		return conditionFields;
 	}
 	
-	default void loadJoinElements(Connection conn) throws DBException {
+	default void loadJoinElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		tryToLoadJoinFields();
 		
-		if (hasJoinExtraCondition()) {
+		if (hasJoinExtraCondition() && !isUsingManualDefinedAlias()) {
 			this.setJoinExtraCondition(
 			    this.getJoinExtraCondition().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
+			
+			if (schemaInfo != null) {
+				this.setJoinExtraCondition(DBUtilities.tryToReplaceParamsInQuery(this.getJoinExtraCondition(), schemaInfo));
+			}
 		}
 		
 		if (!hasJoinFields()) {
 			throw new ForbiddenOperationException("No join fields were difined between "
 			        + this.getJoiningEntity().getTableName() + " And " + this.getTableName());
+		} else {
+			
+			for (FieldsMapping joiningField : this.getJoinFields()) {
+				if (schemaInfo != null) {
+					joiningField.setSrcField(DBUtilities.tryToReplaceParamsInQuery(joiningField.getSrcField(), schemaInfo));
+					joiningField.setDstField(DBUtilities.tryToReplaceParamsInQuery(joiningField.getDstField(), schemaInfo));
+				}
+			}
 		}
 		
 		if (!hasJoinType()) {

@@ -291,7 +291,7 @@ public class PreparedQuery {
 						    questionMarkToBeReplaced);
 					} else {
 						throw new ForbiddenOperationException("The parameter '" + param.getName()
-						        + " ' has no value and its needed to generate prepared query!!");
+						        + "' has no value and its needed to generate prepared query!!");
 					}
 					
 				}

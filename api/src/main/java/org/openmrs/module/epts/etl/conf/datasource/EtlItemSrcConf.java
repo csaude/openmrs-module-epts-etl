@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -42,8 +43,8 @@ public class EtlItemSrcConf extends SrcConf {
 	}
 	
 	@Override
-	public void loadOwnElements(Connection conn) throws DBException {
-		this.tryToLoadAuxExtraJoinTable(conn);
+	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
+		this.tryToLoadAuxExtraJoinTable(schemaInfo, conn);
 		
 		this.setFullLoaded(true);
 	}

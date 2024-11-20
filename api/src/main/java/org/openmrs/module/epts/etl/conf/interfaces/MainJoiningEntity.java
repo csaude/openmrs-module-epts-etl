@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
@@ -38,15 +39,18 @@ public interface MainJoiningEntity extends TableConfiguration {
 		return utils.arrayHasElement(this.getJoiningTable());
 	}
 	
-	default void tryToLoadAuxExtraJoinTable(Connection conn) throws DBException {
+	default void tryToLoadAuxExtraJoinTable(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		if (hasAuxExtractTable()) {
 			for (JoinableEntity t : this.getJoiningTable()) {
+				t.loadSchemaInfo(schemaInfo, conn);
+				
 				t.setParentConf(this);
 				t.tryToGenerateTableAlias(getRelatedEtlConf());
 				t.setMainExtractTable(this);
 				t.setRelatedEtlConfig(this.getRelatedEtlConf());
 				
-				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName(), new ArrayList<>());
+				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName(),
+				    new ArrayList<>());
 				
 				OpenConnection srcConn = this.getRelatedConnInfo().openConnection();
 				
@@ -72,10 +76,10 @@ public interface MainJoiningEntity extends TableConfiguration {
 					}
 					
 					if (t.isMainJoiningEntity() && t.parseToJoining().hasAuxExtractTable()) {
-						t.parseToJoining().tryToLoadAuxExtraJoinTable(conn);
+						t.parseToJoining().tryToLoadAuxExtraJoinTable(schemaInfo, conn);
 					}
 					
-					t.loadJoinElements(conn);
+					t.loadJoinElements(schemaInfo, conn);
 				}
 				finally {
 					srcConn.finalizeConnection();

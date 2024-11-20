@@ -48,7 +48,8 @@ public class ArithmeticFieldTransformer implements EtlFieldTransformer {
 			throw new ForbiddenOperationException("Source value must be provided for String transformation.");
 		}
 		
-		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform());
+		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform())
+		        .toString();
 		
 		try {
 			return evaluateExpression(srcValueWithParamsReplaced);

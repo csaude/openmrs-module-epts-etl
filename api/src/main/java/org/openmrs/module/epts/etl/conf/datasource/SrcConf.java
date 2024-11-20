@@ -16,12 +16,14 @@ import org.openmrs.module.epts.etl.conf.interfaces.ObjectDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -136,13 +138,13 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	@Override
-	public void loadOwnElements(Connection conn) throws DBException {
+	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		
 		this.tryToLoadParentRefInfo(conn);
 		
-		this.tryToLoadAuxExtraJoinTable(conn);
+		this.tryToLoadAuxExtraJoinTable(schemaInfo, conn);
 		
-		this.tryToLoadExtraDatasource(conn);
+		this.tryToLoadExtraDatasource(schemaInfo, conn);
 		
 		this.loadEtlFields();
 		
@@ -171,7 +173,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	 * @param srcConn
 	 * @throws DBException
 	 */
-	private void tryToLoadExtraDatasource(Connection conn) throws DBException {
+	private void tryToLoadExtraDatasource(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		OpenConnection srcConn = this.getRelatedConnInfo().openConnection();
 		
 		try {
@@ -217,6 +219,17 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			if (hasExtraObjectDataSourceConfig()) {
 				for (ObjectDataSource query : this.getExtraObjectDataSource()) {
 					query.setRelatedSrcConf(this);
+					
+					if (query.hasObjectFields()) {
+						for (DataSourceField f : query.getObjectFields()) {
+							f.setName(DBUtilities.tryToReplaceParamsInQuery(f.getName().toString(), schemaInfo));
+							
+							if (f.hasValue() && schemaInfo != null) {
+								f.setValue(DBUtilities.tryToReplaceParamsInQuery(f.getValue().toString(), schemaInfo));
+							}
+						}
+					}
+					
 					query.fullLoad(srcConn);
 				}
 			}
@@ -470,6 +483,34 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {
 			this.setAuxExtractTable(AuxExtractTable.cloneAll(toCloneFrom.getAuxExtractTable(), this, schemaInfoSrc, conn));
+			
+			for (AuxExtractTable aux : this.getAuxExtractTable()) {
+				
+				if (!aux.isUsingManualDefinedAlias()) {
+					aux.setJoinExtraCondition(
+					    aux.getJoinExtraCondition().replaceAll(aux.getTableName() + "\\.", aux.getTableAlias() + "\\."));
+				}
+				
+				if (schemaInfoSrc != null) {
+					aux.setJoinExtraCondition(
+					    DBUtilities.tryToReplaceParamsInQuery(aux.getJoinExtraCondition(), schemaInfoSrc));
+				}
+				
+				if (!aux.hasJoinFields()) {
+					throw new ForbiddenOperationException("No join fields were difined between "
+					        + aux.getJoiningEntity().getTableName() + " And " + this.getTableName());
+				} else {
+					
+					if (schemaInfoSrc != null) {
+						for (FieldsMapping joiningField : aux.getJoinFields()) {
+							joiningField.setSrcField(
+							    DBUtilities.tryToReplaceParamsInQuery(joiningField.getSrcField(), schemaInfoSrc));
+							joiningField.setDstField(
+							    DBUtilities.tryToReplaceParamsInQuery(joiningField.getDstField(), schemaInfoSrc));
+						}
+					}
+				}
+			}
 		}
 		
 		if (toCloneFrom.hasExtraTableDataSourceConfig()) {
@@ -483,10 +524,34 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		if (toCloneFrom.hasExtraObjectDataSourceConfig()) {
 			this.setExtraObjectDataSource(ObjectDataSource.cloneAll(toCloneFrom.getExtraObjectDataSource(), this, conn));
+			
+			if (hasExtraObjectDataSourceConfig()) {
+				for (ObjectDataSource query : this.getExtraObjectDataSource()) {
+					query.setRelatedSrcConf(this);
+					
+					if (query.hasObjectFields() && schemaInfoSrc != null) {
+						for (DataSourceField f : query.getObjectFields()) {
+							try {
+								f.setName(DBUtilities.tryToReplaceParamsInQuery(f.getName().toString(), schemaInfoSrc));
+							}
+							catch (ForbiddenOperationException e) {}
+							
+							if (f.hasValue()) {
+								try {
+									f.setValue(
+									    DBUtilities.tryToReplaceParamsInQuery(f.getValue().toString(), schemaInfoSrc));
+								}
+								catch (ForbiddenOperationException e) {}
+							}
+						}
+					}
+					
+				}
+			}
+			
 		}
 		
 		this.setDstType(toCloneFrom.getDstType());
-		
 	}
 	
 	@Override

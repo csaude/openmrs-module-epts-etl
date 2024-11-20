@@ -336,7 +336,16 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default void clone(TableConfiguration toCloneFrom, EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
 		this.setTableName(toCloneFrom.getTableName());
 		
+		if (!this.hasAlias() && toCloneFrom.hasDynamicAlias()) {
+			this.setTableAlias(toCloneFrom.getAlias());
+			this.setUsingManualDefinedAlias(true);
+		}
+		
 		this.tryToLoadSchemaInfo(schemaInfoSrc);
+		
+		if (!this.hasSchema()) {
+			this.setSchema(toCloneFrom.getSchema());
+		}
 		
 		this.setParents(toCloneFrom.getParents());
 		this.setMustLoadChildrenInfo(toCloneFrom.isMustLoadChildrenInfo());
@@ -376,16 +385,16 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setInsertSQLWithObjectId(toCloneFrom.getInsertSQLWithObjectId());
 		this.setInsertSQLWithoutObjectId(toCloneFrom.getInsertSQLWithoutObjectId());
 		this.setUpdateSql(toCloneFrom.getUpdateSql());
-		this.setRelatedEtlConfig(toCloneFrom.getRelatedEtlConf());
-		this.setSchema(toCloneFrom.getSchema());
 		
-		this.tryToGenerateTableAlias(toCloneFrom.getRelatedEtlConf());
+		if (toCloneFrom.getRelatedEtlConf() != null) {
+			this.tryToGenerateTableAlias(toCloneFrom.getRelatedEtlConf());
+		}
 		
-		if (toCloneFrom.hasExtraConditionForExtract()) {
+		if (toCloneFrom.hasExtraConditionForExtract() && !toCloneFrom.isUsingManualDefinedAlias()) {
 			//First try to replace the alias
 			this.setExtraConditionForExtract(toCloneFrom.getExtraConditionForExtract()
 			        .replaceAll(toCloneFrom.getTableAlias() + "\\.", getTableAlias() + "\\."));
-			//Secodn try to replace tableName
+			//Second try to replace tableName
 			
 			this.setExtraConditionForExtract(
 			    this.getExtraConditionForExtract().replaceAll(toCloneFrom.getTableName() + "\\.", getTableAlias() + "\\."));
@@ -395,8 +404,17 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		if (isFullLoaded()) {
-			loadOwnElements(conn);
+			loadOwnElements(schemaInfoSrc, conn);
 		}
+		
+	}
+	
+	default boolean hasDynamicAlias() {
+		return hasAlias() && this.getAlias().contains("@");
+	}
+	
+	default boolean useDynamicTableName() {
+		return this.getTableName().contains("@");
 	}
 	
 	@JsonIgnore
@@ -1320,7 +1338,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					    this.getExtraConditionForExtract().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
 				}
 				
-				loadOwnElements(conn);
+				loadOwnElements(null, conn);
 				
 				this.setFullLoaded(true);
 				
@@ -1381,6 +1399,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc) throws ForbiddenOperationException {
 		if (isTableNameInfoLoaded())
 			return;
+		
+		if (hasDynamicAlias() && schemaInfoSrc != null) {
+			this.setTableAlias(DBUtilities.tryToReplaceParamsInQuery(this.getAlias(), schemaInfoSrc));
+		}
 		
 		String[] tableNameParts = getTableName().split("\\.");
 		
@@ -2286,7 +2308,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 * Usually called after a call to {@link #fullLoad()}, allow the loading of own elements. Eg.
 	 * the join fields,etc
 	 */
-	void loadOwnElements(Connection conn) throws DBException;
+	void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException;
 	
 	/**
 	 * Generates a full dump select from query.
@@ -2329,12 +2351,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default void tryToGenerateTableAlias(TableAliasesGenerator aliasGenerator) {
-		
 		synchronized (this) {
 			if (hasAlias())
 				return;
 			
-			aliasGenerator.generateAliasForTable(this);
+			if (!useDynamicTableName()) {
+				aliasGenerator.generateAliasForTable(this);
+			}
 		}
 	}
 	

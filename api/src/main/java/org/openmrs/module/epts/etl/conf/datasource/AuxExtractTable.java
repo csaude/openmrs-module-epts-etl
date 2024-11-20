@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
@@ -29,6 +30,8 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	
 	private String joinExtraCondition;
 	
+	private ConditionClauseScope joinExtraConditionScope;
+	
 	/*
 	 * The join type between this additional src table with the main src table. It could be INNER or LEFT.
 	 * If empty, a INNER join will be applied if the main table has only one additional src, and will be LEFT join if there are more than one additional src tables 
@@ -42,6 +45,17 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	private boolean doNotUseAsDatasource;
 	
 	public AuxExtractTable() {
+		this.joinExtraConditionScope = ConditionClauseScope.ON_CLAUSE;
+	}
+	
+	@Override
+	public ConditionClauseScope getJoinExtraConditionScope() {
+		return this.joinExtraConditionScope;
+	}
+	
+	@Override
+	public void setJoinExtraConditionScope(ConditionClauseScope joinExtraConditionScope) {
+		this.joinExtraConditionScope = joinExtraConditionScope;
 	}
 	
 	public List<InnerAuxExtractTable> getAuxExtractTable() {
@@ -122,7 +136,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	
 	@Override
 	public EtlConfiguration getRelatedEtlConf() {
-		return this.getParentConf().getRelatedEtlConf();
+		return this.getParentConf() != null ? this.getParentConf().getRelatedEtlConf() : null;
 	}
 	
 	@Override
@@ -141,7 +155,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public void loadOwnElements(Connection conn) throws DBException {
+	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 	}
 	
 	@Override
@@ -189,13 +203,17 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	
 	public void clone(AuxExtractTable toCloneFrom, MainJoiningEntity relatedMainExtractTable,
 	        EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+		
+		this.setIgnoreMissingParameters(relatedMainExtractTable.ignoreMissingParameters());
+		
 		super.clone(toCloneFrom, schemaInfoSrc, conn);
 		
-		this.setJoinFields(toCloneFrom.getJoinFields());
+		this.setParentConf(relatedMainExtractTable);
+		this.setIgnoreMissingParameters(relatedMainExtractTable.ignoreMissingParameters());
+		this.setJoinFields(FieldsMapping.cloneAll(toCloneFrom.getJoinFields()));
 		this.setJoinExtraCondition(toCloneFrom.getJoinExtraCondition());
 		this.setJoinType(toCloneFrom.getJoinType());
-		this.setMainExtractTable(relatedMainExtractTable);
-		
+		this.setJoinExtraConditionScope(toCloneFrom.getJoinExtraConditionScope());
 		if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {
 			this.setAuxExtractTable(new ArrayList<>(toCloneFrom.getAuxExtractTable().size()));
 			

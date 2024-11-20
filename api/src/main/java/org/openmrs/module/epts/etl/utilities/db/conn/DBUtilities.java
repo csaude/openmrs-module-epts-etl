@@ -27,6 +27,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.TypePrecision;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
+import org.openmrs.module.epts.etl.model.pojo.generic.AuxEtlDataBaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
@@ -1552,27 +1553,14 @@ public class DBUtilities {
 	}
 	
 	public static void main(String[] args) {
-		String sql = "";
+		String sql = "select @@param";
 		
-		sql += " select a, b ";
-		sql += " from tab1 ";
+		AuxEtlDataBaseObject g = new AuxEtlDataBaseObject();
 		
-		sql += " union ";
+		g.setParam("paramValue");
 		
-		sql += " select tab2.x as a, k as a ";
-		sql += " from 	tab2 ";
-		sql += "		left join (	select  k ";
-		sql += "					from tab3 ";
-		sql += "					union ";
-		sql += "					select y as k ";
-		sql += "					from tab4) inner_union on inner_union.col1 = tab2.col3";
-		sql += " union";
-		sql += " select a, b ";
-		sql += " from tab7 ";
+		System.out.println(tryToReplaceParamsInQuery(sql, g));
 		
-		for (String query : tryToSplitQueryByUnions(sql)) {
-			System.out.println("\"" + query + "\"");
-		}
 	}
 	
 	public static void handlePostgresExceptionIssue(Connection conn) throws DBException {
@@ -1625,7 +1613,6 @@ public class DBUtilities {
 					throw new ForbiddenOperationException("You need to specify the source of param");
 				}
 				
-				
 				if (paramValue != null && !paramValue.toString().isEmpty()) {
 					matcher.appendReplacement(result, paramValue.toString());
 				} else {
@@ -1633,7 +1620,6 @@ public class DBUtilities {
 				}
 			}
 			catch (ForbiddenOperationException e) {
-				e.printStackTrace();
 			}
 			
 		}

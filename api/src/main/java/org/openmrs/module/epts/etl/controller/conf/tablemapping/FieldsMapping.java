@@ -322,4 +322,18 @@ public class FieldsMapping implements TransformableField {
 	public void setApplyNullValue(boolean applyNullValue) {
 		this.applyNullValue = applyNullValue;
 	}
+
+	public static List<FieldsMapping> cloneAll(List<FieldsMapping> toClone) {
+		if (toClone == null) return null;
+		
+		List<FieldsMapping> cloned = new ArrayList<>(toClone.size()); 
+		
+		for (FieldsMapping f : toClone) {
+			FieldsMapping clonedF = new FieldsMapping(f.getSrcField(), null, f.getDstField());
+			
+			cloned.add(clonedF);
+		}
+		
+		return cloned;
+	}
 }

@@ -17,7 +17,7 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 	
 	private static final String LOCK_STRING = "LOCK_STRING";
 	
-	private DefaultFieldTransformer() {
+	public DefaultFieldTransformer() {
 	}
 	
 	public static DefaultFieldTransformer getInstance() {

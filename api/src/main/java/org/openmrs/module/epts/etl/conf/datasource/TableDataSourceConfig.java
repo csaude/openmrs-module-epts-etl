@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
@@ -43,7 +44,20 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	private PreparedQuery defaultPreparedQuery;
 	
+	private ConditionClauseScope joinExtraConditionScope;
+	
 	public TableDataSourceConfig() {
+		this.joinExtraConditionScope = ConditionClauseScope.ON_CLAUSE;
+	}
+	
+	@Override
+	public ConditionClauseScope getJoinExtraConditionScope() {
+		return this.joinExtraConditionScope;
+	}
+	
+	@Override
+	public void setJoinExtraConditionScope(ConditionClauseScope joinExtraConditionScope) {
+		this.joinExtraConditionScope = joinExtraConditionScope;
 	}
 	
 	@Override
@@ -196,11 +210,11 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public void loadOwnElements(Connection conn) throws DBException {
-		this.loadJoinElements(conn);
+	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
+		this.loadJoinElements(schemaInfo, conn);
 		this.loadAlias();
 		
-		this.tryToLoadAuxExtraJoinTable(conn);
+		this.tryToLoadAuxExtraJoinTable(schemaInfo, conn);
 	}
 	
 	@Override
@@ -264,6 +278,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		this.setJoinFields(toCloneFrom.getJoinFields());
 		this.setJoinExtraCondition(this.getJoinExtraCondition());
 		this.setRelatedSrcConf(relatedSrcConf);
+		this.setJoinExtraConditionScope(toCloneFrom.getJoinExtraConditionScope());
 		
 		if (toCloneFrom.hasAuxExtractTable()) {
 			this.setAuxExtractTable(AuxExtractTable.cloneAll(toCloneFrom.getAuxExtractTable(), this, schemaInfoSrc, conn));

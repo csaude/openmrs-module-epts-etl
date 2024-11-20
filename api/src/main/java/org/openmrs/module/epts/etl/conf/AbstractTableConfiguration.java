@@ -122,6 +122,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		
 		this.tableName = tableName;
 	}
+	
 	public boolean isIgnoreMissingParameters() {
 		return ignoreMissingParameters;
 	}
@@ -401,8 +402,9 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	public void setTableAlias(String tableAlias) {
-		if (hasAlias() && !tableAlias.equals(this.getTableAlias()))
+		if (hasAlias() && !hasDynamicAlias() && !tableAlias.equals(this.getTableAlias())) {
 			throw new ForbiddenOperationException("This table has already an alias and change is forbidden!");
+		}
 		
 		this.tableAlias = tableAlias;
 	}

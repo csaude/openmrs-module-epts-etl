@@ -68,7 +68,7 @@ public interface EtlFieldTransformer {
 	Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn, Connection dstConn)
 	        throws DBException, ForbiddenOperationException;
 	
-	default String tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final String srcValoue)
+	default Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final String srcValoue)
 	        throws ForbiddenOperationException {
 		
 		if (srcValoue == null || srcValoue.isEmpty()) {
@@ -112,6 +112,13 @@ public interface EtlFieldTransformer {
 			if (paramValue == null) {
 				throw new ForbiddenOperationException("Parameter '" + paramName + "' not found in source objects.");
 			}
+			
+			
+			//The param represent the whole srcValue
+			if (srcValoue.equals("@" + paramName)) {
+				return paramValue;
+			}
+			
 			
 			matcher.appendReplacement(buffer, paramValue.toString());
 		}

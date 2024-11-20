@@ -14,7 +14,7 @@ public class SimpleValueTransformer implements EtlFieldTransformer {
 	
 	private static final String LOCK_STRING = "LOCK_STRING";
 	
-	private SimpleValueTransformer() {
+	public SimpleValueTransformer() {
 	}
 	
 	public static SimpleValueTransformer getInstance() {

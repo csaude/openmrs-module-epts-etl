@@ -7,6 +7,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -125,7 +126,7 @@ public class ChildTable extends AbstractRelatedTable {
 	}
 	
 	@Override
-	public void loadOwnElements(Connection conn) throws DBException {
+	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		
 	}

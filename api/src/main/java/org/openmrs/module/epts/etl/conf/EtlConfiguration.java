@@ -18,6 +18,7 @@ import java.util.regex.Matcher;
 
 import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.datasource.EtlConfigurationSrcConf;
+import org.openmrs.module.epts.etl.conf.datasource.EtlItemSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
@@ -1628,6 +1629,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 				cloned.copyFromOther(item, clonedEtlConf, true, conn);
 				
+				cloned.setEtlItemSrcConf(new EtlItemSrcConf());
+				cloned.getEtlItemSrcConf().copyFromOther(item.getEtlItemSrcConf(), null, cloned, conn);
 				clonedEtlConf.getEtlItemConfiguration().add(cloned);
 			}
 			

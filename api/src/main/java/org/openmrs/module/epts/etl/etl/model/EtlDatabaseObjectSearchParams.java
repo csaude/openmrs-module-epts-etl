@@ -103,6 +103,10 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		String joinType = aux.getJoinType().toString();
 		String extraJoinQuery = aux.generateJoinConditionsFields();
 		
+		if (aux.getJoinExtraConditionScope().isWhereClause() && aux.hasJoinExtraCondition()) {
+			searchClauses.addToClauses(aux.getJoinExtraCondition());
+		}
+		
 		if (utilities.stringHasValue(extraJoinQuery)) {
 			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraJoinQuery, getSrcConf()),
 			    getConfig().getRelatedEtlConf(), true, DbmsType.determineFromConnection(srcConn));
@@ -129,7 +133,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 			        + shrd.generateJoinCondition();
 		}
 		
-		if (aux.getJoinType().isLeftJoin()) {
+		if (aux.getMainExtractTable().getJoiningTable().size() > 1 && aux.getJoinType().isLeftJoin()) {
 			if (aux.getPrimaryKey() == null) {
 				throw new ForbiddenOperationException("The aux table " + aux.getTableName() + " in relation "
 				        + srcConfig.getTableName() + " does not have primary key");
