@@ -556,4 +556,24 @@ public class Field implements Serializable {
 		}
 	}
 	
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		this.setName(utilities.tryToReplacePlaceholders(this.getName(), schemaInfoSrc));
+		
+		if (this.hasValue() && this.getValue() instanceof String) {
+			this.setValue(utilities.tryToReplacePlaceholders(this.getValue().toString(), schemaInfoSrc));
+		}
+		
+		if (this.hasDataType()) {
+			this.setValue(utilities.tryToReplacePlaceholders(this.getDataType(), schemaInfoSrc));
+		}
+	}
+	
+	public static void tryToReplacePlaceholders(List<? extends Field> conditionalFields, EtlDatabaseObject schemaInfoSrc) {
+		if (conditionalFields != null) {
+			for (Field f : conditionalFields) {
+				f.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+	}
+	
 }

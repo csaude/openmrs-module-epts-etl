@@ -1,10 +1,14 @@
 package org.openmrs.module.epts.etl.conf;
 
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class RefMapping {
+	
+	private CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private Key childField;
 	
@@ -205,6 +209,21 @@ public class RefMapping {
 		ref.setNullDueInconsistency = this.setNullDueInconsistency;
 		
 		return ref;
+	}
+	
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		
+		if (this.getChildField() != null) {
+			this.getChildField().tryToReplacePlaceholders(schemaInfoSrc);
+		}
+		
+		if (this.getParentField() != null) {
+			this.getParentField().tryToReplacePlaceholders(schemaInfoSrc);
+		}
+		
+		utilities.tryToReplacePlaceholders(this.getChildFieldName(), schemaInfoSrc);
+		utilities.tryToReplacePlaceholders(this.getParentFieldName(), schemaInfoSrc);
+		
 	}
 	
 }

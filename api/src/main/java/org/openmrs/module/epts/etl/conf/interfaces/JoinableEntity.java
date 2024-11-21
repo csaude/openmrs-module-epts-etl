@@ -98,7 +98,7 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 			        + field.getDstField();
 		}
 		
-		if (this.getJoinExtraConditionScope().isOnClause() && this.getJoinExtraCondition() != null && !this.getJoinExtraCondition().isEmpty()) {
+		if (this.getJoinExtraConditionScope().isJoinClause() && this.getJoinExtraCondition() != null && !this.getJoinExtraCondition().isEmpty()) {
 			conditionFields += " AND (" + this.getJoinExtraCondition() + ")";
 		}
 		

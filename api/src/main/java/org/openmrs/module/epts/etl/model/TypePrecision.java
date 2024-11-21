@@ -40,5 +40,4 @@ public class TypePrecision {
 	public String toString() {
 		return this.getLength() + (this.getDecimalDigits() != null ? ", " + this.getDecimalDigits() : "");
 	}
-	
 }

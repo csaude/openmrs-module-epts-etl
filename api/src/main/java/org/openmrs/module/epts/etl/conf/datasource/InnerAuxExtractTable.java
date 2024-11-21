@@ -39,7 +39,7 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	private boolean doNotUseAsDatasource;
 	
 	public InnerAuxExtractTable() {
-		this.joinExtraConditionScope = ConditionClauseScope.ON_CLAUSE;
+		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
 	}
 	
 	@Override
@@ -148,6 +148,22 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 		this.setMainExtractTable(relatedMainExtractTable);
 		this.setDoNotUseAsDatasource(toCloneFrom.isDoNotUseAsDatasource());
 		this.setJoinExtraConditionScope(toCloneFrom.getJoinExtraConditionScope());
+	}
+	
+	public static void tryToReplacePlaceholders(List<InnerAuxExtractTable> auxExtractTable,
+	        EtlDatabaseObject schemaInfoSrc) {
+		
+		if (auxExtractTable != null) {
+			for (InnerAuxExtractTable i : auxExtractTable) {
+				i.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+	}
+	
+	@Override
+	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
+		FieldsMapping.tryToReplacePlaceholders(getJoinFields(), schemaInfoSrc);
+		setJoinExtraCondition(utilities.tryToReplacePlaceholders(getJoinExtraCondition(), schemaInfoSrc));
 	}
 	
 }

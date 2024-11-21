@@ -493,6 +493,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		item.setTesting(this.isTesting());
 		item.setRelatedEtlSchemaObject(schemaInfoSrc);
 		
+		item.tryToReplacePlaceholders(schemaInfoSrc);
+		
 		return item;
 	}
 	
@@ -513,6 +515,17 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.setManualMapPrimaryKeyOnField(toCopyFrom.getManualMapPrimaryKeyOnField());
 		this.setCreateDstTableIfNotExists(toCopyFrom.isCreateDstTableIfNotExists());
 		this.setTesting(toCopyFrom.isTesting());
+	}
+	
+	@Override
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		this.getSrcConf().tryToReplacePlaceholders(schemaInfoSrc);
+		
+		if (hasDstConf()) {
+			for (DstConf dstConf : this.getDstConf()) {
+				dstConf.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
 	}
 	
 }

@@ -17,19 +17,9 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class EtlConfigurationSrcConf extends SrcConf {
 	
-	private List<AuxExtractTable> auxExtractTable;
-	
 	@Override
 	public boolean isGeneric() {
 		return false;
-	}
-	
-	public List<AuxExtractTable> getAuxExtractTable() {
-		return auxExtractTable;
-	}
-	
-	public void setAuxExtractTable(List<AuxExtractTable> auxExtractTable) {
-		this.auxExtractTable = auxExtractTable;
 	}
 	
 	@Override

@@ -127,7 +127,9 @@ public class ChildTable extends AbstractRelatedTable {
 	
 	@Override
 	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
+	}
+	
+	@Override
+	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
 	}
 }

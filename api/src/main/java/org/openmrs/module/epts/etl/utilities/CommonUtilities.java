@@ -23,8 +23,10 @@ import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VO;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1011,7 +1013,6 @@ public class CommonUtilities implements Serializable {
 		
 		List<String> headers = org.openmrs.module.epts.etl.model.Field.parseAllToListOfName(firstObj.getFields());
 		
-		
 		csvBuilder.append(String.join("\t\t\t\t", headers)).append("\n");
 		
 		return csvBuilder.toString();
@@ -1399,4 +1400,25 @@ public class CommonUtilities implements Serializable {
 		        || fieldType == byte.class;
 	}
 	
+	public String tryToReplacePlaceholders(String toReplace, EtlDatabaseObject src) {
+		if (src != null) {
+			return DBUtilities.tryToReplaceParamsInQuery(toReplace, src);
+		}
+		
+		return toReplace;
+	}
+	
+	public List<String> tryToReplacePlaceholders(List<String> toReplace, EtlDatabaseObject src) {
+		
+		if (toReplace == null)
+			return null;
+		
+		List<String> replaced = new ArrayList<>(toReplace.size());
+		
+		for (String r : toReplace) {
+			replaced.add(utilities.tryToReplacePlaceholders(r, src));
+		}
+		
+		return replaced;
+	}
 }

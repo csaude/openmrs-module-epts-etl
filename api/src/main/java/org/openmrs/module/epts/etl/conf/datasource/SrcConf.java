@@ -217,11 +217,11 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			}
 			
 			if (hasExtraObjectDataSourceConfig()) {
-				for (ObjectDataSource query : this.getExtraObjectDataSource()) {
-					query.setRelatedSrcConf(this);
+				for (ObjectDataSource ds : this.getExtraObjectDataSource()) {
+					ds.setRelatedSrcConf(this);
 					
-					if (query.hasObjectFields()) {
-						for (DataSourceField f : query.getObjectFields()) {
+					if (ds.hasObjectFields()) {
+						for (DataSourceField f : ds.getObjectFields()) {
 							f.setName(DBUtilities.tryToReplaceParamsInQuery(f.getName().toString(), schemaInfo));
 							
 							if (f.hasValue() && schemaInfo != null) {
@@ -230,7 +230,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 						}
 					}
 					
-					query.fullLoad(srcConn);
+					ds.fullLoad(srcConn);
 				}
 			}
 		}
@@ -579,6 +579,25 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			}
 		}
 		
+	}
+	
+	@Override
+	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
+		if (hasAuxExtractTable()) {
+			AuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);
+		}
+		
+		if (hasExtraTableDataSourceConfig()) {
+			TableDataSourceConfig.tryToReplacePlaceholders(this.getExtraTableDataSource(), schemaInfoSrc);
+		}
+		
+		if (hasExtraQueryDataSourceConfig()) {
+			QueryDataSourceConfig.tryToReplacePlaceholders(this.getExtraQueryDataSource(), schemaInfoSrc);
+		}
+		
+		if (hasExtraObjectDataSourceConfig()) {
+			ObjectDataSource.tryToReplacePlaceholders(this.getExtraObjectDataSource(), schemaInfoSrc);
+		}
 	}
 	
 }

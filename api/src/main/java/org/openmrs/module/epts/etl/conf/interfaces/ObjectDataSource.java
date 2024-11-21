@@ -356,4 +356,19 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		this.setFieldsValuesGenerator(toCloneFrom.getFieldsValuesGenerator());
 		this.setFieldsValuesGeneratorInstance(toCloneFrom.getFieldsValuesGeneratorInstance());
 	}
+	
+	public static void tryToReplacePlaceholders(List<ObjectDataSource> extraObjectDataSource,
+	        EtlDatabaseObject schemaInfoSrc) {
+		if (utilities.arrayHasElement(extraObjectDataSource)) {
+			for (ObjectDataSource a : extraObjectDataSource) {
+				a.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+		
+	}
+	
+	@Override
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		DataSourceField.tryToReplacePlaceholders(this.getObjectFields(), schemaInfoSrc);
+	}
 }

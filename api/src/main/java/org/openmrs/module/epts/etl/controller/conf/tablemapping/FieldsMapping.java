@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -322,11 +323,12 @@ public class FieldsMapping implements TransformableField {
 	public void setApplyNullValue(boolean applyNullValue) {
 		this.applyNullValue = applyNullValue;
 	}
-
+	
 	public static List<FieldsMapping> cloneAll(List<FieldsMapping> toClone) {
-		if (toClone == null) return null;
+		if (toClone == null)
+			return null;
 		
-		List<FieldsMapping> cloned = new ArrayList<>(toClone.size()); 
+		List<FieldsMapping> cloned = new ArrayList<>(toClone.size());
 		
 		for (FieldsMapping f : toClone) {
 			FieldsMapping clonedF = new FieldsMapping(f.getSrcField(), null, f.getDstField());
@@ -335,5 +337,21 @@ public class FieldsMapping implements TransformableField {
 		}
 		
 		return cloned;
+	}
+	
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		setSrcValue(utilities.tryToReplacePlaceholders(getSrcValue(), schemaInfoSrc));
+		setSrcField(utilities.tryToReplacePlaceholders(getSrcField(), schemaInfoSrc));
+		setDataSourceName(utilities.tryToReplacePlaceholders(getDataSourceName(), schemaInfoSrc));
+		setDstField(utilities.tryToReplacePlaceholders(getDstField(), schemaInfoSrc));
+		setDataType(utilities.tryToReplacePlaceholders(getDataType(), schemaInfoSrc));
+	}
+	
+	public static void tryToReplacePlaceholders(List<FieldsMapping> joinFields, EtlDatabaseObject schemaInfoSrc) {
+		if (joinFields != null) {
+			for (FieldsMapping f : joinFields) {
+				f.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
 	}
 }

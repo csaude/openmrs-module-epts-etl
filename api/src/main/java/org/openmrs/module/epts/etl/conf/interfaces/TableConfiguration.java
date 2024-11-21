@@ -2779,5 +2779,4 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default long getMaxRecordId(Connection conn) throws DBException {
 		return this.getExtremeRecord(SqlFunctionType.MAX, conn);
 	}
-	
 }

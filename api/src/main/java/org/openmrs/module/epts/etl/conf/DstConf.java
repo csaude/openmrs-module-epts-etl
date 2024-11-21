@@ -925,4 +925,10 @@ public class DstConf extends AbstractTableConfiguration {
 		this.setIncludeAllFieldsFromDataSource(toCloneFrom.includeAllFieldsFromDataSource());
 	}
 	
+	@Override
+	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
+		FieldsMapping.tryToReplacePlaceholders(this.getJoinFields(), schemaInfoSrc);
+		FieldsMapping.tryToReplacePlaceholders(this.getMapping(), schemaInfoSrc);
+	}
+	
 }

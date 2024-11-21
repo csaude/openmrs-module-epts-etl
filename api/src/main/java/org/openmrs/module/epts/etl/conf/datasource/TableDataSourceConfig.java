@@ -47,7 +47,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	private ConditionClauseScope joinExtraConditionScope;
 	
 	public TableDataSourceConfig() {
-		this.joinExtraConditionScope = ConditionClauseScope.ON_CLAUSE;
+		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
 	}
 	
 	@Override
@@ -298,4 +298,23 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			}
 		}
 	}
+	
+	public static void tryToReplacePlaceholders(List<TableDataSourceConfig> extraTableDataSource,
+	        EtlDatabaseObject schemaInfoSrc) {
+		if (utilities.arrayHasElement(extraTableDataSource)) {
+			for (TableDataSourceConfig a : extraTableDataSource) {
+				a.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+	}
+	
+	@Override
+	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
+		FieldsMapping.tryToReplacePlaceholders(getJoinFields(), schemaInfoSrc);
+		setJoinExtraCondition(utilities.tryToReplacePlaceholders(getJoinExtraCondition(), schemaInfoSrc));
+		
+		AuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);
+		
+	}
+	
 }

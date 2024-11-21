@@ -1628,6 +1628,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				EtlItemConfiguration cloned = new EtlItemConfiguration();
 				
 				cloned.copyFromOther(item, clonedEtlConf, true, conn);
+				cloned.tryToReplacePlaceholders(schemaInfoSrc);
 				
 				cloned.setEtlItemSrcConf(new EtlItemSrcConf());
 				cloned.getEtlItemSrcConf().copyFromOther(item.getEtlItemSrcConf(), null, cloned, conn);
@@ -1677,4 +1678,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return getSyncStageSchema() + "." + getRecordWithDefaultParentInfoTableName();
 	}
 	
+	@Override
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+	}
 }

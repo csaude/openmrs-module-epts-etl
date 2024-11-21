@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.conf;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.RelatedTable;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
 /**
  * Represents an related table, to an {@link AbstractTableConfiguration}
@@ -95,5 +96,14 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 		
 		return true;
 		
+	}
+	
+	@Override
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		if (refMapping != null) {
+			for (RefMapping ref : this.getRefMapping()) {
+				ref.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
 	}
 }

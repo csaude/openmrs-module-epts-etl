@@ -831,4 +831,21 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		return compacted;
 	}
 	
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		if (hasFields()) {
+			for (Key k : getFields()) {
+				k.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+	}
+	
+	public static void tryToReplacePlaceholders(List<UniqueKeyInfo> uniqueKeys, EtlDatabaseObject schemaInfoSrc) {
+		
+		if (uniqueKeys != null) {
+			for (UniqueKeyInfo r : uniqueKeys) {
+				r.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+	}
+	
 }

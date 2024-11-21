@@ -174,4 +174,8 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 		
 	}
 	
+	@Override
+	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
+		Field.tryToReplacePlaceholders(this.getConditionalFields(), schemaInfoSrc);
+	}
 }

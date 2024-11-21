@@ -45,7 +45,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	private boolean doNotUseAsDatasource;
 	
 	public AuxExtractTable() {
-		this.joinExtraConditionScope = ConditionClauseScope.ON_CLAUSE;
+		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
 	}
 	
 	@Override
@@ -238,6 +238,23 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 				tab.loadSchemaInfo(schemaInfoSrc, conn);
 			}
 		}
+	}
+	
+	public static void tryToReplacePlaceholders(List<AuxExtractTable> auxExtractTable, EtlDatabaseObject schemaInfoSrc) {
+		if (utilities.arrayHasElement(auxExtractTable)) {
+			for (AuxExtractTable a : auxExtractTable) {
+				a.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+	}
+	
+	@Override
+	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
+		FieldsMapping.tryToReplacePlaceholders(getJoinFields(), schemaInfoSrc);
+		setJoinExtraCondition(utilities.tryToReplacePlaceholders(getJoinExtraCondition(), schemaInfoSrc));
+		
+		InnerAuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);
+		
 	}
 	
 }

@@ -57,4 +57,10 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
+		// TODO Auto-generated method stub
+		
+	}
 }

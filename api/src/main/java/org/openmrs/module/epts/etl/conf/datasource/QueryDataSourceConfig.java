@@ -522,4 +522,23 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	public void tryToFillParams(EtlDatabaseObject schemaInfoSrc) {
 		this.setQuery(DBUtilities.tryToReplaceParamsInQuery(this.getQuery(), schemaInfoSrc));
 	}
+	
+	public static void tryToReplacePlaceholders(List<QueryDataSourceConfig> extraQueryDataSource,
+	        EtlDatabaseObject schemaInfoSrc) {
+		
+		if (utilities.arrayHasElement(extraQueryDataSource)) {
+			for (QueryDataSourceConfig a : extraQueryDataSource) {
+				a.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+		
+	}
+	
+	@Override
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		setName(utilities.tryToReplacePlaceholders(this.getName(), schemaInfoSrc));
+		setQuery(utilities.tryToReplacePlaceholders(getQuery(), schemaInfoSrc));
+		setScript(utilities.tryToReplacePlaceholders(this.getScript(), schemaInfoSrc));
+	}
+	
 }

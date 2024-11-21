@@ -615,4 +615,41 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		return this.tableName.compareTo(o.getTableName());
 	}
 	
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		this.setIgnorableFields(utilities.tryToReplacePlaceholders(getIgnorableFields(), schemaInfoSrc));
+		
+		utilities.tryToReplacePlaceholders(getTableAlias(), schemaInfoSrc);
+		
+		if (hasParents()) {
+			for (ParentTable p : this.getParents()) {
+				p.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+		
+		if (hasPK()) {
+			this.getPrimaryKey().tryToReplacePlaceholders(schemaInfoSrc);
+		}
+		
+		if (useSharedPKKey()) {
+			utilities.tryToReplacePlaceholders(this.getSharePkWith(), schemaInfoSrc);
+		}
+		
+		if (hasObservationDateFields()) {
+			this.setObservationDateFields(
+			    utilities.tryToReplacePlaceholders(this.getObservationDateFields(), schemaInfoSrc));
+		}
+		
+		if (hasUniqueKeys()) {
+			UniqueKeyInfo.tryToReplacePlaceholders(this.getUniqueKeys(), schemaInfoSrc);
+		}
+		
+		setManualMapPrimaryKeyOnField(utilities.tryToReplacePlaceholders(manualMapPrimaryKeyOnField, schemaInfoSrc));
+		
+		setExtraConditionForExtract(utilities.tryToReplacePlaceholders(getExtraConditionForExtract(), schemaInfoSrc));
+		
+		tryToReplacePlaceholdersOnOwnElements(schemaInfoSrc);
+	}
+	
+	public abstract void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc);
+	
 }
