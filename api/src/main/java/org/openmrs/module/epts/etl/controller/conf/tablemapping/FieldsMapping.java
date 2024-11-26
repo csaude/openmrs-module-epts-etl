@@ -47,8 +47,6 @@ public class FieldsMapping implements TransformableField {
 	
 	private List<String> possibleSrc;
 	
-	private boolean applyNullValue;
-	
 	public FieldsMapping() {
 		this.possibleSrc = new ArrayList<>(5);
 	}
@@ -313,15 +311,6 @@ public class FieldsMapping implements TransformableField {
 	@Override
 	public String getName() {
 		return hasSrcField() ? this.getSrcField() : this.getDstField();
-	}
-	
-	@Override
-	public boolean applyNullValue() {
-		return applyNullValue;
-	}
-	
-	public void setApplyNullValue(boolean applyNullValue) {
-		this.applyNullValue = applyNullValue;
 	}
 	
 	public static List<FieldsMapping> cloneAll(List<FieldsMapping> toClone) {

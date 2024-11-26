@@ -44,8 +44,6 @@ public interface TransformableField {
 	
 	String getSrcField();
 	
-	boolean applyNullValue();
-	
 	default boolean hasDataType() {
 		return utilities.stringHasValue(this.getDataType());
 	}
