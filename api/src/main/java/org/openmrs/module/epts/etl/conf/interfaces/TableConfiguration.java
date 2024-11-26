@@ -192,23 +192,23 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@Override
 	default boolean hasPK(Connection conn) throws DBException {
 		
-		if (!isPrimaryKeyInfoLoaded()) {
-			loadPrimaryKeyInfo(conn);
+		if (!this.isPrimaryKeyInfoLoaded()) {
+			this.loadPrimaryKeyInfo(conn);
 		}
 		
-		return getPrimaryKey() != null;
+		return this.getPrimaryKey() != null;
 	}
 	
 	default boolean hasTableName() {
-		return getTableName() != null && !getTableName().isEmpty();
+		return this.getTableName() != null && !this.getTableName().isEmpty();
 	}
 	
 	default void createTable(Connection conn) throws DBException {
-		if (!hasFields()) {
+		if (!this.hasFields()) {
 			throw new ForbiddenOperationException("There is no field for creation table!!");
 		}
 		
-		if (!hasTableName()) {
+		if (!this.hasTableName()) {
 			throw new ForbiddenOperationException("The table has no table name!!");
 		}
 		
@@ -255,7 +255,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			    this.getTableName() + "_pk", conn);
 		}
 		
-		if (hasUniqueKeys()) {
+		if (this.hasUniqueKeys()) {
 			sql += endLineMarker;
 			
 			for (UniqueKeyInfo uk : this.getUniqueKeys()) {
@@ -290,7 +290,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean hasExtraConditionForExtract() {
-		return utilities.stringHasValue(getExtraConditionForExtract());
+		return utilities.stringHasValue(this.getExtraConditionForExtract());
 	}
 	
 	@JsonIgnore
@@ -325,11 +325,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			for (UniqueKeyInfo uk : UniqueKeyInfo.cloneAll_(uniqueKeys)) {
 				uk.setTabConf(this);
 				
-				getUniqueKeys().add(uk);
+				this.getUniqueKeys().add(uk);
 			}
 			
 		} else {
-			setUniqueKeys(null);
+			this.setUniqueKeys(null);
 		}
 	}
 	
@@ -410,7 +410,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean hasDynamicAlias() {
-		return hasAlias() && this.getAlias().contains("@");
+		return this.hasAlias() && this.getAlias().contains("@");
 	}
 	
 	default boolean useDynamicTableName() {
@@ -425,18 +425,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default void loadPrimaryKeyInfo(Connection conn) throws DBException {
 		PrimaryKey primaryKey = null;
 		
-		if (!isPrimaryKeyInfoLoaded()) {
+		if (!this.isPrimaryKeyInfoLoaded()) {
 			
-			if (hasPK()) {
+			if (this.hasPK()) {
 				this.loadManualConfiguredPk(conn);
 			} else {
 				
-				loadSchemaInfo(null, conn);
-				loadFields(conn);
+				this.loadSchemaInfo(null, conn);
+				this.loadFields(conn);
 				
 				try {
 					
-					ResultSet rs = conn.getMetaData().getPrimaryKeys(getCatalog(conn), getSchema(), getTableName());
+					ResultSet rs = conn.getMetaData().getPrimaryKeys(this.getCatalog(conn), this.getSchema(),
+					    this.getTableName());
 					
 					while (rs.next()) {
 						primaryKey = new PrimaryKey(this);
@@ -450,31 +451,31 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						primaryKey.addKey(pk);
 					}
 					
-					setPrimaryKey(primaryKey);
+					this.setPrimaryKey(primaryKey);
 				}
 				catch (SQLException e) {
 					throw new DBException(e);
 				}
 				
-				if (primaryKey == null && hasManualMapPrimaryKeyOnField()) {
-					if (this.containsField(getManualMapPrimaryKeyOnField())) {
+				if (primaryKey == null && this.hasManualMapPrimaryKeyOnField()) {
+					if (this.containsField(this.getManualMapPrimaryKeyOnField())) {
 						primaryKey = new PrimaryKey();
 						
-						primaryKey.addKey(Key.fastCreateKey(getManualMapPrimaryKeyOnField()));
+						primaryKey.addKey(Key.fastCreateKey(this.getManualMapPrimaryKeyOnField()));
 						
-						setPrimaryKey(primaryKey);
+						this.setPrimaryKey(primaryKey);
 						
 						this.loadManualConfiguredPk(conn);
 					}
 				}
 			}
 			
-			setPrimaryKeyInfoLoaded(true);
+			this.setPrimaryKeyInfoLoaded(true);
 		}
 	}
 	
 	default boolean hasManualMapPrimaryKeyOnField() {
-		return getManualMapPrimaryKeyOnField() != null;
+		return this.getManualMapPrimaryKeyOnField() != null;
 	}
 	
 	default EtlDatabaseObject generateAndSaveDefaultObject(Connection conn) throws DBException {
@@ -482,12 +483,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		synchronized (this) {
 			
 			try {
-				EtlDatabaseObject defaultObject = getDefaultObject(conn);
+				EtlDatabaseObject defaultObject = this.getDefaultObject(conn);
 				
 				if (defaultObject != null) {
 					return defaultObject;
 				} else {
-					defaultObject = getSyncRecordClass().newInstance();
+					defaultObject = this.getSyncRecordClass().newInstance();
 					defaultObject.setRelatedConfiguration(this);
 					
 					defaultObject.loadWithDefaultValues(conn);
@@ -501,14 +502,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 						}
 					}
 					
-					defaultObject = getDefaultObject(conn);
+					defaultObject = this.getDefaultObject(conn);
 					
-					EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf = getRelatedEtlConf()
+					EtlConfigurationTableConf defaultGeneratedObjectKeyTabConf = this.getRelatedEtlConf()
 					        .getDefaultGeneratedObjectKeyTabConf();
 					
 					if (!defaultGeneratedObjectKeyTabConf.isFullLoaded()) {
 						
-						defaultGeneratedObjectKeyTabConf.setTableName(getRelatedEtlConf().getSyncStageSchema() + "."
+						defaultGeneratedObjectKeyTabConf.setTableName(this.getRelatedEtlConf().getSyncStageSchema() + "."
 						        + defaultGeneratedObjectKeyTabConf.getTableName());
 						
 						defaultGeneratedObjectKeyTabConf.setTableAlias(defaultGeneratedObjectKeyTabConf.getTableName());
@@ -536,13 +537,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default void deleteAllSkippedRecord(Connection srcConn) throws DBException {
-		EtlConfigurationTableConf skippedRecordTabConf = getRelatedEtlConf().getSkippedRecordTabConf();
+		EtlConfigurationTableConf skippedRecordTabConf = this.getRelatedEtlConf().getSkippedRecordTabConf();
 		
 		DatabaseObjectDAO.removeAll(skippedRecordTabConf, "table_name = '" + getTableName() + "'", srcConn);
 	}
 	
 	default void saveSkippedRecord(EtlDatabaseObject skippedrecord, Connection srcConn) throws DBException {
-		EtlConfigurationTableConf skippedRecordTabConf = getRelatedEtlConf().getSkippedRecordTabConf();
+		EtlConfigurationTableConf skippedRecordTabConf = this.getRelatedEtlConf().getSkippedRecordTabConf();
 		
 		if (!skippedRecordTabConf.isFullLoaded()) {
 			skippedRecordTabConf.fullLoad(srcConn);
@@ -568,13 +569,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		if (!getPrimaryKey().isSimpleKey())
 			throw new ForbiddenOperationException("Only simple pk is supported!");
 		
-		EtlConfigurationTableConf recWithDefaultParents = getRelatedEtlConf().getRecordWithDefaultParentsInfoTabConf();
+		EtlConfigurationTableConf recWithDefaultParents = this.getRelatedEtlConf().getRecordWithDefaultParentsInfoTabConf();
 		
 		String sql = "";
-		sql += getTableAlias() + "." + getPrimaryKey().retrieveSimpleKeyColumnName();
+		sql += this.getTableAlias() + "." + this.getPrimaryKey().retrieveSimpleKeyColumnName();
 		sql += " in  (	select src_rec_id \n";
 		sql += "		from " + recWithDefaultParents.getFullTableName() + "\n";
-		sql += " 		where table_name = '" + getTableName() + "')";
+		sql += " 		where table_name = '" + this.getTableName() + "')";
 		
 		return sql;
 	}
@@ -591,9 +592,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		OpenConnection conn = null;
 		
 		try {
-			conn = getRelatedEtlConf().getSrcConnInfo().openConnection();
+			conn = this.getRelatedEtlConf().getSrcConnInfo().openConnection();
 			
-			loadUniqueKeys(conn);
+			this.loadUniqueKeys(conn);
 		}
 		catch (DBException e) {
 			throw new RuntimeException(e);
@@ -606,18 +607,18 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default void loadUniqueKeys(Connection conn) {
-		if (isUniqueKeyInfoLoaded())
+		if (this.isUniqueKeyInfoLoaded())
 			return;
 		
 		if (this.getUniqueKeys() == null) {
-			loadUniqueKeys(this, conn);
+			this.loadUniqueKeys(this, conn);
 		} else {
 			for (UniqueKeyInfo uk : this.getUniqueKeys()) {
 				uk.setTabConf(this);
 			}
 		}
 		
-		setUniqueKeyInfoLoaded(true);
+		this.setUniqueKeyInfoLoaded(true);
 	}
 	
 	@JsonIgnore
@@ -646,14 +647,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default int countChildren(Connection conn) throws SQLException {
 		String tableName = DBUtilities.extractTableNameFromFullTableName(this.getTableName());
 		
-		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(getCatalog(conn), getSchema(), tableName);
+		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(this.getCatalog(conn), this.getSchema(), tableName);
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {
 				foreignKeyRS.last();
 			} else {
 				while (foreignKeyRS.next()) {}
-				;
 			}
 			
 			return foreignKeyRS.getRow();
@@ -665,34 +665,34 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default void logInfo(String msg) {
-		getRelatedEtlConf().logInfo(msg);
+		this.getRelatedEtlConf().logInfo(msg);
 	}
 	
 	default void logDebug(String msg) {
-		getRelatedEtlConf().logDebug(msg);
+		this.getRelatedEtlConf().logDebug(msg);
 	}
 	
 	default void logTrace(String msg) {
-		getRelatedEtlConf().logTrace(msg);
+		this.getRelatedEtlConf().logTrace(msg);
 	}
 	
 	default void logWarn(String msg) {
-		getRelatedEtlConf().logWarn(msg);
+		this.getRelatedEtlConf().logWarn(msg);
 	}
 	
 	default void logErr(String msg) {
-		getRelatedEtlConf().logErr(msg);
+		this.getRelatedEtlConf().logErr(msg);
 	}
 	
 	default int countParents(Connection conn) throws SQLException {
-		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(getCatalog(conn), getSchema(), getTableName());
+		ResultSet foreignKeyRS = conn.getMetaData().getImportedKeys(this.getCatalog(conn), this.getSchema(),
+		    this.getTableName());
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {
 				foreignKeyRS.last();
 			} else {
 				while (foreignKeyRS.next()) {}
-				;
 			}
 			
 			return foreignKeyRS.getRow();
@@ -700,23 +700,21 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		finally {
 			foreignKeyRS.close();
 		}
-		
 	}
 	
 	default void loadParents(Connection conn) throws DBException {
 		if (!getRelatedEtlConf().doNotResolveRelationship()) {
 			
 			synchronized (this) {
-				
 				try {
-					if (isParentsLoaded())
+					if (this.isParentsLoaded())
 						return;
 					
-					logDebug("LOADING PARENTS FOR TABLE '" + getTableName() + "'");
+					logDebug("LOADING PARENTS FOR TABLE '" + this.getTableName() + "'");
 					
 					ResultSet foreignKeyRS = null;
 					
-					int count = countParents(conn);
+					int count = this.countParents(conn);
 					
 					//First load all necessary info on configured parents
 					
@@ -739,17 +737,18 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					}
 					
 					if (count == 0) {
-						logDebug("NO PARENT FOUND FOR TABLE '" + getTableName() + "'");
+						this.logDebug("NO PARENT FOUND FOR TABLE '" + getTableName() + "'");
 					} else
 						try {
-							logDebug("DISCOVERED '" + count + "' PARENTS FOR TABLE '" + getTableName() + "'");
+							this.logDebug("DISCOVERED '" + count + "' PARENTS FOR TABLE '" + this.getTableName() + "'");
 							
-							foreignKeyRS = conn.getMetaData().getImportedKeys(getCatalog(conn), getSchema(), getTableName());
+							foreignKeyRS = conn.getMetaData().getImportedKeys(this.getCatalog(conn), this.getSchema(),
+							    this.getTableName());
 							
 							while (foreignKeyRS.next()) {
 								
-								logDebug("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME") + "] FOR TABLE '"
-								        + getTableName() + "'");
+								this.logDebug("CONFIGURING PARENT [" + foreignKeyRS.getString("PKTABLE_NAME")
+								        + "] FOR TABLE '" + this.getTableName() + "'");
 								
 								String refCode = foreignKeyRS.getString("FK_NAME");
 								
@@ -880,7 +879,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 								this.setParentRefInfo(cleanList);
 							}
 							
-							logDebug("LOADED PARENTS FOR TABLE '" + getTableName() + "'");
+							this.logDebug("LOADED PARENTS FOR TABLE '" + this.getTableName() + "'");
 						}
 						finally
 						
@@ -890,7 +889,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 							}
 						}
 					
-					setParentsLoaded(true);
+					this.setParentsLoaded(true);
 				}
 				catch (SQLException e) {
 					throw new DBException(e);
@@ -910,7 +909,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			if (!this.isMustLoadChildrenInfo())
 				return;
 			
-			logDebug("LOADING CHILDREN FOR TABLE '" + getTableName() + "'");
+			logDebug("LOADING CHILDREN FOR TABLE '" + this.getTableName() + "'");
 			
 			List<ChildTable> childRefInfo = new ArrayList<ChildTable>();
 			
@@ -919,20 +918,21 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			int count = countChildren(conn);
 			
 			if (count == 0) {
-				logDebug("NO CHILDREN FOUND FOR TABLE '" + getTableName() + "'");
+				logDebug("NO CHILDREN FOUND FOR TABLE '" + this.getTableName() + "'");
 			} else {
 				ResultSet foreignKeyRS = null;
 				
 				try {
-					logDebug("DISCOVERED '" + count + "' CHILDREN FOR TABLE '" + getTableName() + "'");
+					logDebug("DISCOVERED '" + count + "' CHILDREN FOR TABLE '" + this.getTableName() + "'");
 					
-					foreignKeyRS = conn.getMetaData().getExportedKeys(getCatalog(conn), getSchema(), getTableName());
+					foreignKeyRS = conn.getMetaData().getExportedKeys(this.getCatalog(conn), this.getSchema(),
+					    this.getTableName());
 					
 					int i = 0;
 					
 					while (foreignKeyRS.next()) {
 						logDebug("CONFIGURING CHILD " + ++i + " [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
-						        + getTableName() + "'");
+						        + this.getTableName() + "'");
 						
 						String refCode = foreignKeyRS.getString("FK_NAME");
 						
@@ -952,13 +952,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 							childTabConf.setSchema(foreignKeyRS.getString("PKTABLE_CAT"));
 						}
 						
-						addChildMappingInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
+						this.addChildMappingInfo(refCode, childTabConf, childFieldName, parentFieldName, conn);
 						
 						logDebug("CHILDREN " + i + " [" + foreignKeyRS.getString("FKTABLE_NAME") + "] FOR TABLE '"
 						        + getTableName() + "' CONFIGURED");
 					}
 					
-					logDebug("LOADED CHILDREN FOR TABLE '" + getTableName() + "'");
+					this.logDebug("LOADED CHILDREN FOR TABLE '" + this.getTableName() + "'");
 				}
 				finally {
 					if (foreignKeyRS != null) {
@@ -983,7 +983,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		TableConfiguration childTabConf = this;
 		
-		initRefInfo(RefType.IMPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
+		this.initRefInfo(RefType.IMPORTED, refCode, childTabConf, childFieldName, parentTabConf, parentFieldName, conn);
 	}
 	
 	default void initRefInfo(RefType refType, String refCode, TableConfiguration childTabConf, String childFieldname,
@@ -1069,7 +1069,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@JsonIgnore
 	default boolean existsSyncRecordClass(DBConnectionInfo connInfo) {
 		try {
-			return getSyncRecordClass(connInfo) != null;
+			return this.getSyncRecordClass(connInfo) != null;
 		}
 		catch (ForbiddenOperationException e) {
 			
@@ -1126,11 +1126,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@JsonIgnore
 	@Override
 	default String generateClassName() {
-		return generateClassName(this.getTableName());
+		return this.generateClassName(this.getTableName());
 	}
 	
 	default String generateClassName(String tableName) {
-		String[] nameParts = getTableName().split("\\.");
+		String[] nameParts = this.getTableName().split("\\.");
 		
 		//Ignore the schema
 		if (nameParts.length > 1) {
@@ -1160,54 +1160,54 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default String generateRelatedStageSrcUniqueKeysTableName() {
-		return generateRelatedStageTableName() + "_src_unique_keys";
+		return this.generateRelatedStageTableName() + "_src_unique_keys";
 	}
 	
 	@JsonIgnore
 	default String generateRelatedStageDstUniqueKeysTableName() {
-		return generateRelatedStageTableName() + "_dst_unique_keys";
+		return this.generateRelatedStageTableName() + "_dst_unique_keys";
 	}
 	
 	@JsonIgnore
 	default String getSyncStageSchema() {
-		return getRelatedEtlConf().getSyncStageSchema();
+		return this.getRelatedEtlConf().getSyncStageSchema();
 	}
 	
 	@JsonIgnore
 	default String generateFullStageTableName() {
-		return getSyncStageSchema() + "." + generateRelatedStageTableName();
+		return this.getSyncStageSchema() + "." + this.generateRelatedStageTableName();
 	}
 	
 	@JsonIgnore
 	default String generateFullDstStageTableName() {
-		return getSyncStageSchema() + "." + generateRelatedDstStageTableName();
+		return this.getSyncStageSchema() + "." + this.generateRelatedDstStageTableName();
 	}
 	
 	default String generateFullTableName(Connection conn) throws DBException {
-		return getSchema() + "." + getTableName();
+		return this.getSchema() + "." + this.getTableName();
 	}
 	
 	default String generateFullTableNameWithAlias(Connection conn) throws DBException, ForbiddenOperationException {
-		if (!hasAlias()) {
+		if (!this.hasAlias()) {
 			throw new ForbiddenOperationException("No alias is defined for table " + this.getTableName());
 		}
 		
-		return generateFullTableName(conn) + " " + this.getTableAlias();
+		return this.generateFullTableName(conn) + " " + this.getTableAlias();
 	}
 	
 	default String generateFullTableNameWithAlias() {
-		if (!hasAlias()) {
+		if (!this.hasAlias()) {
 			throw new ForbiddenOperationException("No alias is defined for table " + this.getTableName());
 		}
-		if (!hasSchema()) {
+		if (!this.hasSchema()) {
 			throw new ForbiddenOperationException("No schema is defined for table" + this.getTableName());
 		}
 		
-		return getSchema() + "." + generateTableNameWithAlias();
+		return this.getSchema() + "." + this.generateTableNameWithAlias();
 	}
 	
 	default String generateTableNameWithAlias() {
-		if (!hasAlias()) {
+		if (!this.hasAlias()) {
 			throw new ForbiddenOperationException("No alias is defined for table " + this.getTableName());
 		}
 		
@@ -1216,19 +1216,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default String generateFullStageSrcUniqueKeysTableName() {
-		return getSyncStageSchema() + "." + generateRelatedStageSrcUniqueKeysTableName();
+		return this.getSyncStageSchema() + "." + this.generateRelatedStageSrcUniqueKeysTableName();
 	}
 	
 	@JsonIgnore
 	default String generateFullStageDstUniqueKeysTableName() {
-		return getSyncStageSchema() + "." + generateRelatedStageDstUniqueKeysTableName();
+		return this.getSyncStageSchema() + "." + this.generateRelatedStageDstUniqueKeysTableName();
 	}
 	
 	@JsonIgnore
 	default boolean existRelatedExportStageTable(Connection conn) {
-		String schema = getSyncStageSchema();
+		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = generateRelatedStageTableName();
+		String tabName = this.generateRelatedStageTableName();
 		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
@@ -1241,9 +1241,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean existRelatedDstStageTable(Connection conn) {
-		String schema = getSyncStageSchema();
+		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = generateRelatedDstStageTableName();
+		String tabName = this.generateRelatedDstStageTableName();
 		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
@@ -1256,9 +1256,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean existRelatedStageSrcUniqueKeysTable(Connection conn) {
-		String schema = getSyncStageSchema();
+		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = generateRelatedStageSrcUniqueKeysTableName();
+		String tabName = this.generateRelatedStageSrcUniqueKeysTableName();
 		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
@@ -1273,7 +1273,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default boolean existRelatedStageDstUniqueKeysTable(Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = generateRelatedStageDstUniqueKeysTableName();
+		String tabName = this.generateRelatedStageDstUniqueKeysTableName();
 		
 		try {
 			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
@@ -1287,7 +1287,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default boolean isConfigured() {
-		for (TableConfiguration tabConf : getRelatedEtlConf().getConfiguredTables()) {
+		for (TableConfiguration tabConf : this.getRelatedEtlConf().getConfiguredTables()) {
 			if (tabConf.equals(this))
 				return true;
 		}
@@ -1297,7 +1297,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@Override
 	default void fullLoad(Connection conn) throws DBException {
-		tryToGenerateTableAlias(getRelatedEtlConf());
+		this.tryToGenerateTableAlias(this.getRelatedEtlConf());
 		
 		synchronized (this) {
 			
@@ -1307,38 +1307,39 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					return;
 				}
 				
-				loadSchemaInfo(null, conn);
+				this.loadSchemaInfo(null, conn);
 				
-				loadFields(conn);
+				this.loadFields(conn);
 				
-				loadPrimaryKeyInfo(conn);
+				this.loadPrimaryKeyInfo(conn);
 				
-				loadParents(conn);
-				loadChildren(conn);
+				this.loadParents(conn);
+				this.loadChildren(conn);
 				
-				tryToDiscoverySharedKeyInfo(conn);
+				this.tryToDiscoverySharedKeyInfo(conn);
 				
-				loadUniqueKeys(conn);
+				this.loadUniqueKeys(conn);
 				
-				loadAttDefinition(conn);
+				this.loadAttDefinition(conn);
 				
 				this.setAutoIncrementId(useAutoIncrementId(conn));
 				
-				if (!includePrimaryKeyOnInsert()) {
+				if (!this.includePrimaryKeyOnInsert()) {
 					
 					//Force the inclusion of primaryKey if the table is not autoincrement or if it uses shared pj
-					if ((!isAutoIncrementId() || useSharedPKKey() || this.getRelatedEtlConf().isDoNotTransformsPrimaryKeys())
+					if ((!this.isAutoIncrementId() || this.useSharedPKKey()
+					        || this.getRelatedEtlConf().isDoNotTransformsPrimaryKeys())
 					        && !(this instanceof EtlConfigurationTableConf)) {
-						setIncludePrimaryKeyOnInsert(true);
+						this.setIncludePrimaryKeyOnInsert(true);
 					}
 				}
 				
-				if (hasExtraConditionForExtract() && !isUsingManualDefinedAlias()) {
+				if (this.hasExtraConditionForExtract() && !this.isUsingManualDefinedAlias()) {
 					this.setExtraConditionForExtract(
-					    this.getExtraConditionForExtract().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
+					    this.getExtraConditionForExtract().replaceAll(getTableName() + "\\.", this.getTableAlias() + "\\."));
 				}
 				
-				loadOwnElements(null, conn);
+				this.loadOwnElements(null, conn);
 				
 				this.setFullLoaded(true);
 				
@@ -1355,11 +1356,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default void addParent(ParentTable p) {
 		if (!hasParents()) {
-			setParents(new ArrayList<>());
+			this.setParents(new ArrayList<>());
 		}
 		
-		if (!getParents().contains(p)) {
-			getParents().add(p);
+		if (!this.getParents().contains(p)) {
+			this.getParents().add(p);
 		}
 	}
 	
@@ -1386,8 +1387,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			catch (ForbiddenOperationException e) {}
 		}
 		
-		if (paramValue == null && getRelatedEtlConf() != null) {
-			paramValue = getRelatedEtlConf().getParamValue(paramName);
+		if (paramValue == null && this.getRelatedEtlConf() != null) {
+			paramValue = this.getRelatedEtlConf().getParamValue(paramName);
 		}
 		
 		return paramValue != null ? paramValue.toString() : null;
@@ -1397,7 +1398,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 * @throws ForbiddenOperationException
 	 */
 	default void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc) throws ForbiddenOperationException {
-		if (isTableNameInfoLoaded())
+		if (this.isTableNameInfoLoaded())
 			return;
 		
 		if (hasDynamicAlias() && schemaInfoSrc != null) {
@@ -1407,20 +1408,20 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		String[] tableNameParts = getTableName().split("\\.");
 		
 		if (tableNameParts.length == 1) {} else if (tableNameParts.length == 2) {
-			setTableName(tableNameParts[1]);
-			setSchema(tableNameParts[0]);
+			this.setTableName(tableNameParts[1]);
+			this.setSchema(tableNameParts[0]);
 		} else {
-			throw new ForbiddenOperationException("The table name " + getTableName() + " is malformed!");
+			throw new ForbiddenOperationException("The table name " + this.getTableName() + " is malformed!");
 		}
 		
-		if (hasSchema() && getSchema().startsWith("@")) {
-			String normalizedSchema = DBUtilities.normalizeQuery(getSchema());
+		if (this.hasSchema() && this.getSchema().startsWith("@")) {
+			String normalizedSchema = DBUtilities.normalizeQuery(this.getSchema());
 			
 			String param = utilities.removeFirsChar(normalizedSchema);
 			
 			Object paramValue = this.getParamValue(schemaInfoSrc, param);
 			
-			if (paramValue == null && !ignoreMissingParameters()) {
+			if (paramValue == null && !this.ignoreMissingParameters()) {
 				throw new ForbiddenOperationException("You should configure the parameter '" + param + "'");
 			}
 			
@@ -1429,19 +1430,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			}
 		}
 		
-		if (getTableName().startsWith("@")) {
-			String normalizedTableName = DBUtilities.normalizeQuery(getTableName());
+		if (this.getTableName().startsWith("@")) {
+			String normalizedTableName = DBUtilities.normalizeQuery(this.getTableName());
 			
 			String param = utilities.removeFirsChar(normalizedTableName);
 			
 			Object paramValue = this.getParamValue(schemaInfoSrc, param);
 			
-			if (paramValue == null && !ignoreMissingParameters()) {
+			if (paramValue == null && !this.ignoreMissingParameters()) {
 				throw new ForbiddenOperationException("You should configure the parameter '" + param + "'");
 			}
 			
 			if (paramValue != null) {
-				setTableName(paramValue.toString());
+				this.setTableName(paramValue.toString());
 			}
 		}
 		
@@ -1455,21 +1456,21 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
 	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
 		
-		if (isTableNameInfoLoaded())
+		if (this.isTableNameInfoLoaded())
 			return;
 		
-		tryToLoadSchemaInfo(schemaInfoSrc);
+		this.tryToLoadSchemaInfo(schemaInfoSrc);
 		
-		if (getSchema() == null) {
-			setSchema(DBUtilities.determineSchemaName(conn));
+		if (this.getSchema() == null) {
+			this.setSchema(DBUtilities.determineSchemaName(conn));
 		}
 		
-		boolean exists = DBUtilities.isTableExists(getSchema(), getTableName(), conn);
+		boolean exists = DBUtilities.isTableExists(this.getSchema(), this.getTableName(), conn);
 		
 		if (!exists)
-			throw new DatabaseResourceDoesNotExists(generateFullTableName(conn));
+			throw new DatabaseResourceDoesNotExists(this.generateFullTableName(conn));
 		
-		setTableNameInfoLoaded(true);
+		this.setTableNameInfoLoaded(true);
 	}
 	
 	/**
@@ -1477,15 +1478,15 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 * @throws DBException
 	 */
 	default void loadFields(Connection conn) throws DBException {
-		logDebug("Loading field for table " + getFullTableDescription());
+		this.logDebug("Loading field for table " + getFullTableDescription());
 		
-		if (isFieldsLoaded())
+		if (this.isFieldsLoaded())
 			return;
 		
 		List<Field> flds = null;
 		
 		try {
-			flds = DBUtilities.getTableFields(getTableName(), getSchema(), conn);
+			flds = DBUtilities.getTableFields(this.getTableName(), this.getSchema(), conn);
 		}
 		catch (Exception e) {
 			throw e;
@@ -1494,12 +1495,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setFields(new ArrayList<>());
 		
 		for (Field f : flds) {
-			if (!isIgnorableField(f)) {
+			if (!this.isIgnorableField(f)) {
 				this.getFields().add(f);
 			}
 		}
 		
-		logTrace("Fields for table " + getFullTableDescription() + " Loaded!");
+		logTrace("Fields for table " + this.getFullTableDescription() + " Loaded!");
 	}
 	
 	default void loadAttDefinition(Connection conn) {
@@ -1515,7 +1516,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		field.setAttDefinedElements(AttDefinedElements.define(field.getName(), field.getDataType(), true, this));
 		
-		generateSQLElemenets();
+		this.generateSQLElemenets();
 	}
 	
 	default void tryToDiscoverySharedKeyInfo(Connection conn) throws DBException {
@@ -1546,12 +1547,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	@Override
 	default void fullLoad() throws DBException {
 		synchronized (this) {
-			OpenConnection mainConn = getRelatedEtlConf().getSrcConnInfo().openConnection();
+			OpenConnection mainConn = this.getRelatedEtlConf().getSrcConnInfo().openConnection();
 			
 			OpenConnection dstConn = null;
 			
 			try {
-				fullLoad(mainConn);
+				this.fullLoad(mainConn);
 			}
 			finally {
 				mainConn.finalizeConnection();
@@ -1564,17 +1565,17 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default ParentTable getSharedTableConf() {
-		if (getSharedKeyRefInfo() != null) {
-			return getSharedKeyRefInfo();
+		if (this.getSharedKeyRefInfo() != null) {
+			return this.getSharedKeyRefInfo();
 		}
 		
 		return null;
 	}
 	
 	default ParentTable getSharedKeyRefInfo() {
-		if (getSharePkWith() == null) {
+		if (this.getSharePkWith() == null) {
 			return null;
-		} else if (hasParentRefInfo()) {
+		} else if (this.hasParentRefInfo()) {
 			
 			for (ParentTable parent : this.getParentRefInfo()) {
 				if (parent.getTableName().equalsIgnoreCase(this.getSharePkWith())) {
@@ -1615,15 +1616,15 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default String getFullTableName() {
-		return hasSchema() ? getSchema() + "." + getTableName() : getTableName();
+		return this.hasSchema() ? this.getSchema() + "." + this.getTableName() : this.getTableName();
 	}
 	
 	default String generateFullTableNameOnSchema(String schema) {
-		return schema + "." + getTableName();
+		return schema + "." + this.getTableName();
 	}
 	
 	default String getFullTableDescription() {
-		return getFullTableName() + (hasAlias() ? " as " + getTableAlias() : "");
+		return this.getFullTableName() + (this.hasAlias() ? " as " + this.getTableAlias() : "");
 	}
 	
 	default List<ParentTable> findAllRefToParent(String parentTableName) {
@@ -1665,17 +1666,17 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	@JsonIgnore
 	default boolean isDataReconciliationProcess() {
-		return getRelatedEtlConf().isDataReconciliationProcess();
+		return this.getRelatedEtlConf().isDataReconciliationProcess();
 	}
 	
 	@JsonIgnore
 	default boolean isDBQuickLoad() {
-		return getRelatedEtlConf().isDBQuickLoadProcess();
+		return this.getRelatedEtlConf().isDBQuickLoadProcess();
 	}
 	
 	@JsonIgnore
 	default boolean isDataBasesMergeFromSourceDBProcess() {
-		return getRelatedEtlConf().isDataBaseMergeFromSourceDBProcess();
+		return this.getRelatedEtlConf().isDataBaseMergeFromSourceDBProcess();
 	}
 	
 	@JsonIgnore
@@ -1704,7 +1705,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		for (int i = 0; i < this.getUniqueKeys().size(); i++) {
 			
-			String uniqueKeyJoinField = generateUniqueKeyConditionsFields(this.getUniqueKeys().get(i), dbObject);
+			String uniqueKeyJoinField = this.generateUniqueKeyConditionsFields(this.getUniqueKeys().get(i), dbObject);
 			
 			if (i > 0)
 				joinCondition += " OR ";
@@ -1726,7 +1727,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		for (int i = 0; i < this.getUniqueKeys().size(); i++) {
 			
-			String uniqueKeyJoinField = generateUniqueKeyConditionsFields(this.getUniqueKeys().get(i));
+			String uniqueKeyJoinField = this.generateUniqueKeyConditionsFields(this.getUniqueKeys().get(i));
 			
 			if (i > 0)
 				joinCondition += " OR ";
@@ -1795,7 +1796,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default List<ParentTable> getConditionalParents() {
 		List<ParentTable> conditionalParents = null;
 		
-		if (hasParents()) {
+		if (this.hasParents()) {
 			
 			conditionalParents = new ArrayList<>();
 			
@@ -1810,9 +1811,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default void generateSQLElemenets() {
-		generateInsertSQLWithObjectId();
-		generateInsertSQLWithoutObjectId();
-		setUpdateSql(generateUpdateSQL());
+		this.generateInsertSQLWithObjectId();
+		this.generateInsertSQLWithoutObjectId();
+		this.setUpdateSql(this.generateUpdateSQL());
 	}
 	
 	void setUpdateSql(java.lang.String generateUpdateSQL);
@@ -1899,7 +1900,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setInsertSQLWithoutObjectId("INSERT INTO " + this.getFullTableName() + "(" + insertSQLFieldsWithoutObjectId
 		        + ") VALUES( " + insertSQLQuestionMarksWithoutObjectId + ");");
 		
-		setInsertSQLQuestionMarksWithoutObjectId(insertSQLQuestionMarksWithoutObjectId);
+		this.setInsertSQLQuestionMarksWithoutObjectId(insertSQLQuestionMarksWithoutObjectId);
 	}
 	
 	default void generateInsertSQLWithObjectId() {
@@ -2053,7 +2054,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 * @return
 	 */
 	default String generateSelectFromClauseContent() {
-		String fromClause = generateFullTableNameWithAlias();
+		String fromClause = this.generateFullTableNameWithAlias();
 		
 		if (useSharedPKKey()) {
 			fromClause += "\n INNER JOIN " + this.getSharedTableConf().generateFullTableNameWithAlias() + " ON "
@@ -2161,7 +2162,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			
 			FieldsMapping field = joinFields.get(i);
 			
-			conditionFields += getTableAlias() + "." + field.getSrcField() + " = " + joiningTable.getTableAlias() + "."
+			conditionFields += this.getTableAlias() + "." + field.getSrcField() + " = " + joiningTable.getTableAlias() + "."
 			        + field.getDstField();
 		}
 		
@@ -2240,7 +2241,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default void fullLoadAllRelatedTables(TableAliasesGenerator aliasGenerator, TableConfiguration related, Connection conn)
 	        throws DBException {
-		if (isAllRelatedTablesFullLoaded()) {
+		if (this.isAllRelatedTablesFullLoaded()) {
 			return;
 		}
 		
@@ -2266,8 +2267,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				} else {
 					ref.fullLoad(conn);
 				}
-				
-				//ref.fullLoadAllRelatedTables(aliasGenerator, this, conn);
 			}
 			
 			this.setAllRelatedTablesFullLoaded(true);
@@ -2275,7 +2274,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean containsField(String fieldName) {
-		if (!hasFields())
+		if (!this.hasFields())
 			return false;
 		
 		for (Field f : this.getFields()) {
@@ -2288,7 +2287,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean isIgnorableField(Field field) {
-		if (!hasIgnorableField())
+		if (!this.hasIgnorableField())
 			return false;
 		
 		for (String ignorable : this.getIgnorableFields()) {
@@ -2301,7 +2300,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean hasIgnorableField() {
-		return utilities.arrayHasElement(getIgnorableFields());
+		return utilities.arrayHasElement(this.getIgnorableFields());
 	}
 	
 	/**
@@ -2316,8 +2315,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 * @return the generated select dump query
 	 */
 	default String generateSelectFromQuery() {
-		String sql = " SELECT " + generateFullAliasedSelectColumns() + "\n";
-		sql += " FROM " + generateSelectFromClauseContent() + "\n";
+		String sql = " SELECT " + this.generateFullAliasedSelectColumns() + "\n";
+		sql += " FROM " + this.generateSelectFromClauseContent() + "\n";
 		
 		return sql;
 	}
@@ -2352,10 +2351,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default void tryToGenerateTableAlias(TableAliasesGenerator aliasGenerator) {
 		synchronized (this) {
-			if (hasAlias())
+			if (this.hasAlias())
 				return;
 			
-			if (!useDynamicTableName()) {
+			if (!this.useDynamicTableName()) {
 				aliasGenerator.generateAliasForTable(this);
 			}
 		}
@@ -2363,7 +2362,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default EtlDatabaseObject createRecordInstance() {
 		try {
-			EtlDatabaseObject rec = getSyncRecordClass().newInstance();
+			EtlDatabaseObject rec = this.getSyncRecordClass().newInstance();
 			
 			rec.setRelatedConfiguration(this);
 			
@@ -2376,11 +2375,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean hasObservationDateFields() {
-		return utilities.arrayHasElement(getObservationDateFields());
+		return utilities.arrayHasElement(this.getObservationDateFields());
 	}
 	
 	default void addUniqueKey(UniqueKeyInfo uk) {
-		if (!hasUniqueKeys()) {
+		if (!this.hasUniqueKeys()) {
 			this.setUniqueKeys(new ArrayList<>());
 		}
 		
@@ -2396,11 +2395,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default boolean containsAllFields(List<Field> fields) {
-		if (!hasFields() || fields == null)
+		if (!this.hasFields() || fields == null)
 			return false;
 		
 		for (Field f : fields) {
-			if (!containsField(f.getName()))
+			if (!this.containsField(f.getName()))
 				return false;
 		}
 		
@@ -2415,7 +2414,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		List<ParentTable> parents = new ArrayList<>();
 		
-		for (ParentTable parentToCloneFrom : getParents()) {
+		for (ParentTable parentToCloneFrom : this.getParents()) {
 			if (DBUtilities.isTableExists(tableToCloneTo.getSchema(), parentToCloneFrom.getTableName(), conn)) {
 				ParentTable clonedParent = new ParentTableImpl();
 				
@@ -2453,13 +2452,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	 */
 	default boolean hasItsOwnKeys() {
 		
-		if (!hasUniqueKeys())
+		if (!this.hasUniqueKeys())
 			return false;
 		
-		if (!useSharedPKKey())
+		if (!this.useSharedPKKey())
 			return true;
 		
-		for (UniqueKeyInfo keyInfo : getUniqueKeys()) {
+		for (UniqueKeyInfo keyInfo : this.getUniqueKeys()) {
 			if (containsAllFields(utilities.parseList(keyInfo.getFields(), Field.class))) {
 				return true;
 			}
@@ -2490,86 +2489,65 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default void generateStagingTables(Connection conn) throws DBException {
 		
-		synchronized (getTableName()) {
+		synchronized (this.getTableName()) {
 			
-			conn = getRelatedEtlConf().openSrcConn();
+			conn = this.getRelatedEtlConf().openSrcConn();
 			
-			logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
+			this.logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
 			
-			if (!existRelatedExportStageTable(conn)) {
-				logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
+			if (!this.existRelatedExportStageTable(conn)) {
+				this.logDebug("GENERATING RELATED STAGE TABLE FOR [" + this.getTableName() + "]");
 				
-				createRelatedSrcStageAreaTable(conn);
+				this.createRelatedSrcStageAreaTable(conn);
 				
-				logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
-			} else {
-				//Temporary code to Add Column
-				
-				/*if (!DBUtilities.isColumnExistOnTable(this.generateFullStageTableName(), "compacted_object_uk", conn)) {
-					
-					String sql = "ALTER TABLE " + this.generateFullStageTableName() + " ADD COLUMN ";
-					
-					sql += DBUtilities.generateTableVarcharField("compacted_object_uk", 190, "NULL", conn);
-					
-					BaseDAO.executeBatch(conn, sql);
-				}*/
-				
-				//Temporary code to Remove Column
-				
-				/*if (DBUtilities.isColumnExistOnTable(this.generateFullStageTableName(), "compacted_object_uk", conn)) {
-					String sql = "ALTER TABLE " + this.generateFullStageTableName() + " DROP COLUMN compacted_object_uk";
-					
-					BaseDAO.executeBatch(conn, sql);
-				}*/
-				
+				this.logDebug("RELATED STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
 			}
 			
-			if (!existRelatedDstStageTable(conn)) {
-				logDebug("GENERATING RELATED DST STAGE TABLE FOR [" + this.getTableName() + "]");
+			if (!this.existRelatedDstStageTable(conn)) {
+				this.logDebug("GENERATING RELATED DST STAGE TABLE FOR [" + this.getTableName() + "]");
 				
-				createRelatedDstSyncStage(conn);
+				this.createRelatedDstSyncStage(conn);
 				
-				logDebug("RELATED DST STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
-				
+				this.logDebug("RELATED DST STAGE TABLE FOR [" + this.getTableName() + "] GENERATED");
 			}
 			
-			if (!existRelatedStageSrcUniqueKeysTable(conn)) {
-				logDebug("GENERATING RELATED STAGE ORIGIN UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
+			if (!this.existRelatedStageSrcUniqueKeysTable(conn)) {
+				this.logDebug("GENERATING RELATED STAGE ORIGIN UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
 				
-				createRelatedStageAreaSrcUniqueKeysTable(conn);
+				this.createRelatedStageAreaSrcUniqueKeysTable(conn);
 				
-				logDebug("RELATED STAGE SRC UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
+				this.logDebug("RELATED STAGE SRC UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
 			}
 			
-			if (!existRelatedStageDstUniqueKeysTable(conn)) {
-				logDebug("GENERATING RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
+			if (!this.existRelatedStageDstUniqueKeysTable(conn)) {
+				this.logDebug("GENERATING RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "]");
 				
-				createRelatedSyncStageAreaDstUniqueKeysTable(conn);
+				this.createRelatedSyncStageAreaDstUniqueKeysTable(conn);
 				
-				logDebug("RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
+				this.logDebug("RELATED STAGE DST UNIQUE KEYS TABLE FOR [" + this.getTableName() + "] GENERATED");
 			}
 			
-			logDebug("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
+			this.logDebug("THE PREPARATION OF TABLE '" + getTableName() + "' IS FINISHED!");
 			
 		}
 		
 	}
 	
 	default EtlConfigurationTableConf generateRelatedSrcStageTableConf(Connection conn) throws DBException {
-		return generateRelatedStageTabConf(this.generateRelatedStageTableName(), this.getSyncStageSchema(), conn);
+		return this.generateRelatedStageTabConf(this.generateRelatedStageTableName(), this.getSyncStageSchema(), conn);
 	}
 	
 	default EtlConfigurationTableConf generateRelatedDstStageTableConf(Connection conn) throws DBException {
-		return generateRelatedStageTabConf(this.generateRelatedDstStageTableName(), this.getSyncStageSchema(), conn);
+		return this.generateRelatedStageTabConf(this.generateRelatedDstStageTableName(), this.getSyncStageSchema(), conn);
 	}
 	
 	default EtlConfigurationTableConf generateRelatedStageDstUniqueKeysTableConf(Connection conn) throws DBException {
-		return generateRelatedStageTabConf(this.generateRelatedStageDstUniqueKeysTableName(), this.getSyncStageSchema(),
+		return this.generateRelatedStageTabConf(this.generateRelatedStageDstUniqueKeysTableName(), this.getSyncStageSchema(),
 		    conn);
 	}
 	
 	default EtlConfigurationTableConf generateRelatedStageSrcUniqueKeysTableConf(Connection conn) throws DBException {
-		return generateRelatedStageTabConf(this.generateRelatedStageSrcUniqueKeysTableName(), this.getSyncStageSchema(),
+		return this.generateRelatedStageTabConf(this.generateRelatedStageSrcUniqueKeysTableName(), this.getSyncStageSchema(),
 		    conn);
 	}
 	
@@ -2577,7 +2555,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	        throws DBException {
 		
 		synchronized (tableName) {
-			TableConfiguration tabConf = getRelatedEtlConf().findOnFullLoadedTables(tableName, schema);
+			TableConfiguration tabConf = this.getRelatedEtlConf().findOnFullLoadedTables(tableName, schema);
 			
 			if (tabConf == null) {
 				tabConf = new EtlConfigurationTableConf(tableName, this.getRelatedEtlConf());
@@ -2597,9 +2575,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		String notNullConstraint = "NOT NULL";
 		String endLineMarker = ",\n";
 		
-		String tableName = generateRelatedDstStageTableName();
+		String tableName = this.generateRelatedDstStageTableName();
 		
-		String fullTableName = getSyncStageSchema() + "." + tableName;
+		String fullTableName = this.getSyncStageSchema() + "." + tableName;
 		
 		String parentTableName = this.generateFullStageTableName();
 		
@@ -2632,12 +2610,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default void createRelatedStageAreaSrcUniqueKeysTable(Connection conn) throws DBException {
-		createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageSrcUniqueKeysTableName(),
+		this.createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageSrcUniqueKeysTableName(),
 		    this.generateFullStageTableName(), conn);
 	}
 	
 	default void createRelatedSyncStageAreaDstUniqueKeysTable(Connection conn) throws DBException {
-		createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageDstUniqueKeysTableName(),
+		this.createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageDstUniqueKeysTableName(),
 		    this.generateFullDstStageTableName(), conn);
 	}
 	
@@ -2648,7 +2626,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		String nullConstraint = "NULL";
 		String endLineMarker = ",\n";
 		
-		String fullTableName = getSyncStageSchema() + "." + tableName;
+		String fullTableName = this.getSyncStageSchema() + "." + tableName;
 		
 		sql += "CREATE TABLE " + fullTableName + "(\n";
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
@@ -2729,8 +2707,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	}
 	
 	default void createLastUpdateDateMonitorTrigger(Connection conn) throws SQLException {
-		String insert = generateTriggerCode(this.generateLastUpdateDateInsertTriggerMonitor(), "INSERT");
-		String update = generateTriggerCode(this.generateLastUpdateDateUpdateTriggerMonitor(), "UPDATE");
+		String insert = this.generateTriggerCode(this.generateLastUpdateDateInsertTriggerMonitor(), "INSERT");
+		String update = this.generateTriggerCode(this.generateLastUpdateDateUpdateTriggerMonitor(), "UPDATE");
 		
 		BaseDAO.executeBatch(conn, insert, update);
 	}
