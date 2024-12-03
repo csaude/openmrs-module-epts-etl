@@ -547,4 +547,11 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	public Date getDateVoided() {
 		return super.getDateVoided();
 	}
+	
+	@Override
+	public void tryToReplaceFieldWithKey(Key k) {
+		if (this.hasFields()) {
+			utilities.updateOnArray(this.getFields(), k, k);
+		}
+	}
 }

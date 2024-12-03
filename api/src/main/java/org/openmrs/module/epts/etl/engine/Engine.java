@@ -761,6 +761,9 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				if (this.getRelatedEtlOperationConfig().getTotalCountStrategy().isUseMaxRecordIdAsCount()) {
 					total = (int) this.getProgressMeter().getMaxRecordId();
 					remaining = total;
+				} else if (this.getRelatedEtlOperationConfig().getTotalCountStrategy().isUseProvided()) {
+					total = this.getRelatedEtlOperationConfig().getTotalAvaliableRecordsToProcess();
+					remaining = total;
 				} else {
 					logDebug("Loading from Database...");
 					

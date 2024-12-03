@@ -1,7 +1,7 @@
 <!-- logback.xml -->
 <configuration debug="true">
 
-    <property name="eip.base.dir" value="D:\\PRG\\JEE\\Workspace\\CSaude\\eptssync" />
+    <property name="eip.base.dir" value="/home/eip" />
     <property name="LOGS_PATTERN" value="%-5level %date [%thread] %logger{8}:%line %msg%n" />
     <property name="LOGS_DIR" value="${eip.base.dir}" />
     <property name="LOGS_FILE_NAME" value="eptssync" />

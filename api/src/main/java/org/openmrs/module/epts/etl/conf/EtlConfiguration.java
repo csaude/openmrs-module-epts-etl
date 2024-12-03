@@ -23,8 +23,10 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessType;
+import org.openmrs.module.epts.etl.conf.types.EtlTotalRecordsCountStrategy;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -154,6 +156,17 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private EtlConfiguration parentEtlConf;
 	
+	private AutoIncrementHandlingType autoIncrementHandlingType;
+	
+	/**
+	 * A numeric value added to the primary key of the very first destination record for all tables
+	 * defined in the ETL Item Configuration. This property cannot be used when
+	 * autoIncrementHandlingType is explicitly set to AS_SCHEMA_DEFINED. If this property is
+	 * provided and autoIncrementHandlingType is not specified, it will automatically be set to
+	 * IGNORE_SCHEMA_DEFINITION.
+	 */
+	private Integer primaryKeyInitialIncrementValue;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -166,6 +179,22 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.busyTableAliasName = new ArrayList<>();
 		
 		this.waitTimeToCheckStatus = 5;
+	}
+	
+	public Integer getPrimaryKeyInitialIncrementValue() {
+		return primaryKeyInitialIncrementValue;
+	}
+	
+	public void setPrimaryKeyInitialIncrementValue(Integer primaryKeyInitialIncrementValue) {
+		this.primaryKeyInitialIncrementValue = primaryKeyInitialIncrementValue;
+	}
+	
+	public AutoIncrementHandlingType getAutoIncrementHandlingType() {
+		return autoIncrementHandlingType;
+	}
+	
+	public void setAutoIncrementHandlingType(AutoIncrementHandlingType autoIncrementHandlingType) {
+		this.autoIncrementHandlingType = autoIncrementHandlingType;
 	}
 	
 	public EtlConfiguration getParentEtlConf() {
@@ -672,6 +701,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				this.getDstConnInfo().tryToLoadPlaceHolders(this);
 			}
 			
+			if (this.getAutoIncrementHandlingType() == null) {
+				this.autoIncrementHandlingType = AutoIncrementHandlingType.AS_SCHEMA_DEFINED;
+			}
+			
+			if (this.getPrimaryKeyInitialIncrementValue() == null) {
+				this.setPrimaryKeyInitialIncrementValue(0);
+			}
+			
 			for (EtlOperationConfig operation : this.getOperations()) {
 				if (operation.getMaxSupportedProcessors() == 1) {
 					operation.setUseSharedConnectionPerThread(false);
@@ -679,6 +716,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 				if (operation.isConsoleDst()) {
 					operation.setDoNotSaveOperationProgress(true);
+				}
+				
+				if (operation.getTotalAvaliableRecordsToProcess() != null) {
+					operation.setTotalCountStrategy(EtlTotalRecordsCountStrategy.USE_PROVIDED_COUNT);
 				}
 			}
 			
@@ -709,6 +750,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					}
 					
 				} else {
+					if (item.getAutoIncrementHandlingType() == null) {
+						item.setAutoIncrementHandlingType(this.getAutoIncrementHandlingType());
+					}
+					
+					if (item.getPrimaryKeyInitialIncrementValue() == null) {
+						item.setPrimaryKeyInitialIncrementValue(this.getPrimaryKeyInitialIncrementValue());
+					}
+					
 					allItem.add(item);
 					
 					initItem(item, false);
@@ -1039,6 +1088,13 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		if (!hasOperation()) {
 			this.setOperations(utilities.parseToList(EtlOperationConfig.createDefaultOperation(this)));
+		}
+		
+		if (this.getAutoIncrementHandlingType().isAsSchemaDefined()) {
+			if (this.getPrimaryKeyInitialIncrementValue() != null && this.getPrimaryKeyInitialIncrementValue() > 0) {
+				errorMsg += ++errNum
+				        + ". The 'autoIncrementHandlingType' is set to 'AS_SCHEMA_DEFINED' you must ommit the 'primaryKeyInitialIncrementValue' property or change it to 'IGNORE_SCHEMA_DEFINITION'. \n";
+			}
 		}
 		
 		for (EtlOperationConfig operation : this.getOperations()) {

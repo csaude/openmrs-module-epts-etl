@@ -81,6 +81,7 @@ public class DstConf extends AbstractTableConfiguration {
 	private boolean includeAllFieldsFromDataSource;
 	
 	public DstConf() {
+		this.currThreadStartId = DEFAULT_NEXT_TREAD_ID;
 	}
 	
 	public DstConf(String tableName) {
@@ -773,11 +774,14 @@ public class DstConf extends AbstractTableConfiguration {
 	        throws DBException, ForbiddenOperationException {
 		synchronized (stringLock) {
 			if (this.currThreadStartId == DEFAULT_NEXT_TREAD_ID) {
-				this.currQtyRecords = idGeneratorMgt.getEtlObjects().size();
-				
 				this.currThreadStartId = DatabaseObjectDAO.getLastRecord(this, conn);
 				
-				this.currThreadStartId = this.currThreadStartId - this.currQtyRecords + 1;
+				//This mean that the table is empty so let try to add the increase 
+				if (this.currThreadStartId == 0) {
+					this.currThreadStartId += this.getPrimaryKeyInitialIncrementValue() - 1;
+				}
+				
+				this.currThreadStartId = this.currThreadStartId + 1;
 			}
 			
 			this.currThreadStartId += this.currQtyRecords;

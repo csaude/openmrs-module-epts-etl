@@ -677,7 +677,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 	public static Integer getSpecificRecord(TableConfiguration tableConf, String function, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
-		String sql = " SELECT " + function + "(" + tableConf.getPrimaryKey() + ") value\n";
+		String sql = "";
+		sql += " SELECT " + function + "(" + tableConf.getPrimaryKey().asSimpleKey().getName() + ") value\n";
 		sql += " FROM " + tableConf.getTableName() + "\n";
 		sql += " WHERE 1 = 1;";
 		

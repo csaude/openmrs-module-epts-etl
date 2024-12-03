@@ -6,6 +6,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -112,6 +113,10 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private boolean ignoreMissingParameters;
 	
+	private AutoIncrementHandlingType autoIncrementHandlingType;
+	
+	private Integer primaryKeyInitialIncrementValue;
+	
 	public AbstractTableConfiguration() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 		this.onConflict = ConflictResolutionType.MAKE_YOUR_DECISION;
@@ -121,6 +126,26 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this();
 		
 		this.tableName = tableName;
+	}
+	
+	@Override
+	public AutoIncrementHandlingType getAutoIncrementHandlingType() {
+		return autoIncrementHandlingType;
+	}
+	
+	@Override
+	public Integer getPrimaryKeyInitialIncrementValue() {
+		return primaryKeyInitialIncrementValue;
+	}
+	
+	@Override
+	public void setPrimaryKeyInitialIncrementValue(Integer primaryKeyInitialIncrementValue) {
+		this.primaryKeyInitialIncrementValue = primaryKeyInitialIncrementValue;
+	}
+	
+	@Override
+	public void setAutoIncrementHandlingType(AutoIncrementHandlingType autoIncrementHandlingType) {
+		this.autoIncrementHandlingType = autoIncrementHandlingType;
 	}
 	
 	public boolean isIgnoreMissingParameters() {

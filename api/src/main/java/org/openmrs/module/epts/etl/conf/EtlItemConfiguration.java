@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.ThreadingMode;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
@@ -54,7 +55,34 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private ThreadingMode threadingMode;
 	
+	private AutoIncrementHandlingType autoIncrementHandlingType;
+	
+	/**
+	 * A numeric value added to the primary key of the very first destination record for all tables
+	 * defined in the ETL Item Configuration. This property cannot be used when
+	 * autoIncrementHandlingType is explicitly set to AS_SCHEMA_DEFINED. If this property is
+	 * provided and autoIncrementHandlingType is not specified, it will automatically be set to
+	 * IGNORE_SCHEMA_DEFINITION.
+	 */
+	private Integer primaryKeyInitialIncrementValue;
+	
 	public EtlItemConfiguration() {
+	}
+	
+	public Integer getPrimaryKeyInitialIncrementValue() {
+		return primaryKeyInitialIncrementValue;
+	}
+	
+	public void setPrimaryKeyInitialIncrementValue(Integer primaryKeyInitialIncrementValue) {
+		this.primaryKeyInitialIncrementValue = primaryKeyInitialIncrementValue;
+	}
+	
+	public AutoIncrementHandlingType getAutoIncrementHandlingType() {
+		return autoIncrementHandlingType;
+	}
+	
+	public void setAutoIncrementHandlingType(AutoIncrementHandlingType autoIncrementHandlingType) {
+		this.autoIncrementHandlingType = autoIncrementHandlingType;
 	}
 	
 	public ThreadingMode getThreadingMode() {
@@ -492,7 +520,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		item.setCreateDstTableIfNotExists(this.isCreateDstTableIfNotExists());
 		item.setTesting(this.isTesting());
 		item.setRelatedEtlSchemaObject(schemaInfoSrc);
-		
+		item.setAutoIncrementHandlingType(this.getAutoIncrementHandlingType());
+		item.setPrimaryKeyInitialIncrementValue(this.getPrimaryKeyInitialIncrementValue());
 		item.tryToReplacePlaceholders(schemaInfoSrc);
 		
 		return item;
@@ -515,6 +544,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.setManualMapPrimaryKeyOnField(toCopyFrom.getManualMapPrimaryKeyOnField());
 		this.setCreateDstTableIfNotExists(toCopyFrom.isCreateDstTableIfNotExists());
 		this.setTesting(toCopyFrom.isTesting());
+		this.setAutoIncrementHandlingType(toCopyFrom.getAutoIncrementHandlingType());
+		this.setPrimaryKeyInitialIncrementValue(toCopyFrom.getPrimaryKeyInitialIncrementValue());
 	}
 	
 	@Override

@@ -770,4 +770,11 @@ public interface EtlDatabaseObject extends EtlObject {
 		return utils.arrayHasElement(this.getFields());
 	}
 	
+	/**
+	 * If this {@link EtlDatabaseObject} uses the dynamic fields based on map or list of
+	 * {@link Field}, then this method should replace the correspondent field with the given key
+	 * 
+	 * @param key the correspondent key to replace the field
+	 */
+	void tryToReplaceFieldWithKey(Key k);
 }

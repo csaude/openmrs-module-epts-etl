@@ -103,6 +103,8 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	 */
 	private EtlTotalRecordsCountStrategy totalCountStrategy;
 	
+	private Integer totalAvaliableRecordsToProcess;
+	
 	public EtlOperationConfig() {
 		this.dstType = EtlDstType.db;
 		this.actionType = EtlActionType.CREATE;
@@ -114,6 +116,14 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.fisicalCpuMultiplier = 1;
 		this.threadingMode = ThreadingMode.MULTI_THREAD;
 		this.totalCountStrategy = EtlTotalRecordsCountStrategy.COUNT_ONCE;
+	}
+	
+	public Integer getTotalAvaliableRecordsToProcess() {
+		return totalAvaliableRecordsToProcess;
+	}
+	
+	public void setTotalAvaliableRecordsToProcess(Integer totalAvaliableRecordsToProcess) {
+		this.totalAvaliableRecordsToProcess = totalAvaliableRecordsToProcess;
 	}
 	
 	public EtlTotalRecordsCountStrategy getTotalCountStrategy() {
@@ -694,6 +704,11 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 				errorMsg += ++errNum + ". This operation [" + this.getOperationType()
 				        + "] Cannot be configured in db problems resolution process\n";
 			
+		}
+		
+		if (this.getTotalCountStrategy().isUseProvided() && this.getTotalAvaliableRecordsToProcess() == null) {
+			errorMsg += ++errNum
+			        + "'USE_PROVIDED_COUNT' count strategy is being used and no 'totalAvaliableRecordsToProcess' was specified! Please provide a total count using propertie 'totalAvaliableRecordsToProcess'";
 		}
 		
 		try {

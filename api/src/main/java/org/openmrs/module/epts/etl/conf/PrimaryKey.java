@@ -44,7 +44,11 @@ public class PrimaryKey extends UniqueKeyInfo {
 				keyValue = obj.getFieldValue(key.getNameAsClassAtt());
 			}
 			
-			oid.addKey(new Key(key.getName(), key.getDataType(), keyValue));
+			Key k = new Key(key.getName(), key.getDataType(), keyValue);
+			
+			oid.addKey(k);
+			
+			obj.tryToReplaceFieldWithKey(k);
 		}
 		
 		return oid;

@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.RefType;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
@@ -48,11 +49,23 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	void setTableName(String tableName);
 	
+	AutoIncrementHandlingType getAutoIncrementHandlingType();
+	
+	void setAutoIncrementHandlingType(AutoIncrementHandlingType autoIncrementHandlingType);
+	
 	String getTableAlias();
 	
 	String getTableName();
 	
 	String getAlias();
+	
+	/**
+	 * @return the initial increment to be done on the table ID for the first record when the ID is
+	 *         manually generated
+	 */
+	Integer getPrimaryKeyInitialIncrementValue();
+	
+	void setPrimaryKeyInitialIncrementValue(Integer primaryKeyInitialIncrementValue);
 	
 	void setTableAlias(String tableAlias);
 	
@@ -356,6 +369,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setFieldsLoaded(toCloneFrom.isFieldsLoaded());
 		this.setTableNameInfoLoaded(toCloneFrom.isTableNameInfoLoaded());
 		this.setParentsLoaded(toCloneFrom.isParentsLoaded());
+		this.setPrimaryKeyInitialIncrementValue(toCloneFrom.getPrimaryKeyInitialIncrementValue());
 		
 		if (isMustLoadChildrenInfo()) {
 			this.setChildRefInfo(toCloneFrom.getChildRefInfo());
@@ -1322,7 +1336,24 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				
 				this.loadAttDefinition(conn);
 				
-				this.setAutoIncrementId(useAutoIncrementId(conn));
+				if (this.getParentConf() instanceof EtlItemConfiguration) {
+					EtlItemConfiguration parent = (EtlItemConfiguration) this.getParentConf();
+					
+					if (this.getAutoIncrementHandlingType() == null) {
+						this.setAutoIncrementHandlingType(parent.getAutoIncrementHandlingType());
+					}
+					
+					if (this.getPrimaryKeyInitialIncrementValue() == null) {
+						this.setPrimaryKeyInitialIncrementValue(parent.getPrimaryKeyInitialIncrementValue());
+					}
+				}
+				
+				if (overrideAutoIncrement()) {
+					this.setAutoIncrementId(false);
+					this.setIncludePrimaryKeyOnInsert(true);
+				} else {
+					this.setAutoIncrementId(useAutoIncrementId(conn));
+				}
 				
 				if (!this.includePrimaryKeyOnInsert()) {
 					
@@ -1352,6 +1383,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				throw new RuntimeException(e);
 			}
 		}
+	}
+	
+	default boolean overrideAutoIncrement() {
+		return this.getAutoIncrementHandlingType() != null && this.getAutoIncrementHandlingType().isIgnoreSchemaDefinition();
 	}
 	
 	default void addParent(ParentTable p) {

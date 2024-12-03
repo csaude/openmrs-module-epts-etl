@@ -309,7 +309,7 @@ public class EtlLoadHelper {
 			
 			logDebug(objects.size() + " " + dstConf.getTableName() + "  inserted on db!");
 		} else if (getActionType().isUpdate()) {
-			logDebug("Starting the upodate of " + objects.size() + " " + dstConf.getTableName() + " on db...");
+			logDebug("Starting the update of " + objects.size() + " " + dstConf.getTableName() + " on db...");
 			
 			this.loadAndAddResult(DatabaseObjectDAO.updateAll(objects, dstConf, dstConn), dstConf);
 			logDebug(objects.size() + " " + dstConf.getTableName() + " updated from db!");

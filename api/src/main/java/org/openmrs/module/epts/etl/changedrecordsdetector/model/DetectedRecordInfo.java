@@ -171,69 +171,55 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	@Override
 	public void refreshLastSyncDateOnOrigin(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void refreshLastSyncDateOnDestination(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void loadDestParentInfo(TableConfiguration tableInfo, String recordOriginLocationCode, Connection conn)
 	        throws ParentNotYetMigratedException, DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public Object[] getInsertParamsWithoutObjectId() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public String getInsertSQLWithoutObjectId() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public Object[] getInsertParamsWithObjectId() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public String getInsertSQLWithObjectId() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public String getUpdateSQL() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public Object[] getUpdateParams() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public boolean hasIgnoredParent() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 	
 	@Override
 	public boolean hasParents() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 	
@@ -245,53 +231,39 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	@Override
 	public void consolidateData(TableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void resolveInconsistence(TableConfiguration tableInfo, Connection conn)
 	        throws InconsistentStateException, DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public EtlStageRecordVO retrieveRelatedSyncInfo(TableConfiguration tableInfo, String recordOriginLocationCode,
 	        Connection conn) throws DBException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public EtlStageRecordVO getRelatedSyncInfo() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public void setRelatedSyncInfo(EtlStageRecordVO relatedSyncInfo) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void remove(Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void changeObjectId(TableConfiguration abstractTableConfiguration, Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void changeParentForAllChildren(EtlDatabaseObject newParent, TableConfiguration syncTableInfo, Connection conn)
 	        throws DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
@@ -345,142 +317,110 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	
 	@Override
 	public EtlDatabaseObject getSharedPkObj() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public String generateMissingInfo(Map<ParentTableImpl, Integer> missingParents) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public Map<ParentTableImpl, Integer> loadMissingParents(TableConfiguration tableInfo, Connection conn)
 	        throws DBException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public void removeDueInconsistency(TableConfiguration syncTableInfo, Map<ParentTableImpl, Integer> missingParents,
 	        Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void changeParentValue(ParentTable refInfo, EtlDatabaseObject newParent) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void setParentToNull(ParentTableImpl refInfo) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void update(TableConfiguration syncTableInfo, Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void loadWithDefaultValues(Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void setInsertSQLQuestionMarksWithObjectId(String insertQuestionMarks) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public String getInsertSQLQuestionMarksWithObjectId() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public void setInsertSQLQuestionMarksWithoutObjectId(String insertQuestionMarks) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public String getInsertSQLQuestionMarksWithoutObjectId() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public String generateFullFilledUpdateSql() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public void copyFrom(EtlDatabaseObject parentRecordInOrigin) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public EtlDatabaseObject getSrcRelatedObject() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public ConflictResolutionType getConflictResolutionType() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public List<EtlDatabaseObjectUniqueKeyInfo> getUniqueKeysInfo() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
 	public void setUniqueKeysInfo(List<EtlDatabaseObjectUniqueKeyInfo> uniqueKeysInfo) {
-		// TODO Auto-generated method stub
-		
 	}
-
+	
 	@Override
 	public void save(TableConfiguration syncTableInfo, ConflictResolutionType onConflict, Connection conn)
 	        throws DBException {
-		// TODO Auto-generated method stub
-		
 	}
-
+	
 	@Override
 	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
-		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	@Override
+	public void tryToReplaceFieldWithKey(Key k) {
 	}
 }
