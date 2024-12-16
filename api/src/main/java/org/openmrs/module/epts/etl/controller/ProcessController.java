@@ -550,7 +550,9 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	private void performePreReRunActions() throws DBException {
-		FileUtilities.removeFile(this.processInfo.generateProcessStatusFile());
+		FileUtilities.removeFile(this.getProcessInfo().generateProcessStatusFile());
+		
+		FileUtilities.removeFile(this.getProcessInfo().generateProcessStatusFolder());
 		
 		OpenConnection conn = openConnection();
 		
@@ -562,6 +564,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			}
 			
 			FileUtilities.removeFile(this.getProcessInfo().generateProcessStatusFile());
+			FileUtilities.removeFile(this.getProcessInfo().generateProcessStatusFolder());
 			
 			conn.markAsSuccessifullyTerminated();
 		}
@@ -583,18 +586,13 @@ public class ProcessController implements Controller, ControllerStarter {
 		if (!canBeReRun())
 			return false;
 		
-		if (isDBReSyncProcess() || isDBQuickExportProcess()) {
-			ProcessInfo processInfoOnDB = this.processInfo.tryToLoadFromFile();
-			
-			return !this.processInfo.equals(processInfoOnDB);
-		}
+		ProcessInfo processInfoOnDB = this.processInfo.tryToLoadFromFile();
 		
-		return false;
-		
+		return !this.processInfo.equals(processInfoOnDB);
 	}
 	
 	private boolean canBeReRun() {
-		return isDBReSyncProcess() || isDBQuickExportProcess();
+		return getConfiguration().reRunable();
 	}
 	
 	public boolean isDBReSyncProcess() {
@@ -616,7 +614,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			file.delete();
 	}
 	
-	public void initOperationsControllers(Connection conn) {
+	public void initOperationsControllers(Connection conn) throws DBException {
 		for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 			if (!controller.getOperationConfig().isDisabled()) {
 				ExecutorService executor = ThreadPoolService.getInstance()

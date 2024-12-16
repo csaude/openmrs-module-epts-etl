@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -416,17 +417,23 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public void save(TableConfiguration syncTableInfo, ConflictResolutionType onConflict, Connection conn)
 	        throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	@Override
+	public void tryToReplaceFieldWithKey(Key k) {
+		// TODO Auto-generated method stub
+		
 	}
 }

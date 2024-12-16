@@ -167,6 +167,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 */
 	private Integer primaryKeyInitialIncrementValue;
 	
+	private List<String> startupScripts;
+	
+	private boolean reRunable;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -179,6 +183,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.busyTableAliasName = new ArrayList<>();
 		
 		this.waitTimeToCheckStatus = 5;
+	}
+	
+	public List<String> getStartupScripts() {
+		return startupScripts;
+	}
+	
+	public void setStartupScripts(List<String> startupScripts) {
+		this.startupScripts = startupScripts;
 	}
 	
 	public Integer getPrimaryKeyInitialIncrementValue() {
@@ -725,6 +737,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			
 			List<EtlItemConfiguration> allItem = new ArrayList<>();
 			
+			tryToExecuteStartupScripts(conn);
+			
 			int pos = 0;
 			
 			for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
@@ -762,12 +776,22 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					
 					initItem(item, false);
 				}
-				
-				this.setEtlItemConfiguration(allItem);
 			}
+			
+			this.setEtlItemConfiguration(allItem);
 			
 			if (this.hasTestingItem()) {
 				initItem(this.getTestingEtlItemConfiguration(), true);
+			}
+		}
+	}
+	
+	private void tryToExecuteStartupScripts(Connection conn) throws DBException {
+		File scriptsDir = this.getSqlStartupScriptsDirectory();
+		
+		if (scriptsDir.listFiles() != null) {
+			for (File script : scriptsDir.listFiles()) {
+				DBUtilities.executeSqlScript(conn, script.getAbsolutePath());
 			}
 		}
 	}
@@ -948,6 +972,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				conn = etlConfiguration.openSrcConn();
 				etlConfiguration.init(conn);
 			}
+			
+			conn.markAsSuccessifullyTerminated();
 			
 			return etlConfiguration;
 		}
@@ -1254,6 +1280,12 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	@JsonIgnore
 	public File getSqlScriptsDirectory() {
 		String scriptsDir = getEtlRootDirectory() + FileUtilities.getPathSeparator() + "dump-scripts";
+		
+		return new File(scriptsDir);
+	}
+	
+	public File getSqlStartupScriptsDirectory() {
+		String scriptsDir = getSqlScriptsDirectory() + FileUtilities.getPathSeparator() + "startup";
 		
 		return new File(scriptsDir);
 	}
@@ -1736,5 +1768,17 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@Override
 	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+	}
+	
+	public boolean isReRunable() {
+		return reRunable;
+	}
+	
+	public void setReRunable(boolean reRunable) {
+		this.reRunable = reRunable;
+	}
+	
+	public boolean reRunable() {
+		return isReRunable();
 	}
 }

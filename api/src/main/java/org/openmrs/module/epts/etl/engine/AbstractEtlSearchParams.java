@@ -177,7 +177,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		
 		long minRecordId = progressInfo.getProgressMeter().getMinRecordId();
 		long maxRecordId = progressInfo.getProgressMeter().getMaxRecordId();
-		
+			
 		return countAllRecords(minRecordId, maxRecordId, conn);
 	}
 	

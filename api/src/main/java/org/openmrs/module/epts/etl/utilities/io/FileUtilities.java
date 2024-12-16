@@ -445,20 +445,18 @@ public class FileUtilities {
 		}
 		
 	}
-	/*
-	public static boolean renameTo(String sourceFileName, String destinationFileName) {
-		java.io.File sourceFile = new java.io.File(sourceFileName);
-		java.io.File destinationFile = new java.io.File(destinationFileName);
-		
-		return sourceFile.renameTo(destinationFile);
-	}*/
 	
 	public static boolean removeFile(File sourceFile) {
 		if (sourceFile.isDirectory()) {
 			String[] entries = sourceFile.list();
 			for (String s : entries) {
 				java.io.File currentFile = new java.io.File(sourceFile.getPath(), s);
-				currentFile.delete();
+				
+				if (currentFile.isDirectory()) {
+					removeFile(currentFile);
+				} else {
+					currentFile.delete();
+				}
 			}
 		}
 		
@@ -467,29 +465,6 @@ public class FileUtilities {
 	
 	public static boolean removeFile(String sourceFileName) {
 		return removeFile(new java.io.File(sourceFileName));
-	}
-	
-	/*public static void cloneStream() throws IOException{
-	    InputStream toCopy=IOUtils.toInputStream("aaa");
-	    InputStream dest= null;
-	    dest=IOUtils.toBufferedInputStream(toCopy);
-	    toCopy.close();
-	    String result = new String(IOUtils.toByteArray(dest));
-	    System.out.println(result);
-	}*/
-	
-	public static void main(String[] args) throws IOException {
-		
-		//tryToCreateDirectoryStructureForFile("d:\\a\\b\\c\\d.txt");
-		
-		//System.out.println(countLinesOnFile(createStreamFromRealPath("advance-form-element.html")));
-		
-		List<String> read = readAllFileAsListOfString("version_3.2.0.1_description_05-12-2018.xml");
-		
-		//List<String> read = readAllStreamAsListOfString(createStreamFromRealPath("advance-form-element.html"), 2427, 10);
-		
-		System.out.println(read.size());
-		
 	}
 	
 	public static String determineExtencaoApartirDoNome(String fileName) {

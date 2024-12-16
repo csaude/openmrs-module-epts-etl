@@ -107,18 +107,20 @@ public interface EtlFieldTransformer {
 				EtlConfiguration conf = srcObjects.get(0).getRelatedConfiguration().getRelatedEtlConf();
 				
 				paramValue = conf.getParamValue(paramName);
+				
+				if (paramValue != null) {
+					found = true;
+				}
 			}
 			
-			if (paramValue == null) {
+			if (!found) {
 				throw new ForbiddenOperationException("Parameter '" + paramName + "' not found in source objects.");
 			}
-			
 			
 			//The param represent the whole srcValue
 			if (srcValoue.equals("@" + paramName)) {
 				return paramValue;
 			}
-			
 			
 			matcher.appendReplacement(buffer, paramValue.toString());
 		}

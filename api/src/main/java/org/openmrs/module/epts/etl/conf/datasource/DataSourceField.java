@@ -1,5 +1,8 @@
 package org.openmrs.module.epts.etl.conf.datasource;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.interfaces.ObjectDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
@@ -69,6 +72,19 @@ public class DataSourceField extends Field implements TransformableField {
 	}
 	
 	@Override
+	public void copyFrom(Field f) {
+		super.copyFrom(f);
+		
+		if (f instanceof DataSourceField) {
+			DataSourceField fDs = (DataSourceField) f;
+			this.setTransformer(fDs.getTransformer());
+			this.setTransformerInstance(fDs.getTransformerInstance());
+			this.setExtension(fDs.getExtension());
+			this.setDataTypeLoaded(fDs.isDataTypeLoaded());
+		}
+	}
+	
+	@Override
 	public String getValueToTransform() {
 		return this.getValue() != null ? this.getValue().toString() : null;
 	}
@@ -86,6 +102,24 @@ public class DataSourceField extends Field implements TransformableField {
 	@Override
 	public String getSrcField() {
 		return this.getName();
+	}
+	
+	public static List<DataSourceField> cloneAll(List<DataSourceField> toCloneFrom, ObjectDataSource toCloneTo) {
+		if (toCloneFrom == null)
+			return null;
+		
+		List<DataSourceField> clonedItems = new ArrayList<>(toCloneFrom.size());
+		
+		for (DataSourceField dsF : toCloneFrom) {
+			DataSourceField clonedItem = new DataSourceField();
+			
+			clonedItem.copyFrom(dsF);
+			clonedItem.setDataSource(toCloneTo);
+			
+			clonedItems.add(clonedItem);
+		}
+		
+		return clonedItems;
 	}
 	
 }

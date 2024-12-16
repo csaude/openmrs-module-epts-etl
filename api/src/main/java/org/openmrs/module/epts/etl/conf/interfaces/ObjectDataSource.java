@@ -350,7 +350,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		
 		this.setObjectLanguage(toCloneFrom.getObjectLanguage());
 		
-		this.setObjectFields(toCloneFrom.getObjectFields());
+		this.setObjectFields(DataSourceField.cloneAll(toCloneFrom.getObjectFields(), this));
 		this.setRelatedSrcConf(relatedSrcConf);
 		this.setRequired(toCloneFrom.isRequired());
 		this.setFieldsValuesGenerator(toCloneFrom.getFieldsValuesGenerator());

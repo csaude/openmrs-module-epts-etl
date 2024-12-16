@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.utilities.tools;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -145,6 +146,12 @@ public class TestEtlObject extends AbstractDatabaseObject {
 			default:
 				return ""; // Return empty string if no match found
 		}
+	}
+	
+	@Override
+	public void tryToReplaceFieldWithKey(Key k) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }
