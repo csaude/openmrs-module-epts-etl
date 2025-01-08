@@ -971,9 +971,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			if (!etlConfiguration.isDynamic()) {
 				conn = etlConfiguration.openSrcConn();
 				etlConfiguration.init(conn);
+				
+				conn.markAsSuccessifullyTerminated();
 			}
-			
-			conn.markAsSuccessifullyTerminated();
 			
 			return etlConfiguration;
 		}
