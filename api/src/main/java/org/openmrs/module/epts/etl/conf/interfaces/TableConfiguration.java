@@ -2767,6 +2767,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default long getExtremeRecord(SqlFunctionType function, Connection conn) throws DBException {
 		
+		if (this.getPrimaryKey() == null) {
+			throw new ForbiddenOperationException("No Primary Key is defined on " + this.getTableName() + " table. If there is a numeric Primary Key candidate you can spefify it on 'manualMapPrimaryKeyOnField' configuration.");
+		}
+		
 		if (!this.getPrimaryKey().isSimpleNumericKey()) {
 			throw new ForbiddenOperationException("Composite and non numeric keys are not supported for src tables");
 		}
