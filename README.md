@@ -37,6 +37,13 @@ The process configuration file is the heart of the application. For each process
 - *syncStageSchema*: an optional token indicating the database name where the process data will be stored. If not present, the name "etl_stage_area" will be used.
 - *doNotTransformsPrimaryKeys*: indicates whether the primary keys in this process are transformed. If yes, the transformed records are given a new primary key; if no, the primary key in the source is the same in the destination.
 - *manualMapPrimaryKeyOnField*: if present, the value from this field will be mapped as a primary key for all tables that don't have a primary key but have a field with a name matching this field. This value will be overridden by the corresponding value in the ETL configuration session if present there.
+- *doNotResolveRelationship*: if true, the relationship between tables will not resolved on destination database. This usualy is applyed in situation like database copy were the table keys will not kept unchanged.
+- *autoIncrementHandlingType*: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values. The value for this property can be overridden by the value from the same property from the Etl Item Configuration.
+- *primaryKeyInitialIncrementValue*: A numeric value added to the primary key of the very first destination record for all tables defined in the ETL Item Configuration. This property cannot be used when autoIncrementHandlingType is explicitly set to AS_SCHEMA_DEFINED. If this property is provided and autoIncrementHandlingType is not specified, it will automatically be set to IGNORE_SCHEMA_DEFINITION. The value of this property will be applied to all destination tables defined in the *ETL Item Configuration*. However, you can override this value for specific tables by defining the same property within the *EtlItemConf* or *DstConf*. 
+- *dynamicSrcConf*: This configuration parameter enables the dynamic setup of the EtlConfiguration. In this context, "dynamic" refers to the ability to derive certain parameters from a database table, allowing multiple configurations to be generated from a single configuration file. The configuration file effectively serves as a template, populated with data from table records. This approach is particularly useful when working with multiple database sources and performing specific processes on each of them. For example, you can register the database sources in a table (e.g., src_database) and use this table as a dynamic source for generating configurations.
+- *finalizer*: represents a object which define the additional tasks to be performed after the process if finished.
+- *startupScripts*:  A list of SQL scripts to be executed at startup. The files should be placed in @etlRootDirectory/dump-scripts/startup. It is important to ensure that multiple executions of these scripts do not result in inconsistencies;
+- *reRunable*: Normally, when a process is completed, the application skips its execution if the user attempts to re-run it. This property allows the process to be executed multiple times. If the user initiates the process after it has finished, it will restart and execute from the beginning.
 
 ## The Database configuration
 This section allowd the database configuration. The "srcConnConf" allows the configuration of source database and the "dstConnConf" allows the configuration of destination database. Each element allow bellows parameters: 
@@ -47,6 +54,44 @@ This section allowd the database configuration. The "srcConnConf" allows the con
 - "schema" an optional field to specify the database schema if it cannot be determined from the connection url or if it is diffent from this one.
 - "databaseSchemaPath": an optional field which indicate the path where the database schema is located. If present, and the specified database is not present on the specified database, the database will be created according to this script;
 - Other configuration for database from jdbc.poll.Datasource: *maxActiveConnections*, *maxIdleConnections*, *minIdleConnections*
+
+## dynamicSrcConf
+This parameter enables the dynamic setup of the EtlConfiguration. In this context, "dynamic" refers to the ability to derive certain parameters from a database table, allowing multiple configurations to be generated from a single configuration file. The configuration file effectively serves as a template, populated with data from table records. This approach is particularly useful when working with multiple database sources and performing specific processes on each of them. For example, you can register the database sources in a table (e.g., src_database) and use this table as a dynamic source for generating configurations.
+
+The very basic structure of definition of this parameter is shown bellow.
+
+```
+{
+   ...
+   "dynamicSrcConf":{
+      "tableName":"",
+      "extraConditionForExtract":"",
+      "auxExtractTable":[
+         
+      ]
+   }
+   ...
+}
+```
+
+- "tableName": is database table name which will act as the source of dynamic configuration
+- "extraConditionForExtract": optional param which contains the extra sql condition to be injected when the operation queries for records to process.
+- "auxExtractTable": optional list containing the joining tables which helps to add additional extraction conditions; this act as a extra data source also. For full details of "auxExtractTable" configuration please refere to [AuxExtractTable](#aux-extract-table)
+
+## The finalizer
+The finalizer is an object which perfome the finalization tasks. A finalizer is configured as a java class. Currently only a [SqlProcessFInalizer](api/src/main/java/org/openmrs/module/epts/etl/controller/SqlProcessFInalizer.java) is supported. And to use this, you only need to provide the "sqlFinalizerQuery". 
+
+```
+{
+   ...
+   "finalizer":{
+      "finalizerFullClassName":"",
+      "sqlFinalizerQuery":""
+   }
+   ...
+}
+```
+
 
 ## The Operation configuration
 This section allow the configuration of operations. Each operation can be defined by the following fields:
@@ -65,7 +110,8 @@ This section allow the configuration of operations. Each operation can be define
 - "disabled": if true , the this operation will not be run;
 - "child": a nested operation configuration which will be executed after the main operation is finished;
 - "finishOnNoRemainRecordsToProcess": When a process starts, it determines the *minimum* and *maximum* records in intervals to be processed and calculates the *number of records to handle* within each interval. The process will analyze the entire range between the minimum and maximum records and will only complete once the maximum record is reached. However, if *finishOnNoRemainRecordsToProcess* is set to true, the process will finish as soon as the calculated number of records to process is reached, even if the maximum record has not been reached.
-- "totalCountStrategy": Define the strategy for calculating the total number of records to be processed. When the application processes the ETL item for the first time, it calculates the total record count, which is useful for progress tracking. By default, this property is set to 'COUNT_ONCE,' meaning the application will calculate the total record count during the initial processing. If the process is interrupted and restarted, the count will not be recalculated. Depending on the complexity of the ETL process, this calculation can be time-consuming, and you may want to disable it. In such cases, you can use 'USE_MAX_RECORD_ID_AS_COUNT,' which uses the maximum record ID from the source table's record range as the total count.     
+- "totalCountStrategy": Define the strategy for calculating the total number of records to be processed. When the application processes the ETL item for the first time, it calculates the total record count, which is useful for progress tracking. By default, this property is set to 'COUNT_ONCE,' meaning the application will calculate the total record count during the initial processing. If the process is interrupted and restarted, the count will not be recalculated. Depending on the complexity of the ETL process, this calculation can be time-consuming, and you may want to disable it. In such cases, you can use 'USE_MAX_RECORD_ID_AS_COUNT,' which uses the maximum record ID from the source table's record range as the total count. If you already have the count and you don't want the application recalculate it you can use the "USE_PROVIDED_COUNT" strategy; in this strategy you only need to provide the "totalAvaliableRecordsToProcess" within the The Etl operation Configuration as explained in the propertie below.
+- "totalAvaliableRecordsToProcess": provide the pre-calculated total number of records do be processed. (refere to "totalCountStrategy" propertie above);       
 	
 
 ## The etl item configuration
@@ -99,6 +145,7 @@ The etl item configuration section defines the rules of extraction, transformati
 	  
    ],
    "createDstTableIfNotExists": "",
+   "autoIncrementHandlingType":"",
    "etlItemSrcConf":{
 	  
    },
@@ -106,7 +153,7 @@ The etl item configuration section defines the rules of extraction, transformati
 }
 ```
 
-The srcConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source. If "createDstTableIfNotExists" field is set to true, the dst table will be automaticaly created in the dst database if it does not exists. The "disabled" field allow the item to bem ignored on the etl process.  
+The srcConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source
 
 Bellow are explained the relevant configuration for "srcConf" and "dstConf".
 
@@ -195,6 +242,7 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
          {
             "tableName":"",
             "joinExtraCondition":"",
+            "joinExtraConditionScope":"",
             "joinFields":[
                {
                   "srcField":"",
@@ -202,7 +250,7 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
                }
             ],
             "joinType":"",
-	    "doNotUseAsDatasource": "",	
+            "doNotUseAsDatasource":"",
             "auxExtractTable":[
                
             ]
@@ -212,7 +260,7 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
 }
 ```	 
 
-As can be seen on the code above, each auxExtractTable can have the **tableName** which represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, there is also **joiningType** which can be INNER, LEFT or RIGHT; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.  
+As can be seen on the code above, each auxExtractTable can have the **tableName** which represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, there is also **joiningType** which can be INNER, LEFT or RIGHT; the **joinExtraConditionScope** tells weather the "joinExtraCondition" will be inserted on the JOIN clause or on the MAIN query clause; the possible values are: JOIN_CLAUSE or WHERE_CLAUSE; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.
 
 **NOTE** that you can add inner "auxExtractTable" within the main "auxExtractTable" which is also a list of auxiliary tables which allow you to add more conditions for extraction.
 
@@ -226,7 +274,8 @@ The **"extraTableDataSource"** element, allows the specification of extra tables
       "extraTableDataSource":[
          {
             "tableName":"",
-            "joinExtraCondition":"", 
+            "joinExtraCondition":"",
+            "joinExtraConditionScope":"", 
             "joinFields":[
                {
                   "srcField":"",
@@ -242,7 +291,7 @@ The **"extraTableDataSource"** element, allows the specification of extra tables
 }
 ```
 
-As can be seen on the code above, each extraTableDataSource can have the **tableName** which represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT. The **auxExtractTable** allows the inclusion of additional tables which can be joined with the extraTableDataSource for the purpose of inclusion of extra conditions; this is also used as an extra datasource. (See [AuxExtractTable](#aux-extract-table)) 
+As can be seen on the code above, each extraTableDataSource can have the **tableName** which represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT.  The **joinExtraConditionScope** tells weather the "joinExtraCondition" will be inserted on the JOIN clause or on the MAIN query clause; the possible values are: JOIN_CLAUSE or WHERE_CLAUSE; The **auxExtractTable** allows the inclusion of additional tables which can be joined with the extraTableDataSource for the purpose of inclusion of extra conditions; this is also used as an extra datasource. (See [AuxExtractTable](#aux-extract-table)) 
 
 #### The extraQueryDataSource configuration
 
@@ -323,6 +372,8 @@ If the "dstConf '' has more than one element or if the mapping cannot be automat
          "ignoreUnmappedFields":"",
          "dstType":"",
 	 "includeAllFieldsFromDataSource": "",
+         "autoIncrementHandlingType":"",
+	 "primaryKeyInitialIncrementValue":,
          "mapping":[
             {
                "dataSourceName":"",
@@ -357,6 +408,8 @@ Bellow is the explanation for each field:
    - (3) *dstField* the field in dst which we want to fill;
    - (4) *mapToNullValue* a boolean which indicates that this field should be filled with null value;
 -  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst use the same unique keys. The joining fields are important when it comes to determining if all the src records were processed. If the joining fields are not present then the final verification of the process will be skipped for that specific table.
+- **autoIncrementHandlingType**: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values.
+- *primaryKeyInitialIncrementValue*: this override the same property defined on Etl Item Configuration.
 -  **winningRecordFieldsInfo** optional list indicating the fields to be checked when there is conflict between an record with existing one on the etl process. When merge existing record, the incoming dstRecord will win if the listed fields have the specified values. Below is an example of winningRecordFieldsInfo.
   
 ```
@@ -385,10 +438,18 @@ Bellow is the explanation for each field:
 }
 ```	  
 
+As can be seen the "winningRecordFieldsInfo'' is a list of lists, listing the fields which will be used to determine which record will win when there are conflicts between an incoming record and existing one. In the above example, if the incoming record has value 1 on field "is_selected" AND has value 0 on field "voided" OR  if the "fullProcessed" field has value true, then the incoming record will win.  Note that for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND".
+
 ### The etlItemSrcConf
 The etlItemSrcConf allows the dynamic configuration of Etl Items. This means that item elements can be dynamically gathered from one or more tables. Note that the etlItemSrcConf has the very same elements with SrcConf.     
 
-As can be seen the "winningRecordFieldsInfo'' is a list of lists, listing the fields which will be used to determine which record will win when there are conflicts between an incoming record and existing one. In the above example, if the incoming record has value 1 on field "is_selected" AND has value 0 on field "voided" OR  if the "fullProcessed" field has value true, then the incoming record will win.  Note that for the outer list the join condition will be "OR" and for the inner list the join condition will be "AND".
+### Other Properities for Etl Item Configuration
+- *manualMapPrimaryKeyOnField*: if present, the value from this field will be mapped as a primary key for all tables that don't have a primary key but have a field with a name matching this field. This value will be overridden by the corresponding value in the SrcConf or DstConf if present there.
+- *autoIncrementHandlingType*: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values. The value for this property can be overridden by the value from the same property from the DstConf.
+- *createDstTableIfNotExists*: if set to true, the dst table will be automaticaly created in the dst database if it does not exists.
+- *disabled*: this propertie allows the item to bem ignored on the etl process.  
+- *primaryKeyInitialIncrementValue*: this overrides the same property globaly defined on Etl Configuration;
+
 
 ## Default configuration files templates
 In this section are listed some templates for configuration files for specific etl processes. For demo please check [this session](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#etl-quick-examples).
