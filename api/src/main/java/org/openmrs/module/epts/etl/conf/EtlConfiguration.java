@@ -714,7 +714,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			}
 			
 			if (this.getAutoIncrementHandlingType() == null) {
-				this.autoIncrementHandlingType = AutoIncrementHandlingType.AS_SCHEMA_DEFINED;
+				if (this.getPrimaryKeyInitialIncrementValue() != null && this.getPrimaryKeyInitialIncrementValue() > 0) {
+					this.autoIncrementHandlingType = AutoIncrementHandlingType.IGNORE_SCHEMA_DEFINITION;
+				} else {
+					this.autoIncrementHandlingType = AutoIncrementHandlingType.AS_SCHEMA_DEFINED;
+				}
 			}
 			
 			if (this.getPrimaryKeyInitialIncrementValue() == null) {
@@ -1116,7 +1120,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			this.setOperations(utilities.parseToList(EtlOperationConfig.createDefaultOperation(this)));
 		}
 		
-		if (this.getAutoIncrementHandlingType().isAsSchemaDefined()) {
+		if (this.getAutoIncrementHandlingType() != null && this.getAutoIncrementHandlingType().isAsSchemaDefined()) {
 			if (this.getPrimaryKeyInitialIncrementValue() != null && this.getPrimaryKeyInitialIncrementValue() > 0) {
 				errorMsg += ++errNum
 				        + ". The 'autoIncrementHandlingType' is set to 'AS_SCHEMA_DEFINED' you must ommit the 'primaryKeyInitialIncrementValue' property or change it to 'IGNORE_SCHEMA_DEFINITION'. \n";
@@ -1705,6 +1709,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		clonedEtlConf.setManualMapPrimaryKeyOnField(this.getManualMapPrimaryKeyOnField());
 		clonedEtlConf.setWaitTimeToCheckStatus(this.getWaitTimeToCheckStatus());
 		clonedEtlConf.setDoNotResolveRelationship(this.isDoNotResolveRelationship());
+		clonedEtlConf.setPrimaryKeyInitialIncrementValue(this.getPrimaryKeyInitialIncrementValue());
+		clonedEtlConf.setAutoIncrementHandlingType(this.getAutoIncrementHandlingType());
 		
 		OpenConnection conn = null;
 		
@@ -1718,8 +1724,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				cloned.copyFromOther(item, clonedEtlConf, true, conn);
 				cloned.tryToReplacePlaceholders(schemaInfoSrc);
 				
-				cloned.setEtlItemSrcConf(new EtlItemSrcConf());
-				cloned.getEtlItemSrcConf().copyFromOther(item.getEtlItemSrcConf(), null, cloned, conn);
+				if (item.getEtlItemSrcConf() != null) {
+					cloned.setEtlItemSrcConf(new EtlItemSrcConf());
+					cloned.getEtlItemSrcConf().copyFromOther(item.getEtlItemSrcConf(), null, cloned, conn);
+				}
+				
 				clonedEtlConf.getEtlItemConfiguration().add(cloned);
 			}
 			
