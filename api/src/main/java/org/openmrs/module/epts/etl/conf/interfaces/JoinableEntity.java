@@ -94,11 +94,23 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 			
 			FieldsMapping field = this.getJoinFields().get(i);
 			
-			conditionFields += getTableAlias() + "." + field.getSrcField() + " = " + getJoiningEntity().getTableAlias() + "."
-			        + field.getDstField();
+			if (field.hasSrcField() && field.hasDstField()) {
+				conditionFields += getTableAlias() + "." + field.getSrcField() + " = " + getJoiningEntity().getTableAlias()
+				        + "." + field.getDstField();
+			} else if (field.hasSrcField() && field.hasSrcValue()) {
+				conditionFields += getTableAlias() + "." + field.getSrcField() + " = " + field.getSrcValue();
+			} else if (field.hasDstField() && field.hasDstValue()) {
+				conditionFields += getJoiningEntity().getTableAlias() + "." + field.getDstField() + " = "
+				        + field.getDstValue();
+			} else {
+				throw new ForbiddenOperationException(
+				        "The join fields mapping must either have 'srcField and dstField', 'srcField and srcValue' or 'dstField and dstValue'");
+			}
+			
 		}
 		
-		if (this.getJoinExtraConditionScope().isJoinClause() && this.getJoinExtraCondition() != null && !this.getJoinExtraCondition().isEmpty()) {
+		if (this.getJoinExtraConditionScope().isJoinClause() && this.getJoinExtraCondition() != null
+		        && !this.getJoinExtraCondition().isEmpty()) {
 			conditionFields += " AND (" + this.getJoinExtraCondition() + ")";
 		}
 		
@@ -125,7 +137,9 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 			for (FieldsMapping joiningField : this.getJoinFields()) {
 				if (schemaInfo != null) {
 					joiningField.setSrcField(DBUtilities.tryToReplaceParamsInQuery(joiningField.getSrcField(), schemaInfo));
+					joiningField.setSrcValue(DBUtilities.tryToReplaceParamsInQuery(joiningField.getSrcValue(), schemaInfo));
 					joiningField.setDstField(DBUtilities.tryToReplaceParamsInQuery(joiningField.getDstField(), schemaInfo));
+					joiningField.setDstValue(DBUtilities.tryToReplaceParamsInQuery(joiningField.getDstValue(), schemaInfo));
 				}
 			}
 		}
