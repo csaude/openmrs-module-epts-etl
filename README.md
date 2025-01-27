@@ -246,7 +246,9 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
             "joinFields":[
                {
                   "srcField":"",
-                  "dstField":""
+                  "srcValue":"",
+                  "dstField":"",
+                  "dstValue":""
                }
             ],
             "joinType":"",
@@ -260,9 +262,29 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
 }
 ```	 
 
-As can be seen on the code above, each auxExtractTable can have the **tableName** which represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, there is also **joiningType** which can be INNER, LEFT or RIGHT; the **joinExtraConditionScope** tells weather the "joinExtraCondition" will be inserted on the JOIN clause or on the MAIN query clause; the possible values are: JOIN_CLAUSE or WHERE_CLAUSE; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.
+As can be seen on the code above, each auxExtractTable can have the **tableName** which represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table or if you what to add static joining condition, there is also **joiningType** which can be INNER, LEFT or RIGHT; the **joinExtraConditionScope** tells weather the "joinExtraCondition" will be inserted on the JOIN clause or on the MAIN query clause; the possible values are: JOIN_CLAUSE or WHERE_CLAUSE; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.
 
 **NOTE** that you can add inner "auxExtractTable" within the main "auxExtractTable" which is also a list of auxiliary tables which allow you to add more conditions for extraction.
+
+###### The Joining Fields
+<a name="joinFields"></a>
+
+The **joinFields** property defines how the "auxExtractTable" joins with the main source table. This property can be omitted if the database schema already specifies the relationships between tables through foreign key references. However, you may need to manually define **joinFields** if:
+
+- The schema does not define foreign key relationships.
+- You want to include custom static joining conditions.
+
+Each object in the joinFields is typically defined by a pair of fields: "srcField" and "dstField". Here:
+
+- srcField refers to a field in the auxExtractTable.
+- dstField refers to a field in the main source table.
+
+If you need to include static conditions in the join, you can use the following pairs:
+
+- "srcField" and "srcValue"
+- "dstField" and "dstValue"
+
+This allows for greater flexibility in customizing the join logic.
 
 
 #### The extra datasource table configuration
@@ -279,7 +301,9 @@ The **"extraTableDataSource"** element, allows the specification of extra tables
             "joinFields":[
                {
                   "srcField":"",
-                  "dstField":""
+                  "srcValue":"",
+                  "dstField":"",
+                  "dstValue":""
                }
             ],
             "joinType":"",
@@ -291,7 +315,7 @@ The **"extraTableDataSource"** element, allows the specification of extra tables
 }
 ```
 
-As can be seen on the code above, each extraTableDataSource can have the **tableName** which represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table, Final there is **joiningType** which can be INNER, LEFT or RIGHT.  The **joinExtraConditionScope** tells weather the "joinExtraCondition" will be inserted on the JOIN clause or on the MAIN query clause; the possible values are: JOIN_CLAUSE or WHERE_CLAUSE; The **auxExtractTable** allows the inclusion of additional tables which can be joined with the extraTableDataSource for the purpose of inclusion of extra conditions; this is also used as an extra datasource. (See [AuxExtractTable](#aux-extract-table)) 
+As can be seen on the code above, each extraTableDataSource can have the **tableName** which represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table; (See [The Joining Fields](#joinFields)) Final there is **joiningType** which can be INNER, LEFT or RIGHT.  The **joinExtraConditionScope** tells weather the "joinExtraCondition" will be inserted on the JOIN clause or on the MAIN query clause; the possible values are: JOIN_CLAUSE or WHERE_CLAUSE; The **auxExtractTable** allows the inclusion of additional tables which can be joined with the extraTableDataSource for the purpose of inclusion of extra conditions; this is also used as an extra datasource. (See [AuxExtractTable](#aux-extract-table)) 
 
 #### The extraQueryDataSource configuration
 
@@ -323,19 +347,19 @@ An object datasource allows to include object fields as datasource. The values f
 ```
 "extraObjectDataSource":[
    {
-	  "name":"",
-	  "objectFields":[
-		 {
-			"name":"",
-			"value":"",
-			"transformer":"",
-			"dataType":""
-		 }
-	  ],
-	  "objectLanguage": "",
-	  "fieldsValuesGenerator":""
+      "name":"",
+      "objectFields":[
+         {
+            "name":"",
+            "value":"",
+            "transformer":"",
+            "dataType":""
+         }
+      ],
+      "objectLanguage":"",
+      "fieldsValuesGenerator":""
    }
-]		 
+]	 
 ```	
 Each "extraObjectDataSource" is defined by
 - *name* which is the unique datasource identifier within the etl item configuration;
@@ -368,12 +392,14 @@ If the "dstConf '' has more than one element or if the mapping cannot be automat
    "dstConf":[
       {
          "tableName":"",
-         "prefferredDataSource":[],
+         "prefferredDataSource":[
+            
+         ],
          "ignoreUnmappedFields":"",
          "dstType":"",
-	 "includeAllFieldsFromDataSource": "",
+         "includeAllFieldsFromDataSource":"",
          "autoIncrementHandlingType":"",
-	 "primaryKeyInitialIncrementValue":,
+         "primaryKeyInitialIncrementValue":,
          "mapping":[
             {
                "dataSourceName":"",
@@ -385,7 +411,9 @@ If the "dstConf '' has more than one element or if the mapping cannot be automat
          "joinFields":[
             {
                "srcField":"",
-               "dstField":""
+               "srcValue":"",
+               "dstField":"",
+               "dstValue":""
             }
          ],
          "winningRecordFieldsInfo":[
@@ -407,7 +435,7 @@ Bellow is the explanation for each field:
    - (2) *srcField* the field on the dataSource from where the value will be picked up;
    - (3) *dstField* the field in dst which we want to fill;
    - (4) *mapToNullValue* a boolean which indicates that this field should be filled with null value;
--  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst use the same unique keys. The joining fields are important when it comes to determining if all the src records were processed. If the joining fields are not present then the final verification of the process will be skipped for that specific table.
+-  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst use the same unique keys. The joining fields are important when it comes to determining if all the src records were processed. If the joining fields are not present then the final verification of the process will be skipped for that specific table. (See [The Joining Fields](#joinFields)) 
 - **autoIncrementHandlingType**: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values.
 - *primaryKeyInitialIncrementValue*: this override the same property defined on Etl Item Configuration.
 -  **winningRecordFieldsInfo** optional list indicating the fields to be checked when there is conflict between an record with existing one on the etl process. When merge existing record, the incoming dstRecord will win if the listed fields have the specified values. Below is an example of winningRecordFieldsInfo.
