@@ -572,9 +572,7 @@ public interface EtlDatabaseObject extends EtlObject {
 		    refInfo.generateFullTableNameOnSchema(src.getSchema()), new ArrayList<>());
 		
 		if (tabConfInSrc == null) {
-			tabConfInSrc = new GenericTableConfiguration(src);
-			tabConfInSrc.setTableName(refInfo.getTableName());
-			
+			tabConfInSrc = new GenericTableConfiguration(refInfo.getTableName(), src);
 			tabConfInSrc.setRelatedEtlConfig(src.getRelatedEtlConf());
 			
 			tabConfInSrc.fullLoad(srcConn);
