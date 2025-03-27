@@ -127,12 +127,12 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	}
 	
 	private void tryToInitIdGenerator(List<T> etlObjects, Connection conn) throws DBException, ForbiddenOperationException {
-		
-		for (DstConf dst : getEtlItemConfiguration().getDstConf()) {
-			
-			if (dst.useManualGeneratedObjectId()) {
+		if (getEtlItemConfiguration().hasDstConf()) {
+			for (DstConf dst : getEtlItemConfiguration().getDstConf()) {
 				
-				addIdGeneratorManager(dst.initIdGenerator(this, etlObjects, conn));
+				if (dst.useManualGeneratedObjectId()) {
+					addIdGeneratorManager(dst.initIdGenerator(this, etlObjects, conn));
+				}
 			}
 		}
 	}
