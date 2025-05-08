@@ -16,6 +16,22 @@ public class GenericTableConfiguration extends AbstractTableConfiguration {
 	public GenericTableConfiguration() {
 	}
 	
+	@Override
+	public EtlConfiguration getRelatedEtlConf() {
+		if (super.getRelatedEtlConf() != null) {
+			return super.getRelatedEtlConf();
+		} else if (this.getRelatedTableConf() != null) {
+			return this.getRelatedTableConf().getRelatedEtlConf();
+		} else {
+			return null;
+		}
+		
+	}
+	
+	public AbstractTableConfiguration getRelatedTableConf() {
+		return relatedTableConf;
+	}
+	
 	public GenericTableConfiguration(String tableName) {
 		setTableName(tableName);
 	}
