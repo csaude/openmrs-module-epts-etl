@@ -1142,6 +1142,12 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				errorMsg += ++errNum + ". The Finalizer class [" + this.getFinalizer().getFinalizerFullClassName()
 				        + "] cannot be found\n";
 			}
+			
+			if (this.getFinalizer().getConnectionToUse().isMainConnInfo() && !this.hasMainConnInfo()) {
+				errorMsg += ++errNum
+				        + ". The Finalizer 'connectionToUse' is set to 'mainConnInfo' but there is no mainConnInfo  \n";
+			}
+			
 		}
 		
 		List<EtlOperationType> supportedOperations = null;

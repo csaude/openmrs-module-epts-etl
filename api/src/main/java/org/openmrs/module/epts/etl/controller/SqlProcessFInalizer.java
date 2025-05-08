@@ -19,7 +19,13 @@ public class SqlProcessFInalizer extends AbstractProcessFinalizer {
 		OpenConnection conn = null;
 		
 		try {
-			conn = getRelatedProcessController().openConnection();
+			if (getRelatedFinalizerConf().getConnectionToUse().isMainConnInfo()) {
+				conn = getRelatedProcessController().tryToOpenMainConnection();
+			} else if (getRelatedFinalizerConf().getConnectionToUse().isDstConnInfo()) {
+				conn = getRelatedProcessController().tryToOpenMainConnection();
+			} else {
+				conn = getRelatedProcessController().openConnection();
+			}
 			
 			if (getRelatedProcessController().getSchemaInfoSrc() != null) {
 				sql = DBUtilities.tryToReplaceParamsInQuery(sql, getRelatedProcessController().getSchemaInfoSrc());

@@ -785,6 +785,16 @@ public class ProcessController implements Controller, ControllerStarter {
 		return conn;
 	}
 	
+	public OpenConnection tryToOpenMainConnection() throws DBException {
+		OpenConnection conn = getConfiguration().openMainConn();
+		
+		if (getConfiguration().doNotResolveRelationship()) {
+			DBUtilities.disableForegnKeyChecks(conn);
+		}
+		
+		return conn;
+	}
+	
 	public OpenConnection tryToOpenDstConn() throws DBException {
 		OpenConnection conn = null;
 		
