@@ -140,7 +140,8 @@ The etl item configuration section defines the rules of extraction, transformati
 	  ],
 	  "extraQueryDataSource":[
 		 
-	  ]
+	  ],
+          "onConflict": ""
    },
    "dstConf":[
 	  
@@ -171,6 +172,7 @@ The "srcConf '' allows the configuration of datasource in an etl process. The re
 - *extraTableDataSource*: optional list of auxiliary tables to be used as data source
 - *extraQueryDataSource*: option list of auxiliary queries to be used as data source;
 - *extraObjectDataSource*: option list of auxiliary objects configuration to be used as data source;
+- *onConflict*: refere to [dstConf.onConflict](#onConflict) 
   
 Bellow are additional explanation of complex configuration on "srcConf"
 
@@ -384,7 +386,7 @@ The parameter value will be lookuped following below sequence:
 
 For demo see [the-power-of-parameters](docs/demo/README.md#the-power-of-parameters) session.
 
-### The DstConf
+### The "DstConf"
 The "dstConf '' element is used to configure the destination object in an ETL operation. This element can be omitted if the dst fields can be automatically mapped from the available datasources;
 If the "dstConf '' has more than one element or if the mapping cannot be automatically done, then it could be configured following the explanation below.
 
@@ -417,6 +419,7 @@ If the "dstConf '' has more than one element or if the mapping cannot be automat
                "dstValue":""
             }
          ],
+         "onConflict": "",
          "winningRecordFieldsInfo":[
             
          ]
@@ -439,6 +442,11 @@ Bellow is the explanation for each field:
 -  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst use the same unique keys. The joining fields are important when it comes to determining if all the src records were processed. If the joining fields are not present then the final verification of the process will be skipped for that specific table. (See [The Joining Fields](#joinFields)) 
 - **autoIncrementHandlingType**: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values.
 - *primaryKeyInitialIncrementValue*: this override the same property defined on Etl Item Configuration.
+<a name="onConflict"></a>
+- **onConflict**: Defines how conflicts should be resolved during the ETL process (note: when not present, the correspondent configuration from "srcConf" will be used). A conflict occurs when an incoming record clashes with an existing one in the destination. The supported resolution strategies are:
+  - `KEEP_EXISTING`: Retains the existing record unchanged, ignoring the incoming data.
+  - `UPDATE_EXISTING`: Replaces the existing record with the incoming one.
+  - `MAKE_YOUR_DECISION`: Uses the `winningRecordFieldsInfo` configuration to determine, field by field, which values to keep in the final record.
 -  **winningRecordFieldsInfo** optional list indicating the fields to be checked when there is conflict between an record with existing one on the etl process. When merge existing record, the incoming dstRecord will win if the listed fields have the specified values. Below is an example of winningRecordFieldsInfo.
   
 ```
