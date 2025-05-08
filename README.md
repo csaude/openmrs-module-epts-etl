@@ -79,7 +79,7 @@ The very basic structure of definition of this parameter is shown bellow.
 - "auxExtractTable": optional list containing the joining tables which helps to add additional extraction conditions; this act as a extra data source also. For full details of "auxExtractTable" configuration please refere to [AuxExtractTable](#aux-extract-table)
 
 ## The finalizer
-The finalizer is an object which perfome the finalization tasks. A finalizer is configured as a java class. Currently only a [SqlProcessFInalizer](api/src/main/java/org/openmrs/module/epts/etl/controller/SqlProcessFInalizer.java) is supported. And to use this, you only need to provide the "sqlFinalizerQuery". You can also provide a "connectionToUse" if needed which specify which connection to use to performe de query. The possible values are "mainConnInfo", "srcConnInfo" and "dstConnInfo".
+The finalizer is an object which perfome the finalization tasks. A finalizer is configured as a java class. Currently only a [SqlProcessFInalizer](api/src/main/java/org/openmrs/module/epts/etl/controller/SqlProcessFInalizer.java) is supported. And to use this, you only need to provide the "sqlFinalizerQuery". You can also provide a "connectionToUse" if needed which specify which connection to use to performe de query. The possible values are "mainConnInfo", "srcConnInfo" and "dstConnInfo". By default the "srcConnInfo" is used.
 
 ```
 {
