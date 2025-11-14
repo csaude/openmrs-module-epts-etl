@@ -109,6 +109,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	public void loadWithDefaultValues(Connection conn) throws DBException {
 		if (this.relatedConfiguration == null) {
@@ -208,15 +209,16 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	public void load(ResultSet rs) throws SQLException {
-		try {
-			super.load(rs);
+		
+		super.load(rs);
+		
+		if (!this.hasRelatedConfiguration()) {
+			throw new ForbiddenOperationException("The relatedConfiguration  is not set");
+		}
+		
+		for (Field field : this.fields) {
 			
-			if (!this.hasRelatedConfiguration()) {
-				throw new ForbiddenOperationException("The relatedConfiguration  is not set");
-			}
-			
-			for (Field field : this.fields) {
-				
+			try {
 				if (getRelatedConfiguration() instanceof TableConfiguration) {
 					field.setValue(
 					    retrieveFieldValue(field.generateAliasedColumn((TableConfiguration) this.relatedConfiguration),
@@ -224,54 +226,55 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 				} else {
 					field.setValue(retrieveFieldValue(field.getName(), field.getDataType(), rs));
 				}
-				
-				try {
-					super.setFieldValue(field.getNameAsClassAtt(), field.getValue());
+			}
+			catch (SQLException e) {
+				//Ignore exception on field retrieval
+				e.printStackTrace();
+			}
+			
+			try {
+				super.setFieldValue(field.getNameAsClassAtt(), field.getValue());
+			}
+			catch (IllegalArgumentException e) {
+				// ignore if field is objectId as there is name clash with super.objectId
+				if (!field.getNameAsClassAtt().equals("objectId")) {
+					throw e;
 				}
-				catch (IllegalArgumentException e) {
-					//ignore if field is objectId as there is name clash with super.objectId
-					if (!field.getNameAsClassAtt().equals("objectId")) {
-						throw e;
-					}
-					
-				}
-				catch (ForbiddenOperationException e) {}
 				
 			}
+			catch (ForbiddenOperationException e) {}
 			
-			if (this.getSharedPkObj() != null && !this.getSharedPkObj().loadedFromDb) {
-				this.getSharedPkObj().load(rs);
-			}
-			
-			if (this.getRelatedConfiguration() instanceof TableConfiguration) {
-				this.loadObjectIdData((TableConfiguration) this.getRelatedConfiguration());
-			}
-			
-			if (this.getRelatedConfiguration() instanceof MainJoiningEntity) {
-				MainJoiningEntity ds = (MainJoiningEntity) this.getRelatedConfiguration();
-				
-				if (ds.hasAuxExtractTable()) {
-					this.setAuxLoadObject(new ArrayList<>());
-					
-					for (JoinableEntity j : ds.getJoiningTable()) {
-						if (!j.doNotUseAsDatasource()) {
-							
-							GenericDatabaseObject obj = new GenericDatabaseObject();
-							obj.setRelatedConfiguration(j);
-							
-							obj.load(rs);
-							
-							this.getAuxLoadObject().add(obj);
-						}
-					}
-				}
-			}
-			
-			loadedFromDb = true;
 		}
-		catch (SQLException e) {
-			e.printStackTrace();
+		
+		if (this.getSharedPkObj() != null && !this.getSharedPkObj().loadedFromDb) {
+			this.getSharedPkObj().load(rs);
 		}
+		
+		if (this.getRelatedConfiguration() instanceof TableConfiguration) {
+			this.loadObjectIdData((TableConfiguration) this.getRelatedConfiguration());
+		}
+		
+		if (this.getRelatedConfiguration() instanceof MainJoiningEntity) {
+			MainJoiningEntity ds = (MainJoiningEntity) this.getRelatedConfiguration();
+			
+			if (ds.hasAuxExtractTable()) {
+				this.setAuxLoadObject(new ArrayList<>());
+				
+				for (JoinableEntity j : ds.getJoiningTable()) {
+					if (!j.doNotUseAsDatasource()) {
+						
+						GenericDatabaseObject obj = new GenericDatabaseObject();
+						obj.setRelatedConfiguration(j);
+						
+						obj.load(rs);
+						
+						this.getAuxLoadObject().add(obj);
+					}
+				}
+			}
+		}
+		
+		loadedFromDb = true;
 	}
 	
 	@Override
