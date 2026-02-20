@@ -42,6 +42,8 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private List<FieldsMapping> allMapping;
 	
+	private List<String> excludedFields;
+	
 	private List<FieldsMapping> mapping;
 	
 	private DBConnectionInfo relatedConnInfo;
@@ -67,6 +69,8 @@ public class DstConf extends AbstractTableConfiguration {
 	private boolean automaticalyGenerated;
 	
 	private EtlDstType dstType;
+	
+	private String csvDelimiter;
 	
 	private String transformer;
 	
@@ -106,6 +110,14 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	public void setInMemoryTable(boolean inMemoryTable) {
 		this.inMemoryTable = inMemoryTable;
+	}
+	
+	public String getCsvDelimiter() {
+		return csvDelimiter;
+	}
+	
+	public void setCsvDelimiter(String csvDelimiter) {
+		this.csvDelimiter = csvDelimiter;
 	}
 	
 	public EtlRecordTransformer getTransformerInstance() {
@@ -195,6 +207,14 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private void setAllMapping(List<FieldsMapping> allMapping) {
 		this.allMapping = allMapping;
+	}
+	
+	public List<String> getExcludedFields() {
+		return excludedFields;
+	}
+	
+	public void setExcludedFields(List<String> excludedFields) {
+		this.excludedFields = excludedFields;
 	}
 	
 	private void addMapping(FieldsMapping fm) throws ForbiddenOperationException {
@@ -567,6 +587,12 @@ public class DstConf extends AbstractTableConfiguration {
 		loadDataSourceInfo(conn);
 		
 		tryToLoadTransformer(conn);
+		
+		if (this.getDstType().isCsv()) {
+			if (this.getCsvDelimiter() == null) {
+				this.setCsvDelimiter(";");
+			}
+		}
 	}
 	
 	private void loadDataSourceInfo(Connection conn) throws DBException {
@@ -599,7 +625,7 @@ public class DstConf extends AbstractTableConfiguration {
 		determinePrefferredDataSources();
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "deprecation" })
 	private void tryToLoadTransformer(Connection conn) {
 		if (this.hasTransformer()) {
 			
@@ -705,21 +731,21 @@ public class DstConf extends AbstractTableConfiguration {
 		
 		if (this.hasUniqueKeys()) {
 			//If no joinField is defined but the dst table has uk, tries to map the uk with src fields
-			tryToAutoGenerateJoinFields(this, this.getSrcConf());
+			tryToAutoGenerateJoinFields(this, this.getSrcConf(), conn);
 			
 			if (!hasJoinFields() && this.getSrcConf().hasUniqueKeys()) {
-				tryToAutoGenerateJoinFields(this.getSrcConf(), this);
+				tryToAutoGenerateJoinFields(this.getSrcConf(), this, conn);
 			}
 		} else if (this.getSrcConf().hasUniqueKeys()) {
 			//If no joinField is defined but the src table has uk, tries to map the uk with dst fields
-			tryToAutoGenerateJoinFields(this.getSrcConf(), this);
+			tryToAutoGenerateJoinFields(this.getSrcConf(), this, conn);
 		}
 	}
 	
 	/**
 	 * @param uk
 	 */
-	public void tryToAutoGenerateJoinFields(AbstractTableConfiguration ukTable, AbstractTableConfiguration targetTable) {
+	public void tryToAutoGenerateJoinFields(AbstractTableConfiguration ukTable, AbstractTableConfiguration targetTable, Connection conn) {
 		
 		for (UniqueKeyInfo uk : ukTable.getUniqueKeys()) {
 			
@@ -728,7 +754,7 @@ public class DstConf extends AbstractTableConfiguration {
 			for (Key key : uk.getFields()) {
 				if (targetTable.containsField(key.getName())) {
 					fakeSrcUk.addKey(key);
-				} else if (useSharedPKKey() && getSharedKeyRefInfo().containsField(key.getName())) {
+				} else if (useSharedPKKey() && getSharedKeyRefInfo(conn).containsField(key.getName())) {
 					fakeSrcUk.addKey(key);
 				}
 			}
@@ -818,12 +844,12 @@ public class DstConf extends AbstractTableConfiguration {
 				
 				//Force the alias to be from the sharedPk table
 				if (useSharedPKKey() && !containsField(joindFields.get(innerCounter).getDstField())) {
-					ownAlias = getSharedKeyRefInfo().getAlias();
+					ownAlias = getSharedKeyRefInfo(null).getAlias();
 				}
 				
 				if (getSrcConf().useSharedPKKey()
 				        && !getSrcConf().containsField(joindFields.get(innerCounter).getSrcField())) {
-					relatedTableAlias = getSrcConf().getSharedKeyRefInfo().getAlias();
+					relatedTableAlias = getSrcConf().getSharedKeyRefInfo(null).getAlias();
 				}
 				
 				currJoinCondition += ownAlias + "." + joindFields.get(innerCounter).getDstField() + " = " + relatedTableAlias
@@ -904,6 +930,7 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			for (DstConf aux : allToCloneFrom) {
 				DstConf cloned = new DstConf();
+				cloned.setIgnoreMissingParameters(true);
 				cloned.clone(aux, relatedItemConf, schemaInfoSrc, conn);
 				
 				allCloned.add(cloned);
@@ -927,6 +954,7 @@ public class DstConf extends AbstractTableConfiguration {
 		this.setTransformer(toCloneFrom.getTransformer());
 		this.setTransformerInstance(toCloneFrom.getTransformerInstance());
 		this.setIncludeAllFieldsFromDataSource(toCloneFrom.includeAllFieldsFromDataSource());
+		this.setExcludedFields(toCloneFrom.getExcludedFields());
 	}
 	
 	@Override

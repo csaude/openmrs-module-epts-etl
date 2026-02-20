@@ -195,15 +195,15 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					t.setRelatedSrcConf(this);
 					
 					if (t.useSharedPKKey()) {
-						t.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
+						t.getSharedKeyRefInfo(conn).tryToGenerateTableAlias(getRelatedEtlConf());
 						
-						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getSharedKeyRefInfo().getFullTableName(),
+						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getSharedKeyRefInfo(conn).getFullTableName(),
 						    new ArrayList<>());
 						
 						if (fullLoadedTab != null) {
-							t.getSharedKeyRefInfo().clone(fullLoadedTab, null, conn);
+							t.getSharedKeyRefInfo(conn).clone(fullLoadedTab, null, conn);
 						} else {
-							t.getSharedKeyRefInfo().fullLoad();
+							t.getSharedKeyRefInfo(conn).fullLoad();
 						}
 					}
 				}
@@ -258,16 +258,16 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 				}
 				
 				if (ref.useSharedPKKey()) {
-					fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getSharedKeyRefInfo().getFullTableName(),
+					fullLoadedTab = findFullConfiguredConfInAllRelatedTable(ref.getSharedKeyRefInfo(conn).getFullTableName(),
 					    new ArrayList<>());
 					
-					if (!ref.getSharedKeyRefInfo().hasAlias()) {
-						ref.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
+					if (!ref.getSharedKeyRefInfo(conn).hasAlias()) {
+						ref.getSharedKeyRefInfo(conn).tryToGenerateTableAlias(getRelatedEtlConf());
 					}
 					if (fullLoadedTab != null) {
-						ref.getSharedKeyRefInfo().clone(fullLoadedTab, null, conn);
+						ref.getSharedKeyRefInfo(conn).clone(fullLoadedTab, null, conn);
 					} else {
-						ref.getSharedKeyRefInfo().fullLoad();
+						ref.getSharedKeyRefInfo(conn).fullLoad();
 					}
 				}
 				
@@ -324,7 +324,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		if (useSharedPKKey()) {
 			
-			ParentTable shrd = this.getSharedKeyRefInfo();
+			ParentTable shrd = this.getSharedKeyRefInfo(conn);
 			
 			//Parse the shared parent to data source
 			ParentAsSrcDataSource sharedAsSrcConf = ParentAsSrcDataSource.generateFromSrcConfSharedPkParent(this, shrd,
@@ -339,7 +339,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		List<EtlAdditionalDataSource> ds = new ArrayList<>();
 		
 		if (useSharedPKKey() && isFullLoaded()) {
-			ds.add((EtlAdditionalDataSource) getSharedKeyRefInfo());
+			ds.add((EtlAdditionalDataSource) getSharedKeyRefInfo(null));
 		}
 		
 		if (hasExtraTableDataSourceConfig()) {

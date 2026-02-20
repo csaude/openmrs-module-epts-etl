@@ -357,8 +357,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String tablesToSelect = stageTable + " src LEFT JOIN " + table + " dest_ on dest_.uuid = src.record_uuid";
 		
 		if (tableConfiguration.useSharedPKKey()) {
-			tablesToSelect = "LEFT JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias() + " ON "
-			        + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
+			tablesToSelect = "LEFT JOIN " + tableConfiguration.getSharedTableConf(conn).generateTableNameWithAlias() + " ON "
+			        + tableConfiguration.getSharedKeyRefInfo(conn).generateJoinCondition();
 		}
 		
 		sql += " SELECT * \n";
@@ -394,8 +394,8 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String tablesToSelect = stageTable + " src INNER JOIN " + table + " dest_ on dest_.uuid = src.record_uuid";
 		
 		if (tableConfiguration.useSharedPKKey()) {
-			tablesToSelect = "LEFT JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias() + " ON "
-			        + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
+			tablesToSelect = "LEFT JOIN " + tableConfiguration.getSharedTableConf(conn).generateTableNameWithAlias() + " ON "
+			        + tableConfiguration.getSharedKeyRefInfo(conn).generateJoinCondition();
 		}
 		
 		sql += " SELECT * \n";

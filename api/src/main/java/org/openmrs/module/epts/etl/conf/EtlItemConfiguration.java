@@ -219,8 +219,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 						}
 						
 						if (refInfo.useSharedPKKey()) {
-							if (!refInfo.getSharedKeyRefInfo().isFullLoaded()) {
-								refInfo.getSharedKeyRefInfo().fullLoad(dstConn);
+							if (!refInfo.getSharedKeyRefInfo(dstConn).isFullLoaded()) {
+								refInfo.getSharedKeyRefInfo(dstConn).fullLoad(dstConn);
 							}
 						}
 						

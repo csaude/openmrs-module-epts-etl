@@ -492,6 +492,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		return this.getManualMapPrimaryKeyOnField() != null;
 	}
 	
+	@SuppressWarnings("deprecation")
 	default EtlDatabaseObject generateAndSaveDefaultObject(Connection conn) throws DBException {
 		
 		synchronized (this) {
@@ -564,6 +565,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		try {
+			@SuppressWarnings("deprecation")
 			EtlDatabaseObject keyInfo = skippedRecordTabConf.getSyncRecordClass().newInstance();
 			
 			keyInfo.setRelatedConfiguration(skippedRecordTabConf);
@@ -1599,15 +1601,15 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 	}
 	
-	default ParentTable getSharedTableConf() {
-		if (this.getSharedKeyRefInfo() != null) {
-			return this.getSharedKeyRefInfo();
+	default ParentTable getSharedTableConf(Connection conn) {
+		if (this.getSharedKeyRefInfo(conn) != null) {
+			return this.getSharedKeyRefInfo(conn);
 		}
 		
 		return null;
 	}
 	
-	default ParentTable getSharedKeyRefInfo() {
+	default ParentTable getSharedKeyRefInfo(Connection conn) {
 		if (this.getSharePkWith() == null) {
 			return null;
 		} else if (this.hasParentRefInfo()) {
@@ -1617,7 +1619,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					
 					if (!parent.isFullLoaded()) {
 						try {
-							parent.fullLoad();
+							
+							if (conn == null) {
+								conn = this.getRelatedEtlConf().openSrcConn();
+							}
+							
+							parent.fullLoad(conn);
 						}
 						catch (DBException e) {
 							throw new EtlExceptionImpl(e);
@@ -2077,7 +2084,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		}
 		
 		if (this.useSharedPKKey()) {
-			fullSelectColumns += "," + this.getSharedTableConf().generateFullAliasedSelectColumns();
+			fullSelectColumns += "," + this.getSharedTableConf(null).generateFullAliasedSelectColumns();
 		}
 		
 		return fullSelectColumns;
@@ -2092,8 +2099,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		String fromClause = this.generateFullTableNameWithAlias();
 		
 		if (useSharedPKKey()) {
-			fromClause += "\n INNER JOIN " + this.getSharedTableConf().generateFullTableNameWithAlias() + " ON "
-			        + this.getSharedKeyRefInfo().generateJoinCondition();
+			fromClause += "\n INNER JOIN " + this.getSharedTableConf(null).generateFullTableNameWithAlias() + " ON "
+			        + this.getSharedKeyRefInfo(null).generateJoinCondition();
 		}
 		
 		return fromClause;
@@ -2397,6 +2404,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default EtlDatabaseObject createRecordInstance() {
 		try {
+			@SuppressWarnings("deprecation")
 			EtlDatabaseObject rec = this.getSyncRecordClass().newInstance();
 			
 			rec.setRelatedConfiguration(this);
@@ -2768,7 +2776,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default long getExtremeRecord(SqlFunctionType function, Connection conn) throws DBException {
 		
 		if (this.getPrimaryKey() == null) {
-			throw new ForbiddenOperationException("No Primary Key is defined on " + this.getTableName() + " table. If there is a numeric Primary Key candidate you can spefify it on 'manualMapPrimaryKeyOnField' configuration.");
+			throw new ForbiddenOperationException("No Primary Key is defined on " + this.getTableName()
+			        + " table. If there is a numeric Primary Key candidate you can spefify it on 'manualMapPrimaryKeyOnField' configuration.");
 		}
 		
 		if (!this.getPrimaryKey().isSimpleNumericKey()) {

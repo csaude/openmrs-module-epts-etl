@@ -55,7 +55,7 @@ public class ChildTable extends AbstractRelatedTable {
 		} else if (utilities.arrayHasElement(this.getParentRefInfo())) {
 			
 			for (ParentTable parent : this.getParentRefInfo()) {
-				if (parent.equals(this.parentTableConf.getSharedKeyRefInfo())) {
+				if (parent.equals(this.parentTableConf.getSharedKeyRefInfo(null))) {
 					return true;
 				}
 			}

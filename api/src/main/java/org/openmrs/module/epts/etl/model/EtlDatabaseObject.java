@@ -516,7 +516,7 @@ public interface EtlDatabaseObject extends EtlObject {
 			throw new ForbiddenOperationException(
 			        "The table '" + tabConf.getFullTableDescription() + " does not use shared key");
 		
-		ParentTable sharedKeyConf = tabConf.getSharedKeyRefInfo();
+		ParentTable sharedKeyConf = tabConf.getSharedKeyRefInfo(conn);
 		
 		Oid key = sharedKeyConf.generateParentOidFromChild(this);
 		
@@ -533,12 +533,12 @@ public interface EtlDatabaseObject extends EtlObject {
 			throw new ForbiddenOperationException(
 			        "The table '" + childTabConf.getFullTableDescription() + " does not use shared key");
 		
-		if (!childTabConf.getSharedKeyRefInfo().equals(tabConf)) {
+		if (!childTabConf.getSharedKeyRefInfo(conn).equals(tabConf)) {
 			throw new ForbiddenOperationException("The table '" + childTabConf.getFullTableDescription()
 			        + " does not share primary key with " + tabConf.getFullTableDescription());
 		}
 		
-		Oid key = childTabConf.getSharedKeyRefInfo().generateChildOidFromParent(this);
+		Oid key = childTabConf.getSharedKeyRefInfo(conn).generateChildOidFromParent(this);
 		
 		EtlDatabaseObject child = DatabaseObjectDAO.getByOid(childTabConf, key, conn);
 		

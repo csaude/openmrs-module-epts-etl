@@ -982,17 +982,35 @@ public class CommonUtilities implements Serializable {
 		}
 	}
 	
-	public <T extends VO> String generateCsvHeader(T firstObj) {
+	public <T extends VO> String generateCsvHeader(T firstObj, List<String> excludedFields, String delimiter) {
 		StringBuilder csvBuilder = new StringBuilder();
 		
-		List<String> headers = org.openmrs.module.epts.etl.model.Field.parseAllToListOfName(firstObj.getFields());
+		List<org.openmrs.module.epts.etl.model.Field> allFields = firstObj.getFields();
 		
-		csvBuilder.append(String.join(",", headers)).append("\n");
+		List<org.openmrs.module.epts.etl.model.Field> fieldsToInclude;
+		
+		if (excludedFields != null) {
+			fieldsToInclude = new ArrayList<>();
+			
+			for (org.openmrs.module.epts.etl.model.Field field : allFields) {
+				if (utilities.containsAll(excludedFields, field.getName())) {
+					continue;
+				}
+				
+				fieldsToInclude.add(field);
+			}
+		} else {
+			fieldsToInclude = allFields;
+		}
+		
+		List<String> headers = org.openmrs.module.epts.etl.model.Field.parseAllToListOfName(fieldsToInclude);
+		
+		csvBuilder.append(String.join(delimiter, headers)).append("\n");
 		
 		return csvBuilder.toString();
 	}
 	
-	public String parseToCSVWithoutHeader(List<? extends VO> objs) {
+	public String parseToCSVWithoutHeader(List<? extends VO> objs,  List<String> excludedFields, String delimiter) {
 		if (objs == null || objs.isEmpty()) {
 			return "";
 		}
@@ -1000,9 +1018,9 @@ public class CommonUtilities implements Serializable {
 		StringBuilder csvBuilder = new StringBuilder();
 		
 		for (VO obj : objs) {
-			List<String> values = obj.getFieldValuesAsString();
+			List<String> values = obj.getFieldValuesAsString(excludedFields);
 			
-			csvBuilder.append(String.join(",", values)).append("\n");
+			csvBuilder.append(String.join(delimiter, values)).append("\n");
 		}
 		
 		return csvBuilder.toString();
@@ -1033,30 +1051,6 @@ public class CommonUtilities implements Serializable {
 		}
 		
 		return tabBuilder.toString();
-	}
-	
-	public static String parseToCSV_(List<String> objs, boolean includeHeader) {
-		if (objs == null || objs.isEmpty()) {
-			return "";
-		}
-		
-		CommonUtilities utils = getInstance();
-		
-		StringBuilder csvBuilder = new StringBuilder();
-		
-		if (includeHeader) {
-			List<String> headers = utils.parseToList("id", "name");
-			
-			csvBuilder.append(String.join(",", headers)).append("\n");
-		}
-		
-		for (String obj : objs) {
-			List<String> values = utils.parseArrayToList(obj.split(","));
-			
-			csvBuilder.append(String.join(",", values)).append("\n");
-		}
-		
-		return csvBuilder.toString();
 	}
 	
 	public String toUpperCase(String str) {

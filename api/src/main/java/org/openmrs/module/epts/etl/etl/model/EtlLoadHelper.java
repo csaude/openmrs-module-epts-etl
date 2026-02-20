@@ -447,7 +447,7 @@ public class EtlLoadHelper {
 		} else if (getEngine().isCsvDst()) {
 			dataFile += ".csv";
 			
-			data = utilities.parseToCSVWithoutHeader(objs);
+			data = utilities.parseToCSVWithoutHeader(objs, dstConf.getExcludedFields(), dstConf.getCsvDelimiter());
 		} else if (getEngine().isDumpDst()) {
 			dataFile += ".sql";
 			
@@ -458,7 +458,8 @@ public class EtlLoadHelper {
 			boolean includeHeader = FileUtilities.isEmpty(new File(dataFile));
 			
 			if (includeHeader) {
-				FileUtilities.write(dataFile, utilities.generateCsvHeader(objs.get(0)));
+				FileUtilities.write(dataFile,
+				    utilities.generateCsvHeader(objs.get(0), dstConf.getExcludedFields(), dstConf.getCsvDelimiter()));
 			}
 			
 			FileUtilities.write(dataFile, data);

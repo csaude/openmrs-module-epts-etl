@@ -199,7 +199,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 			addUniqueKey(prevIndexName, keyElements, uniqueKeysInfo, tabConf, conn);
 			
 			if (tabConf.useSharedPKKey()) {
-				ParentTable p = tabConf.getSharedKeyRefInfo();
+				ParentTable p = tabConf.getSharedKeyRefInfo(conn);
 				
 				if (!p.isFullLoaded()) {
 					p.loadFields(conn);
@@ -683,7 +683,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 			
 			if (!tabConf.containsAllFields(utilities.parseList(this.getFields(), Field.class))) {
 				if (tabConf.useSharedPKKey()) {
-					tabConf = tabConf.getSharedKeyRefInfo();
+					tabConf = tabConf.getSharedKeyRefInfo(null);
 				}
 			}
 			

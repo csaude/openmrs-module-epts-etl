@@ -62,17 +62,17 @@ public interface MainJoiningEntity extends TableConfiguration {
 					}
 					
 					if (t.useSharedPKKey()) {
-						t.getSharedKeyRefInfo().tryToGenerateTableAlias(getRelatedEtlConf());
+						t.getSharedKeyRefInfo(conn).tryToGenerateTableAlias(getRelatedEtlConf());
 						
 						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName(), new ArrayList<>());
 						
 						if (fullLoadedTab != null) {
-							t.getSharedKeyRefInfo().clone(fullLoadedTab, null, srcConn);
+							t.getSharedKeyRefInfo(conn).clone(fullLoadedTab, null, srcConn);
 						} else {
-							t.getSharedKeyRefInfo().fullLoad(srcConn);
+							t.getSharedKeyRefInfo(conn).fullLoad(srcConn);
 						}
 						
-						t.getSharedKeyRefInfo().setParentConf(t);
+						t.getSharedKeyRefInfo(conn).setParentConf(t);
 					}
 					
 					if (t.isMainJoiningEntity() && t.parseToJoining().hasAuxExtractTable()) {

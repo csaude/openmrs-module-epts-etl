@@ -127,7 +127,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		if (aux.useSharedPKKey()) {
 			
-			ParentTable shrd = aux.getSharedTableConf();
+			ParentTable shrd = aux.getSharedTableConf(srcConn);
 			
 			clauseFrom += "\n" + joinType + " join " + shrd.generateSelectFromClauseContent() + " on "
 			        + shrd.generateJoinCondition();

@@ -423,7 +423,7 @@ public class LoadRecord {
 		}
 		
 		if (refInfo.useSharedPKKey()) {
-			TableConfiguration sharedPkConf = refInfo.getSharedKeyRefInfo();
+			TableConfiguration sharedPkConf = refInfo.getSharedKeyRefInfo(dstConn);
 			
 			if (!sharedPkConf.isFullLoaded()) {
 				sharedPkConf.tryToGenerateTableAlias(this.getEtlConfiguration());

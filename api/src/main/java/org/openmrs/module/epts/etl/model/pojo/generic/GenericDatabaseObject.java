@@ -195,7 +195,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			TableConfiguration tabConf = (TableConfiguration) getRelatedConfiguration();
 			
 			if (tabConf.getSharePkWith() != null) {
-				this.sharedPkObj = new GenericDatabaseObject(tabConf.getSharedKeyRefInfo());
+				this.sharedPkObj = new GenericDatabaseObject(tabConf.getSharedKeyRefInfo(null));
 			}
 			
 		}

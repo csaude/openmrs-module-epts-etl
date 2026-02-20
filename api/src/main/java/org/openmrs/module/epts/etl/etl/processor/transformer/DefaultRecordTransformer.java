@@ -108,20 +108,20 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		}
 		
 		if (dstConf.useSharedPKKey()) {
-			List<SrcConf> srcForSharedPk = dstConf.getSharedKeyRefInfo()
+			List<SrcConf> srcForSharedPk = dstConf.getSharedKeyRefInfo(dstConn)
 			        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(processor.getRelatedEtlOperationConfig());
 			
 			if (CommonUtilities.getInstance().arrayHasNoElement(srcForSharedPk)) {
 				throw new ForbiddenOperationException(
 				        "There are relashioship which cannot auto resolved as there is no configured etl for "
-				                + dstConf.getSharedKeyRefInfo().getTableName() + " as source and destination!");
+				                + dstConf.getSharedKeyRefInfo(dstConn).getTableName() + " as source and destination!");
 			}
 			
 			EtlDatabaseObject dstParent = null;
 			
 			for (SrcConf src : srcForSharedPk) {
 				DstConf sharedPkDstConf = ((EtlItemConfiguration) src.getParentConf()).findDstTable(
-				    processor.getRelatedEtlOperationConfig(), dstConf.getSharedKeyRefInfo().getTableName());
+				    processor.getRelatedEtlOperationConfig(), dstConf.getSharedKeyRefInfo(dstConn).getTableName());
 				
 				EtlDatabaseObject recordAsSrc = src.createRecordInstance();
 				recordAsSrc.setRelatedConfiguration(src);

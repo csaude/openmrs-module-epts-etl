@@ -103,10 +103,10 @@ public class DatabaseObjectDAO extends BaseDAO {
 			String clauseFromStarting = tableName;
 			
 			if (parentTableConfiguration.useSharedPKKey()) {
-				TableConfiguration sharedTabConf = parentTableConfiguration.getSharedTableConf();
+				TableConfiguration sharedTabConf = parentTableConfiguration.getSharedTableConf(conn);
 				
 				clauseFromStarting += " INNER JOIN " + sharedTabConf.generateTableNameWithAlias() + " ON "
-				        + parentTableConfiguration.getSharedKeyRefInfo().generateJoinCondition() + "\n";
+				        + parentTableConfiguration.getSharedKeyRefInfo(conn).generateJoinCondition() + "\n";
 				
 				columnsToSelect += ", \n" + sharedTabConf.generateFullAliasedSelectColumns();
 			}
@@ -736,8 +736,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
 		
 		if (tableConfiguration.useSharedPKKey()) {
-			tablesToSelect += "INNER JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias() + " ON "
-			        + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
+			tablesToSelect += "INNER JOIN " + tableConfiguration.getSharedTableConf(conn).generateTableNameWithAlias()
+			        + " ON " + tableConfiguration.getSharedKeyRefInfo(conn).generateJoinCondition();
 		}
 		
 		String startingClause = "1 != 1 ";
@@ -793,8 +793,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
 		
 		if (tableConfiguration.useSharedPKKey()) {
-			tablesToSelect += "\n RIGHT JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias()
-			        + " ON " + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
+			tablesToSelect += "\n RIGHT JOIN " + tableConfiguration.getSharedTableConf(conn).generateTableNameWithAlias()
+			        + " ON " + tableConfiguration.getSharedKeyRefInfo(conn).generateJoinCondition();
 		}
 		
 		sql += " SELECT " + tableConfiguration.getPrimaryKey().retrieveSimpleKeyColumnName() + " object_id \n";
@@ -832,8 +832,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
 		
 		if (tableConfiguration.useSharedPKKey()) {
-			tablesToSelect += "\n INNER JOIN " + tableConfiguration.getSharedTableConf().generateTableNameWithAlias()
-			        + " ON " + tableConfiguration.getSharedKeyRefInfo().generateJoinCondition();
+			tablesToSelect += "\n INNER JOIN " + tableConfiguration.getSharedTableConf(conn).generateTableNameWithAlias()
+			        + " ON " + tableConfiguration.getSharedKeyRefInfo(conn).generateJoinCondition();
 		}
 		String startingClause = "1 != 1 ";
 		String dateVoidedClause = "";
