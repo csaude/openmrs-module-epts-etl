@@ -1,5 +1,7 @@
 package org.openmrs.module.epts.etl.exceptions;
 
+import org.openmrs.module.epts.etl.model.base.EtlObject;
+
 /**
  * This exception is throwen when some forbiden operation is performed
  * 
@@ -48,5 +50,15 @@ public class ForbiddenOperationException extends RuntimeException implements Etl
 	@Override
 	public Throwable getException() {
 		return this;
+	}
+	
+	@Override
+	public ActionOnEtlException getAction() {
+		return ActionOnEtlException.ABORT;
+	}
+	
+	@Override
+	public EtlObject getEtlObject() {
+		return null;
 	}
 }

@@ -22,9 +22,11 @@ public class EtlStageAreaInfo {
 	private EtlStageAreaInfo(EtlLoadHelperRecord etlInfo, Connection srcConn, Connection dstConn) throws DBException {
 		this.etlInfo = etlInfo;
 		
-		this.setSrcStageInfoObject(EtlStageAreaObject.generateSrc(etlInfo.getSrcObject(), srcConn));
+		this.setSrcStageInfoObject(EtlStageAreaObject.generateSrc(etlInfo.getSrcObject(), etlInfo.getActiveException(), srcConn));
 		
-		this.setDstStageInfoObject(EtlStageAreaObject.generateDst(etlInfo.getDstRecords(), dstConn));
+		if (utilities.arrayHasElement(etlInfo.getDstRecords())) {
+			this.setDstStageInfoObject(EtlStageAreaObject.generateDst(etlInfo.getDstRecords(), dstConn));
+		}
 	}
 	
 	public static EtlStageAreaInfo generate(EtlLoadHelperRecord rec, Connection srcConn, Connection dstConn)

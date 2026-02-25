@@ -1,10 +1,15 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.MappingFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -43,6 +48,8 @@ public interface TransformableField {
 	String getDstField();
 	
 	String getSrcField();
+	
+	Object getDefaultValue();
 	
 	default boolean hasDataType() {
 		return utilities.stringHasValue(this.getDataType());
@@ -96,30 +103,56 @@ public interface TransformableField {
 		return getTransformer() != null;
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked" })
 	default void tryToLoadTransformer() {
 		if (this.hasTransformer()) {
 			
-			if (this.getTransformer().equals(EtlFieldTransformer.STRING_TRANSFORMER)) {
-				this.setTransformer(StringTranformer.class.getCanonicalName());
+			String transformerStr = this.getTransformer();
+			String className = transformerStr;
+			
+			if (transformerStr.contains("(") && transformerStr.endsWith(")")) {
+				int start = transformerStr.indexOf("(");
+				
+				className = transformerStr.substring(0, start).trim();
+			}
+			
+			if (this.getTransformer().startsWith(EtlFieldTransformer.STRING_TRANSFORMER)) {
 				this.setTransformerInstance(StringTranformer.getInstance());
-			} else if (this.getTransformer().equals(EtlFieldTransformer.ARITHMETIC_TRANSFORMER)) {
-				this.setTransformer(ArithmeticFieldTransformer.class.getCanonicalName());
+			} else if (this.getTransformer().startsWith(EtlFieldTransformer.ARITHMETIC_TRANSFORMER)) {
 				this.setTransformerInstance(ArithmeticFieldTransformer.getInstance());
+			} else if (this.getTransformer().startsWith(EtlFieldTransformer.MAPPING_TRANSFORMER)) {
+				this.setTransformerInstance(MappingFieldTransformer.getInstance(this.tryToLoadTransformerParameters()));
 			} else {
 				try {
 					ClassLoader loader = EtlRecordTransformer.class.getClassLoader();
 					
 					Class<? extends EtlFieldTransformer> transformerClazz = (Class<? extends EtlFieldTransformer>) loader
-					        .loadClass(this.getTransformer());
+					        .loadClass(className);
 					
-					this.setTransformerInstance(transformerClazz.newInstance());
+					List<Object> transformerParameters = this.tryToLoadTransformerParameters();
+					
+					EtlFieldTransformer instance;
+					
+					if (transformerParameters == null || transformerParameters.isEmpty()) {
+						instance = transformerClazz.getDeclaredConstructor().newInstance();
+					} else {
+						Class<?>[] paramTypes = transformerParameters.stream().map(Object::getClass)
+						        .toArray(Class<?>[]::new);
+						
+						Constructor<? extends EtlFieldTransformer> constructor = transformerClazz
+						        .getDeclaredConstructor(paramTypes);
+						
+						instance = constructor.newInstance(transformerParameters.toArray());
+					}
+					
+					this.setTransformerInstance(instance);
 				}
 				catch (Exception e) {
 					throw new ForbiddenOperationException(
 					        "Error loading transformer class [" + this.getTransformer() + "]!!! " + e.getLocalizedMessage());
 				}
 			}
+			
 		} else if (this.getValueToTransform() != null) {
 			this.setTransformer(SimpleValueTransformer.class.getCanonicalName());
 			this.setTransformerInstance(SimpleValueTransformer.getInstance());
@@ -129,4 +162,28 @@ public interface TransformableField {
 			this.setTransformerInstance(DefaultFieldTransformer.getInstance());
 		}
 	}
+	
+	default List<Object> tryToLoadTransformerParameters() {
+		String transformerStr = this.getTransformer();
+		List<Object> params = new ArrayList<>();
+		
+		if (transformerStr.contains("(") && transformerStr.endsWith(")")) {
+			
+			int start = transformerStr.indexOf("(");
+			int end = transformerStr.lastIndexOf(")");
+			
+			String paramsStr = transformerStr.substring(start + 1, end).trim();
+			
+			if (!paramsStr.isEmpty()) {
+				String[] splitParams = paramsStr.split(",");
+				
+				for (String p : splitParams) {
+					params.add(p.trim());
+				}
+			}
+		}
+		
+		return params;
+	}
+	
 }

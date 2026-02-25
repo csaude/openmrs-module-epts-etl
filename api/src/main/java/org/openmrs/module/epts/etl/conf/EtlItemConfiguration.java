@@ -328,7 +328,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				}
 			}
 			
-			if (operationConfig.writeOperationHistory()) {
+			if (operationConfig.writeOperationHistory()
+			        || operationConfig.getRelatedEtlConfig().getGeneralBehaviourOnEtlException().log()) {
 				srcConn = this.getRelatedEtlConf().openSrcConn();
 				
 				this.getSrcConf().generateStagingTables(srcConn);

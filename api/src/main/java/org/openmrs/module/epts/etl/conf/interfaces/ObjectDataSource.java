@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.conf.datasource.DataSourceField;
 import org.openmrs.module.epts.etl.conf.datasource.DefaultObjectFieldsValuesGenerator;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.types.ObjectLanguageType;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -40,7 +41,8 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	
 	private JavaObjectFieldsValuesGenerator fieldsValuesGeneratorInstance;
 	
-	public EtlConfiguration getRelatedSyncConfiguration() {
+	@Override
+	public EtlConfiguration getRelatedEtlConf() {
 		return this.relatedSrcConf.getRelatedEtlConf();
 	}
 	
@@ -296,7 +298,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		return utilities.stringHasValue(fieldsValuesGenerator);
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "deprecation" })
 	public void tryToLoadFieldValueGenerator() {
 		if (this.hasFieldsValuesGenerator()) {
 			
@@ -370,5 +372,10 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	@Override
 	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
 		DataSourceField.tryToReplacePlaceholders(this.getObjectFields(), schemaInfoSrc);
+	}
+	
+	@Override
+	public ActionOnEtlException getGeneralBehaviourOnEtlException() {
+		return this.getRelatedEtlConf().getGeneralBehaviourOnEtlException();
 	}
 }

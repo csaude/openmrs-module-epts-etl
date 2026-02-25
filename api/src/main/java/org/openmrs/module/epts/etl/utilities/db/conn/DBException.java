@@ -3,9 +3,11 @@ package org.openmrs.module.epts.etl.utilities.db.conn;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
@@ -283,5 +285,15 @@ public class DBException extends SQLException implements EtlException {
 	
 	public RuntimeException parseToRuntimeException() {
 		return new RuntimeException(this);
+	}
+	
+	@Override
+	public ActionOnEtlException getAction() {
+		return ActionOnEtlException.ABORT;
+	}
+	
+	@Override
+	public EtlObject getEtlObject() {
+		return null;
 	}
 }

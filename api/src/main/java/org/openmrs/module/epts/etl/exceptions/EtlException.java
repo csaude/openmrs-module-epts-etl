@@ -1,5 +1,7 @@
 package org.openmrs.module.epts.etl.exceptions;
 
+import org.openmrs.module.epts.etl.model.base.EtlObject;
+
 public interface EtlException {
 	
 	String getLocalizedMessage();
@@ -7,4 +9,9 @@ public interface EtlException {
 	void printStackTrace();
 	
 	Throwable getException();
+	
+	ActionOnEtlException getAction();
+	
+	EtlObject getEtlObject();
+	
 }

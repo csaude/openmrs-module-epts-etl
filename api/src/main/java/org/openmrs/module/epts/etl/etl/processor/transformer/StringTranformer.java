@@ -7,8 +7,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -37,10 +38,11 @@ public class StringTranformer implements EtlFieldTransformer {
 	
 	@Override
 	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
-	        Connection dstConn) throws DBException, ForbiddenOperationException {
+	        Connection dstConn) throws DBException, EtlTransformationException {
 		
 		if (field.getValueToTransform() == null) {
-			throw new ForbiddenOperationException("Source value must be provided for String transformation.");
+			throw new EtlTransformationException("Source value must be provided for String transformation.",
+			        srcObjects.get(0), ActionOnEtlException.ABORT);
 		}
 		
 		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform())

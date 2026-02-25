@@ -6,17 +6,23 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
  * A {@link EtlLoadHelperRecord} group destination records sharing same source dstRecord.
  */
 public class EtlLoadHelperRecord {
 	
+	CommonUtilities utilities = CommonUtilities.getInstance();
+	
 	private EtlDatabaseObject srcObject;
 	
 	private List<LoadRecord> loadRecord;
+	
+	private EtlException activeException;
 	
 	public EtlLoadHelperRecord(EtlDatabaseObject srcObject, EtlProcessor processor) {
 		this.srcObject = srcObject;
@@ -80,7 +86,9 @@ public class EtlLoadHelperRecord {
 		List<EtlDatabaseObject> dstrecords = new ArrayList<>();
 		
 		for (LoadRecord lr : getLoadRecord()) {
-			dstrecords.add(lr.getDstRecord());
+			if (lr.getDstRecord() != null) {
+				dstrecords.add(lr.getDstRecord());
+			}
 		}
 		
 		return dstrecords;
@@ -107,13 +115,24 @@ public class EtlLoadHelperRecord {
 	}
 	
 	public ConflictResolutionType getGlobalConflictResolutionType() {
-		for (EtlDatabaseObject obj : this.getDstRecords()) {
-			if (!obj.getConflictResolutionType().none()) {
-				return obj.getConflictResolutionType();
+		
+		if (utilities.arrayHasElement(this.getDstRecords())) {
+			for (EtlDatabaseObject obj : this.getDstRecords()) {
+				if (!obj.getConflictResolutionType().none()) {
+					return obj.getConflictResolutionType();
+				}
 			}
 		}
 		
 		return ConflictResolutionType.NONE;
+	}
+	
+	public EtlException getActiveException() {
+		return this.activeException;
+	}
+	
+	public void setActiveException(EtlException activeException) {
+		this.activeException = activeException;
 	}
 	
 }

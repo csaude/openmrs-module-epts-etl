@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -36,7 +38,7 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 	
 	@Override
 	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
-	        Connection dstConn) throws DBException, ForbiddenOperationException {
+	        Connection dstConn) throws DBException, EtlTransformationException {
 		
 		Object dstValue = null;
 		
@@ -63,8 +65,13 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 			}
 			
 			if (!found) {
-				throw new ForbiddenOperationException(
-				        "The field '" + field.getName() + " does not belong to any configured source table");
+				throw new EtlTransformationException(
+				        "The field '" + field.getName() + " does not belong to any configured source table",
+				        srcObjects.get(0), ActionOnEtlException.ABORT);
+			}
+			
+			if (dstValue == null) {
+				dstValue = tryToLoadDefaultValue(field, srcObjects);
 			}
 		}
 		

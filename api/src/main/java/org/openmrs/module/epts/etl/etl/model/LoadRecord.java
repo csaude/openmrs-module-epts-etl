@@ -66,7 +66,9 @@ public class LoadRecord {
 		
 		this.parentsWithDefaultValues = new ArrayList<ParentInfo>();
 		
-		this.dstRecord.loadUniqueKeyValues();
+		if (this.dstRecord != null) {
+			this.dstRecord.loadUniqueKeyValues();
+		}
 		
 		this.resultItem = new EtlOperationItemResult<EtlDatabaseObject>(srcRecord);
 		

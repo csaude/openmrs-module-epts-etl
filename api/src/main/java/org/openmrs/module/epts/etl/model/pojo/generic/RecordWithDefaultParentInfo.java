@@ -38,7 +38,8 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		rec.setRelatedConfiguration(recursiveRecordTableInfo);
 		
 		rec.setFieldValue("record_origin_location_code", parentRefInfo.getRelatedEtlConf().getOriginAppLocationCode());
-		rec.setFieldValue("table_name", srcObject.generateTableName());
+		rec.setFieldValue("src_table_name", srcObject.generateTableName());
+		rec.setFieldValue("dst_table_name", dstObject.generateTableName());
 		rec.setFieldValue("src_rec_id", srcObject.getObjectId().asSimpleValue());
 		rec.setFieldValue("dst_rec_id", dstObject.getObjectId().asSimpleValue());
 		rec.setFieldValue("parent_table", parentRefInfo.getTableName());
@@ -54,8 +55,12 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		return this.getFieldValue("record_origin_location_code").toString();
 	}
 	
-	public String getTableName() {
-		return this.getFieldValue("table_name").toString();
+	public String getSrcTableName() {
+		return this.getFieldValue("src_table_name").toString();
+	}
+	
+	public String getDstTableName() {
+		return this.getFieldValue("dst_table_name").toString();
 	}
 	
 	public String getParentTable() {
@@ -87,7 +92,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 			throw new ForbiddenOperationException("The relatedItemConf must be full loaded!!!");
 		}
 		
-		DstConf dstConf = relatedItemConf.findDstTable(null, this.getParentTable());
+		DstConf dstConf = relatedItemConf.findDstTable(null, this.getDstTableName());
 		
 		this.parentRefInfo = relatedSrcConf.getFieldIsRelatedParent(Field.fastCreateField(this.getParentField()));
 		
@@ -103,7 +108,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		}
 		
 		this.parentRecordInOrigin = DatabaseObjectDAO.getByOid(this.parentRefInfo,
-		    Oid.fastCreate(dstConf.getPrimaryKey().asSimpleKey().getName(), this.getSrcParentId()), dstConn);
+		    Oid.fastCreate(this.getParentField(), this.getSrcParentId()), dstConn);
 		
 	}
 	
@@ -135,7 +140,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		sql += " select " + tabConf.generateFullAliasedSelectColumns();
 		sql += " from   " + tabConf.generateSelectFromClauseContent();
 		sql += " where  src_rec_id = ? ";
-		sql += "		and table_name = ?";
+		sql += "		and src_table_name = ?";
 		
 		Object[] params = { srcRecId, srcTable.getTableName() };
 		
@@ -153,7 +158,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		        .getRecordWithDefaultParentsInfoTabConf();
 		
 		DatabaseObjectDAO.removeAll(skippedRecordTabConf,
-		    "table_name = '" + srcConf.getTableName() + "' and inconsistent_parent = -1", srcConn);
+		    "src_table_name = '" + srcConf.getTableName() + "' and inconsistent_parent = -1", srcConn);
 	}
 	
 }

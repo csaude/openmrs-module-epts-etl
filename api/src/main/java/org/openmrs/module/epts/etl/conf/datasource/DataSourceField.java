@@ -21,6 +21,8 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	private boolean dataTypeLoaded;
 	
+	private Object defaultValue;
+	
 	private ObjectDataSource dataSource;
 	
 	public DataSourceField() {
@@ -39,6 +41,16 @@ public class DataSourceField extends Field implements TransformableField {
 		return this.getDataSource().getName();
 	}
 	
+	@Override
+	public Object getDefaultValue() {
+		return this.defaultValue;
+	}
+	
+	public void setDefaultValue(Object defaultValue) {
+		this.defaultValue = defaultValue;
+	}
+	
+	@Override
 	public String getTransformer() {
 		return transformer;
 	}

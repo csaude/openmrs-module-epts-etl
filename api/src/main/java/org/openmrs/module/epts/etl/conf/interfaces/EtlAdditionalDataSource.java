@@ -24,6 +24,7 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 */
 	boolean isRequired();
 	
+	@SuppressWarnings("deprecation")
 	default EtlDatabaseObject newInstance() {
 		try {
 			EtlDatabaseObject obj = getSyncRecordClass().newInstance();

@@ -49,6 +49,8 @@ public class FieldsMapping implements TransformableField {
 	
 	private List<String> possibleSrc;
 	
+	private Object defaultValue;
+	
 	public FieldsMapping() {
 		this.possibleSrc = new ArrayList<>(5);
 	}
@@ -60,6 +62,15 @@ public class FieldsMapping implements TransformableField {
 		this.dataSourceName = dataSourceName;
 		this.dstField = destField;
 		this.possibleSrc.add(dataSourceName);
+	}
+	
+	@Override
+	public Object getDefaultValue() {
+		return this.defaultValue;
+	}
+	
+	public void setDefaultValue(Object defaultValue) {
+		this.defaultValue = defaultValue;
 	}
 	
 	public List<String> getPossibleSrc() {

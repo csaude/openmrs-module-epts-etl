@@ -177,7 +177,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		
 		long minRecordId = progressInfo.getProgressMeter().getMinRecordId();
 		long maxRecordId = progressInfo.getProgressMeter().getMaxRecordId();
-			
+		
 		return countAllRecords(minRecordId, maxRecordId, conn);
 	}
 	
@@ -292,27 +292,13 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			        .thenAccept(allSearchedRecords::addAll).join();
 		});
 		
-		// Block and wait for all tasks to complete (optional)
+		// Block and wait for all tasks to complete 
 		try {
 			allOf.get();
 		}
 		catch (InterruptedException | ExecutionException e) {
-			e.printStackTrace();
+			throw new EtlExceptionImpl("Error Happened when searching for records", e);
 		}
-		
-		/*
-		if (utilities.arrayHasNoElement(allSearchedRecords) && this.getThreadRecordIntervalsManager().canGoNext()) {
-			this.getThreadRecordIntervalsManager().save();
-			
-			this.getRelatedController()
-			        .logDebug("Empty result on fased quering... The application will keep searching next pages "
-			                + this.getThreadRecordIntervalsManager());
-			
-			this.getThreadRecordIntervalsManager().moveNext();
-			
-			return searchNextRecordsInMultiThreads(srcConn, dstConn);
-		}
-		*/
 		
 		return allSearchedRecords;
 	}

@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -539,6 +540,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		setName(utilities.tryToReplacePlaceholders(this.getName(), schemaInfoSrc));
 		setQuery(utilities.tryToReplacePlaceholders(getQuery(), schemaInfoSrc));
 		setScript(utilities.tryToReplacePlaceholders(this.getScript(), schemaInfoSrc));
+	}
+
+	@Override
+	public ActionOnEtlException getGeneralBehaviourOnEtlException() {
+		return relatedSrcConf.getGeneralBehaviourOnEtlException();
 	}
 	
 }

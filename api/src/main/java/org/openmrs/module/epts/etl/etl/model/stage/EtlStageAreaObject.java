@@ -9,9 +9,11 @@ import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class EtlStageAreaObject extends GenericDatabaseObject {
 	
@@ -20,8 +22,8 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 	public EtlStageAreaObject() {
 	}
 	
-	private EtlStageAreaObject(EtlStageTableType type, EtlDatabaseObject relatedEtlObject, Connection conn)
-	        throws DBException {
+	private EtlStageAreaObject(EtlStageTableType type, EtlDatabaseObject relatedEtlObject, EtlException relatedException,
+	    Connection conn) throws DBException {
 		TableConfiguration etlTable = (TableConfiguration) relatedEtlObject.getRelatedConfiguration();
 		
 		EtlConfigurationTableConf keyInfoTabConf = null;
@@ -34,33 +36,49 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			this.setFieldValue("record_origin_location_code", etlTable.getOriginAppLocationCode());
 			this.setFieldValue("compacted_object_uk", UniqueKeyInfo.compactAll(this.getAllKeys()));
 			
+			if (relatedException != null) {
+				this.setFieldValue("last_sync_try_err", relatedException.getLocalizedMessage());
+				this.setFieldValue("migration_status", 0);
+			} else {
+				this.setFieldValue("migration_status", 1);
+			}
+			
 			keyInfoTabConf = etlTable.generateRelatedStageSrcUniqueKeysTableConf(conn);
 			
 		} else {
-			this.setRelatedConfiguration(((DstConf) etlTable).getSrcConf().generateRelatedDstStageTableConf(conn));
+			OpenConnection srcConn = relatedEtlObject.getRelatedConfiguration().getRelatedEtlConf().openSrcConn();
 			
-			this.setFieldValue("dst_table_name", etlTable.getTableName());
-			this.setFieldValue("dst_compacted_object_uk", UniqueKeyInfo.compactAll(this.getAllKeys()));
-			this.setFieldValue("conflict_resolution_type",
-			    this.getRelatedEtlObject().getConflictResolutionType().toString());
-			
-			keyInfoTabConf = ((DstConf) etlTable).getSrcConf().generateRelatedStageDstUniqueKeysTableConf(conn);
+			try {
+				this.setRelatedConfiguration(((DstConf) etlTable).getSrcConf().generateRelatedDstStageTableConf(srcConn));
+				
+				this.setFieldValue("dst_table_name", etlTable.getTableName());
+				this.setFieldValue("dst_compacted_object_uk", UniqueKeyInfo.compactAll(this.getAllKeys()));
+				this.setFieldValue("conflict_resolution_type",
+				    this.getRelatedEtlObject().getConflictResolutionType().toString());
+				
+				keyInfoTabConf = ((DstConf) etlTable).getSrcConf().generateRelatedStageDstUniqueKeysTableConf(srcConn);
+				
+			}
+			finally {
+				srcConn.finalizeConnection();
+			}
 		}
 		
 		this.generateUniqueKeyInfoRecord(keyInfoTabConf);
 	}
 	
-	private static EtlStageAreaObject generate(EtlStageTableType type, EtlDatabaseObject relatedEtlObject, Connection conn)
-	        throws DBException {
-		return new EtlStageAreaObject(type, relatedEtlObject, conn);
+	private static EtlStageAreaObject generate(EtlStageTableType type, EtlDatabaseObject relatedEtlObject,
+	        EtlException relatedException, Connection conn) throws DBException {
+		return new EtlStageAreaObject(type, relatedEtlObject, relatedException, conn);
 	}
 	
-	public static EtlStageAreaObject generateSrc(EtlDatabaseObject relatedEtlObject, Connection conn) throws DBException {
+	public static EtlStageAreaObject generateSrc(EtlDatabaseObject relatedEtlObject, EtlException relatedException,
+	        Connection conn) throws DBException {
 		
 		TableConfiguration tabConf = (TableConfiguration) relatedEtlObject.getRelatedConfiguration();
 		
 		if (tabConf.hasPK()) {
-			return generate(EtlStageTableType.SRC, relatedEtlObject, conn);
+			return generate(EtlStageTableType.SRC, relatedEtlObject, relatedException, conn);
 		} else {
 			return null;
 		}
@@ -68,13 +86,17 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 	
 	public static List<EtlStageAreaObject> generateDst(List<EtlDatabaseObject> relatedEtlObject, Connection conn)
 	        throws DBException {
+		
 		List<EtlStageAreaObject> recs = new ArrayList<>();
 		
-		for (EtlDatabaseObject etlObject : relatedEtlObject) {
-			TableConfiguration tabConf = (TableConfiguration) etlObject.getRelatedConfiguration();
+		if (utilities.arrayHasElement(relatedEtlObject)) {
 			
-			if (tabConf.hasPK()) {
-				recs.add(generate(EtlStageTableType.DST, etlObject, conn));
+			for (EtlDatabaseObject etlObject : relatedEtlObject) {
+				TableConfiguration tabConf = (TableConfiguration) etlObject.getRelatedConfiguration();
+				
+				if (tabConf.hasPK()) {
+					recs.add(generate(EtlStageTableType.DST, etlObject, null, conn));
+				}
 			}
 		}
 		

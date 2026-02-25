@@ -8,6 +8,8 @@ import java.util.regex.Pattern;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -28,6 +30,8 @@ public interface EtlFieldTransformer {
 	
 	static final String SRC_VALUE_TRANSFORMER = SimpleValueTransformer.class.getCanonicalName();
 	
+	static final String MAPPING_TRANSFORMER = MappingFieldTransformer.class.getCanonicalName();
+	
 	/**
 	 * Generates the transformed value for a given dtsField and set it to dstObject.
 	 * 
@@ -40,7 +44,7 @@ public interface EtlFieldTransformer {
 	 */
 	default void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects,
 	        FieldsMapping fieldsMapping, Connection srcConn, Connection dstConn)
-	        throws DBException, ForbiddenOperationException {
+	        throws DBException, EtlTransformationException {
 		
 		if (fieldsMapping.getSrcValue() == null && fieldsMapping.hasDataSourceName()) {
 			fieldsMapping.setSrcValue("@" + fieldsMapping.getSrcField());
@@ -48,12 +52,25 @@ public interface EtlFieldTransformer {
 		
 		Object dstValue = this.transform(srcObjects, fieldsMapping, srcConn, dstConn);
 		
+		if (dstValue == null) {
+			dstValue = tryToLoadDefaultValue(fieldsMapping, srcObjects);
+		}
+		
 		if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(fieldsMapping.getDstField()))) {
 			dstValue = utilities.parseValue(dstValue.toString(),
 			    transformedRecord.getFieldType(fieldsMapping.getDstField()));
 		}
 		
 		transformedRecord.setFieldValue(fieldsMapping.getDstField(), dstValue);
+	}
+	
+	default Object tryToLoadDefaultValue(TransformableField transformableField, List<EtlDatabaseObject> srcObjects) {
+		if (transformableField.getDefaultValue() != null) {
+			return tryToReplaceParametersOnSrcValue(srcObjects, transformableField.getDefaultValue().toString());
+		}
+		
+		return null;
+		
 	}
 	
 	/**
@@ -66,16 +83,16 @@ public interface EtlFieldTransformer {
 	 * @return the transformed value for dstField
 	 */
 	Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn, Connection dstConn)
-	        throws DBException, ForbiddenOperationException;
+	        throws DBException, EtlTransformationException;
 	
-	default Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final String srcValoue)
-	        throws ForbiddenOperationException {
+	default Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final String srcValue)
+	        throws EtlTransformationException {
 		
-		if (srcValoue == null || srcValoue.isEmpty()) {
-			throw new ForbiddenOperationException("The srcValue is empty");
+		if (srcValue == null || srcValue.isEmpty()) {
+			throw new EtlTransformationException("The srcValue is empty", srcObjects.get(0), ActionOnEtlException.ABORT);
 		}
 		
-		String expression = srcValoue;
+		String expression = srcValue;
 		
 		Pattern pattern = Pattern.compile("@(\\w+)");
 		Matcher matcher = pattern.matcher(expression);
@@ -114,11 +131,12 @@ public interface EtlFieldTransformer {
 			}
 			
 			if (!found) {
-				throw new ForbiddenOperationException("Parameter '" + paramName + "' not found in source objects.");
+				throw new EtlTransformationException("Parameter '" + paramName + "' not found in source objects.",
+				        srcObjects.get(0), ActionOnEtlException.ABORT);
 			}
 			
 			//The param represent the whole srcValue
-			if (srcValoue.equals("@" + paramName)) {
+			if (srcValue.equals("@" + paramName)) {
 				return paramValue;
 			}
 			

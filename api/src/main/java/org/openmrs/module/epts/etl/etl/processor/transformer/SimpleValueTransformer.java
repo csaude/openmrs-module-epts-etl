@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -33,11 +33,12 @@ public class SimpleValueTransformer implements EtlFieldTransformer {
 	
 	@Override
 	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
-	        Connection dstConn) throws DBException, ForbiddenOperationException {
+	        Connection dstConn) throws DBException, EtlTransformationException {
 		
 		if (field == null || field.getValueToTransform().toString().isEmpty()
 		        || field.getValueToTransform().equals("null")) {
-			return null;
+			
+			return tryToLoadDefaultValue(field, srcObjects);
 		} else {
 			return tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform());
 		}

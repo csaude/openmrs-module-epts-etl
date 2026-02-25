@@ -496,11 +496,20 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			throw new ForbiddenOperationException("The relatedConfiguration  is not full loaded");
 		
 		for (Field f : this.fields) {
+			if (((TableConfiguration) this.getRelatedConfiguration()).isIgnorableField(f)) {
+				continue;
+			}
+			
 			try {
 				f.setValue(copyFrom.getFieldValue(f.getName()));
 			}
 			catch (ForbiddenOperationException e) {
-				f.setValue(copyFrom.getFieldValue(f.getNameAsClassAtt()));
+				try {
+					f.setValue(copyFrom.getFieldValue(f.getNameAsClassAtt()));
+				}
+				catch (ForbiddenOperationException e1) {
+					//Ignore no matching fields
+				}
 			}
 		}
 		

@@ -316,5 +316,4 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		AuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);
 		
 	}
-	
 }

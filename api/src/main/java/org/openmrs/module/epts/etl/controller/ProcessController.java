@@ -247,7 +247,6 @@ public class ProcessController implements Controller, ControllerStarter {
 		getConfiguration().finalizeAllApps();
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public void finalize(Controller c) {
 		c.killSelfCreatedThreads();
@@ -1058,7 +1057,8 @@ public class ProcessController implements Controller, ControllerStarter {
 			sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
 			        + endLineMarker;
-			sql += DBUtilities.generateTableVarcharField("table_name", 100, notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("src_table_name", 100, notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
 			sql += DBUtilities.generateTableBigIntField("src_rec_id", notNullConstraint, conn) + endLineMarker;
 			sql += DBUtilities.generateTableBigIntField("dst_rec_id", notNullConstraint, conn) + endLineMarker;
 			sql += DBUtilities.generateTableVarcharField("parent_table", 50, notNullConstraint, conn) + endLineMarker;

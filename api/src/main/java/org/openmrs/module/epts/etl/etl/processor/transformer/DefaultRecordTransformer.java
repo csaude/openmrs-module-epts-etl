@@ -10,7 +10,8 @@ import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -43,7 +44,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	@Override
 	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject,
 	        DstConf dstConf, TransformationType transformationType, Connection srcConn, Connection dstConn)
-	        throws DBException, ForbiddenOperationException {
+	        throws DBException, EtlTransformationException {
 		
 		processor.logTrace("Transforming dstRecord " + srcObject);
 		
@@ -112,9 +113,10 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(processor.getRelatedEtlOperationConfig());
 			
 			if (CommonUtilities.getInstance().arrayHasNoElement(srcForSharedPk)) {
-				throw new ForbiddenOperationException(
+				throw new EtlTransformationException(
 				        "There are relashioship which cannot auto resolved as there is no configured etl for "
-				                + dstConf.getSharedKeyRefInfo(dstConn).getTableName() + " as source and destination!");
+				                + dstConf.getSharedKeyRefInfo(dstConn).getTableName() + " as source and destination!",
+				        srcObject, ActionOnEtlException.ABORT);
 			}
 			
 			EtlDatabaseObject dstParent = null;
@@ -138,8 +140,9 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			}
 			
 			if (dstParent == null) {
-				throw new ForbiddenOperationException(
-				        "The related shared pk object for record " + srcObject + " cannot be transformed");
+				throw new EtlTransformationException(
+				        "The related shared pk object for record " + srcObject + " cannot be transformed", srcObject,
+				        ActionOnEtlException.ABORT);
 			} else {
 				transformedRec.setSharedPkObj(dstParent);
 			}

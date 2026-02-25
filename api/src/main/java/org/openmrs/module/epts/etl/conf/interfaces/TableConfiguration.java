@@ -379,6 +379,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		this.setSyncRecordClass(toCloneFrom.getSyncRecordClass());
 		this.setParentConf(toCloneFrom.getParentConf());
 		this.setFields(toCloneFrom.getFields());
+		this.setIgnorableFields(toCloneFrom.getIgnorableFields());
 		
 		if (toCloneFrom.hasPK()) {
 			this.setPrimaryKey(toCloneFrom.getPrimaryKey());
@@ -591,7 +592,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		sql += this.getTableAlias() + "." + this.getPrimaryKey().retrieveSimpleKeyColumnName();
 		sql += " in  (	select src_rec_id \n";
 		sql += "		from " + recWithDefaultParents.getFullTableName() + "\n";
-		sql += " 		where table_name = '" + this.getTableName() + "')";
+		sql += " 		where src_table_name = '" + this.getTableName() + "')";
 		
 		return sql;
 	}
@@ -832,7 +833,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 												    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
 												mixedConfiguredRef.setSetNullDueInconsistency(
 												    manualConfiguredRefInfo.isSetNullDueInconsistency());
-												
+												mixedConfiguredRef.setIgnorableFields(manualConfiguredRefInfo.getIgnorableFields());
 											}
 											
 											if (autoLoadedRefInfo.equals(mixedConfiguredRef)) {
@@ -843,6 +844,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 												    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
 												autoLoadedRefInfo.setSetNullDueInconsistency(
 												    manualConfiguredRefInfo.isSetNullDueInconsistency());
+												
+												autoLoadedRefInfo.setIgnorableFields(manualConfiguredRefInfo.getIgnorableFields());
 												
 												for (RefMapping map : autoLoadedRefInfo.getRefMapping()) {
 													RefMapping configuredMap = mixedConfiguredRef.findRefMapping(

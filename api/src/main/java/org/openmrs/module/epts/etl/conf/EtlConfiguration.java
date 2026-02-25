@@ -28,6 +28,7 @@ import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessType;
 import org.openmrs.module.epts.etl.conf.types.EtlTotalRecordsCountStrategy;
 import org.openmrs.module.epts.etl.controller.ProcessController;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -171,6 +172,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private boolean reRunable;
 	
+	private ActionOnEtlException generalBehaviourOnEtlException;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -183,6 +186,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.busyTableAliasName = new ArrayList<>();
 		
 		this.waitTimeToCheckStatus = 5;
+		
+		this.generalBehaviourOnEtlException = ActionOnEtlException.ABORT;
 	}
 	
 	public List<String> getStartupScripts() {
@@ -1795,5 +1800,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public boolean reRunable() {
 		return isReRunable();
+	}
+	
+	@Override
+	public ActionOnEtlException getGeneralBehaviourOnEtlException() {
+		return this.generalBehaviourOnEtlException;
+	}
+	
+	public void setGeneralBehaviourOnEtlException(ActionOnEtlException generalBehaviourOnEtlException) {
+		this.generalBehaviourOnEtlException = generalBehaviourOnEtlException;
 	}
 }

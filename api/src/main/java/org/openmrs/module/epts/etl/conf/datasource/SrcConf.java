@@ -197,8 +197,8 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 					if (t.useSharedPKKey()) {
 						t.getSharedKeyRefInfo(conn).tryToGenerateTableAlias(getRelatedEtlConf());
 						
-						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getSharedKeyRefInfo(conn).getFullTableName(),
-						    new ArrayList<>());
+						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(
+						    t.getSharedKeyRefInfo(conn).getFullTableName(), new ArrayList<>());
 						
 						if (fullLoadedTab != null) {
 							t.getSharedKeyRefInfo(conn).clone(fullLoadedTab, null, conn);
