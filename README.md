@@ -446,7 +446,7 @@ Bellow is the explanation for each field:
    - (1) *dataSourceName* the datasource from were the data will be picked-up; this can be omitted if there is only one datasource containing the srcField or if the "prefferredDataSource" is defined. You can also specify the dataSourceName within the srcField like 'dataSourceName.srcFieldName'
    - (2) *srcField* the field on the dataSource from where the value will be picked up;
    - (3) *dstField* the field in dst which we want to fill;
-   - (4) **defaultValue** default value to use when *value* is null; this override the *mapToNullValue* behaviour  
+   - (4) **defaultValue** default value to use when *value* is null;  
    - (5) *mapToNullValue* a boolean which indicates that this field should be filled with null value;
 -  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst use the same unique keys. The joining fields are important when it comes to determining if all the src records were processed. If the joining fields are not present then the final verification of the process will be skipped for that specific table. (See [The Joining Fields](#joinFields)) 
 - **autoIncrementHandlingType**: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values.
