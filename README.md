@@ -355,6 +355,7 @@ An object datasource allows to include object fields as datasource. The values f
          {
             "name":"",
             "value":"",
+			"defaultValue": ""
             "transformer":"",
             "dataType":""
          }
@@ -369,8 +370,14 @@ Each "extraObjectDataSource" is defined by
 - *objectFields* the list of object fields. Note that each field is defined by:
   - (1) **name** the unique field name within the datasource;
   - (2) **value** allow the specification of fixed value for the field. This value can be constant, parameter or expression. Parameter values should start with '@' then followed by an identifier. If no value is specified then application will assume that the "fieldsValuesGenerator" will generates the "value";
-  - (3) **transformer** a transformer enables transformation of "value". A transformation is needed when the "value" is an expression. There are 3 types of transformers, namely: (1) the *org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer* which allow the evaluation of arithmetic expressions (2) *org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer* which allow the transformation through string methods and (3) the *org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTranformer* which allow the direct transformation of value. If empty, then the **SimpleValueTranformer** will be applied .  
-  - (4) **dataType** an optional token to specify the data type for value. By default, the type will match the final expression type from the transformer. Supported types: int, long, double, string, date      
+  - (3) **defaultValue** default value to use when *value* is null;
+  - (4) **transformer** a transformer enables transformation of "value". A transformation is needed when the "value" is an expression or needs a complex transformation. There are 4 types of transformers, namely:
+    - (1) the **org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer** which allow the evaluation of arithmetic expressions;
+    - (2) **org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer** which allow the transformation through string methods;
+    - (3) the **org.openmrs.module.epts.etl.etl.processor.transformer.MappingFieldTransformer** which allows the transformation through a database table mapping. This transformer require 3 parameters which must be passed within () as shown:
+      - **org.openmrs.module.epts.etl.etl.processor.transformer.MappingFieldTransformer(mapping_table_name,mapping_src_field,mapping_dst_field)**
+    - (4) the **org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTranformer** which allows direct transformation of value; this transformed is used by default.  
+  - (5) **dataType** an optional token to specify the data type for value. By default, the type will match the final expression type from the transformer. Supported types: int, long, double, string, date      
 - *objectLanguage* specify the language to be used to process the field generation. This can be omitted if there is no custom generator to be used
 - *fieldsValuesGenerator* a full class name for custom field generator.   
 
@@ -408,6 +415,7 @@ If the "dstConf '' has more than one element or if the mapping cannot be automat
                "dataSourceName":"",
                "srcField":"",
                "dstField":"",
+               "defaultValue": "",
                "mapToNullValue":""
             }
          ],
@@ -438,7 +446,8 @@ Bellow is the explanation for each field:
    - (1) *dataSourceName* the datasource from were the data will be picked-up; this can be omitted if there is only one datasource containing the srcField or if the "prefferredDataSource" is defined. You can also specify the dataSourceName within the srcField like 'dataSourceName.srcFieldName'
    - (2) *srcField* the field on the dataSource from where the value will be picked up;
    - (3) *dstField* the field in dst which we want to fill;
-   - (4) *mapToNullValue* a boolean which indicates that this field should be filled with null value;
+   - (4) **defaultValue** default value to use when *value* is null; this override the *mapToNullValue* behaviour  
+   - (5) *mapToNullValue* a boolean which indicates that this field should be filled with null value;
 -  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst use the same unique keys. The joining fields are important when it comes to determining if all the src records were processed. If the joining fields are not present then the final verification of the process will be skipped for that specific table. (See [The Joining Fields](#joinFields)) 
 - **autoIncrementHandlingType**: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values.
 - *primaryKeyInitialIncrementValue*: this override the same property defined on Etl Item Configuration.
