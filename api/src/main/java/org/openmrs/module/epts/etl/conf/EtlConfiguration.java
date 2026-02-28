@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.datasource.EtlConfigurationSrcConf;
@@ -51,11 +52,15 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
+	static final String STRING_LOCK = new String("LOCK_STRING");
+	
 	public static final String SKIPPED_RECORD_TABLE_NAME = "skipped_record";
 	
 	public static final String DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME = "default_generated_object_key";
 	
 	public static final String ETL_RECORD_ERROR_TABLE_NAME = "etl_record_error";
+	
+	private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([A-Za-z0-9_.-]+)}");
 	
 	private String etlRootDirectory;
 	
@@ -623,9 +628,36 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return relatedConfFile;
 	}
 	
+	private static String resolvePlaceholders(String text, java.util.Properties sysProps, Map<String, String> env) {
+		
+		Matcher m = PLACEHOLDER.matcher(text);
+		StringBuffer sb = new StringBuffer();
+		
+		while (m.find()) {
+			String key = m.group(1);
+			
+			String value = sysProps.getProperty(key);
+			if (value == null)
+				value = env.get(key);
+			
+			if (value == null) {
+				throw new IllegalArgumentException("Missing placeholder value for: " + key);
+			}
+			
+			m.appendReplacement(sb, Matcher.quoteReplacement(value));
+		}
+		m.appendTail(sb);
+		
+		return sb.toString();
+	}
+	
 	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromFile(File file)
 	        throws IOException, ForbiddenOperationException {
-		EtlConfiguration conf = EtlConfiguration.loadFromJSON(FileUtilities.realAllFileAsString(file));
+		
+		String json = FileUtilities.realAllFileAsString(file);
+		
+		EtlConfiguration conf = EtlConfiguration
+		        .loadFromJSON(resolvePlaceholders(json, System.getProperties(), System.getenv()));
 		
 		conf.setConfigFilePath(file.getAbsolutePath());
 		
@@ -633,8 +665,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		return conf;
 	}
-	
-	static final String STRING_LOCK = new String("LOCK_STRING");
 	
 	void initLogger() {
 		if (this.logger != null)

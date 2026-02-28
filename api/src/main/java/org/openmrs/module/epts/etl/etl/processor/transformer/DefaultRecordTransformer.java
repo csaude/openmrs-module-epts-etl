@@ -41,12 +41,9 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		}
 	}
 	
-	@Override
-	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject,
-	        DstConf dstConf, TransformationType transformationType, Connection srcConn, Connection dstConn)
-	        throws DBException, EtlTransformationException {
-		
-		processor.logTrace("Transforming dstRecord " + srcObject);
+	private List<EtlDatabaseObject> loadAvaliableTransformationSrcObjects(EtlDatabaseObject srcObject, DstConf dstConf,
+	        EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		
 		List<EtlDatabaseObject> srcObjects = new ArrayList<>();
 		
@@ -54,6 +51,10 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		
 		if (srcObject.shasSharedPkObj()) {
 			srcObjects.add(srcObject.getSharedPkObj());
+		}
+		
+		if (migratedDstParent != null) {
+			srcObjects.add(migratedDstParent);
 		}
 		
 		if (srcObject.hasAuxLoadObject()) {
@@ -99,10 +100,34 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			srcObjects.add(relatedSrcObject);
 		}
 		
+		return srcObjects;
+	}
+	
+	@Override
+	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject,
+	        DstConf dstConf, EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
+	        Connection dstConn) throws DBException, EtlTransformationException {
+		
+		processor.logTrace("Transforming dstRecord " + srcObject);
+		
+		List<EtlDatabaseObject> srcObjects;
+		
+		if (utilities.arrayHasElement(srcObject.getTransformationSrcObject())) {
+			srcObjects = srcObject.getTransformationSrcObject();
+		} else {
+			srcObjects = loadAvaliableTransformationSrcObjects(srcObject, dstConf, migratedDstParent, transformationType, srcConn,
+			    dstConn);
+			
+			if (utilities.arrayHasNoElement(srcObjects)) {
+				return null;
+			}
+		}
+		
 		EtlDatabaseObject transformedRec = dstConf.createRecordInstance();
 		
 		transformedRec.setRelatedConfiguration(dstConf);
 		transformedRec.setSrcRelatedObject(srcObject);
+		transformedRec.setTransformationSrcObject(srcObjects);
 		
 		for (FieldsMapping fieldsMapping : dstConf.getAllMapping()) {
 			fieldsMapping.getTransformerInstance().transform(transformedRec, srcObjects, fieldsMapping, srcConn, dstConn);
@@ -130,7 +155,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 				
 				recordAsSrc.copyFrom(srcObject.getSharedPkObj());
 				dstParent = sharedPkDstConf.getTransformerInstance().transform(processor, recordAsSrc, sharedPkDstConf,
-				    TransformationType.INNER, srcConn, dstConn);
+				    migratedDstParent, TransformationType.INNER, srcConn, dstConn);
 				
 				if (dstParent != null) {
 					

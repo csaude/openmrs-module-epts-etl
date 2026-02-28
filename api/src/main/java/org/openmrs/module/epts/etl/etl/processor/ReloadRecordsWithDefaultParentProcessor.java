@@ -144,8 +144,8 @@ public class ReloadRecordsWithDefaultParentProcessor extends TaskProcessor<EtlDa
 				
 				recordAsSrc.copyFrom(recWithDefaultParentInfo.getParentRecordInOrigin());
 				
-				dstParent = dst.getTransformerInstance().transform(this, recordAsSrc, dst, TransformationType.INNER, srcConn,
-				    dstConn);
+				dstParent = dst.getTransformerInstance().transform(this, recordAsSrc, dst, null, TransformationType.INNER,
+				    srcConn, dstConn);
 				
 				if (dstParent != null) {
 					

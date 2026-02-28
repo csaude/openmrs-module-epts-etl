@@ -436,4 +436,16 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public List<EtlDatabaseObject> getTransformationSrcObject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects) {
+		// TODO Auto-generated method stub
+		
+	}
 }

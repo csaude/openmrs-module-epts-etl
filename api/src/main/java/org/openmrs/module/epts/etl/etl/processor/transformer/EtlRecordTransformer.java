@@ -11,6 +11,6 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public interface EtlRecordTransformer {
 	
 	EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject, DstConf dstConf,
-	        TransformationType transformationType, Connection srcConn, Connection dstConn)
-	        throws DBException, EtlTransformationException;
+	        EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
+	        Connection dstConn) throws DBException, EtlTransformationException;
 }

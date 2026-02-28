@@ -423,4 +423,16 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	@Override
 	public void tryToReplaceFieldWithKey(Key k) {
 	}
+
+	@Override
+	public List<EtlDatabaseObject> getTransformationSrcObject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects) {
+		// TODO Auto-generated method stub
+		
+	}
 }

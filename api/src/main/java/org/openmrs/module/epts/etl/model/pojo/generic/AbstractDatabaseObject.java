@@ -58,6 +58,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	protected EtlDatabaseObject srcRelatedObject;
 	
+	protected List<EtlDatabaseObject> avaliableSrcObjects;
+	
 	protected ConflictResolutionType conflictResolutionType;
 	
 	public AbstractDatabaseObject() {
@@ -994,5 +996,15 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			Object parentValue = newParent.getFieldValue(map.getChildFieldNameAsAttClass());
 			this.setFieldValue(map.getChildFieldNameAsAttClass(), parentValue);
 		}
+	}
+	
+	@Override
+	public List<EtlDatabaseObject> getTransformationSrcObject() {
+		return this.avaliableSrcObjects;
+	}
+	
+	@Override
+	public void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects) {
+		this.avaliableSrcObjects = avaliableSrcObjects;
 	}
 }

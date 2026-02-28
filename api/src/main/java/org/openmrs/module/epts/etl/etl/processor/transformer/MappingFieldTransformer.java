@@ -80,7 +80,11 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 		    srcValueWithParamsReplaced, srcConn);
 		
 		if (list != null && list.size() > 0) {
-			return list.get(0).getFieldValue(this.mappingDstField);
+			Object value = list.get(0).getFieldValue(this.mappingDstField);
+			
+			if (value != null) {
+				return value;
+			}
 		}
 		
 		Object defaultValue = tryToLoadDefaultValue(field, srcObjects);

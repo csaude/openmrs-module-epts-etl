@@ -52,9 +52,19 @@ public interface EtlDatabaseObject extends EtlObject {
 	void refreshLastSyncDateOnDestination(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn);
 	
+	/**
+	 * @return the main transformed src object for this object
+	 */
 	EtlDatabaseObject getSrcRelatedObject();
 	
 	void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject);
+	
+	/**
+	 * @return all src objects loaded during the transformation process to this object
+	 */
+	List<EtlDatabaseObject> getTransformationSrcObject();
+	
+	void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects);
 	
 	Oid getObjectId();
 	

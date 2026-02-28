@@ -408,7 +408,7 @@ public class AttDefinedElements {
 			return "Byte";
 		if (utilities.isStringIn(databaseType, "YEAR", "SMALLINT"))
 			return "Short";
-		if (utilities.isStringIn(databaseType, "BIGINT", "INT8", "SERIAL"))
+		if (utilities.isStringIn(databaseType, "BIGINT", "INT8", "SERIAL", "BIGINT UNSIGNED"))
 			return "Long";
 		if (utilities.isStringIn(databaseType, "DECIMAL", "NUMERIC", "REAL", "DOUBLE"))
 			return "Double";

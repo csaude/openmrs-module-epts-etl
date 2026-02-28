@@ -11,13 +11,9 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtre
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
-import org.openmrs.module.epts.etl.etl.model.EtlLoadHelperRecord;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.etl.model.LoadingType;
-import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaInfo;
-import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaObjectDAO;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
@@ -67,12 +63,13 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 					
 					for (DstConf mappingInfo : getEtlItemConfiguration().getDstConf()) {
 						EtlDatabaseObject dstObject = mappingInfo.getTransformerInstance().transform(this, srcRecord,
-						    mappingInfo, TransformationType.PRINCIPAL, srcConn, dstConn);
+						    mappingInfo, null, TransformationType.PRINCIPAL, srcConn, dstConn);
 						
 						if (dstObject != null) {
 							logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
 							
-							LoadRecord etlRec = initEtlRecord(srcRecord, dstObject, mappingInfo);
+							LoadRecord etlRec = LoadRecord.initEtlRecord(this, dstObject.getSrcRelatedObject(), dstObject,
+							    mappingInfo);
 							
 							loadHelper.addRecord(etlRec);
 							
@@ -83,7 +80,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				}
 				catch (EtlTransformationException e) {
 					if (getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().log()) {
-						logEtlError(srcRecord, e, srcConn, dstConn);
+						EtlLoadHelper.logEtlError(this, srcRecord, e, srcConn, dstConn);
 					}
 				}
 			}
@@ -103,23 +100,6 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			getTaskResultInfo().setFatalException(e);
 		}
 		
-	}
-	
-	private void logEtlError(EtlDatabaseObject srcRecord, EtlException exception, Connection srcConn, Connection dstConn)
-	        throws DBException {
-		LoadRecord etlRec = initEtlRecord(srcRecord, null, null);
-		
-		EtlLoadHelperRecord rec = new EtlLoadHelperRecord(etlRec);
-		
-		rec.setActiveException(exception);
-		
-		EtlStageAreaInfo stage = EtlStageAreaInfo.generate(rec, srcConn, dstConn);
-		
-		EtlStageAreaObjectDAO.saveSrcInfo(stage, srcConn);
-	}
-	
-	public LoadRecord initEtlRecord(EtlDatabaseObject srcObject, EtlDatabaseObject destObject, DstConf mappingInfo) {
-		return new LoadRecord(srcObject, destObject, getSrcConf(), mappingInfo, this);
 	}
 	
 	@Override

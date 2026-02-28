@@ -16,6 +16,9 @@ import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaInfo;
 import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaObjectDAO;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
+import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -215,6 +218,61 @@ public class EtlLoadHelper {
 			getEngine().requestDisplayOfEtlResult(dstConf, getAllRecordsAsEtlDstDatabaseObject(dstConf));
 		} else {
 			throw new ForbiddenOperationException("Unsupported dstType '" + dstType + "'");
+		}
+		
+		tryToLoadChild(dstConf, srcConn, dstConn);
+		
+	}
+	
+	private void tryToLoadChild(DstConf dstConf, Connection srcConn, Connection dstConn) throws DBException {
+		
+		if (dstConf.hasChildDst()) {
+			
+			EtlLoadHelper loadHelper = new EtlLoadHelper(this.getProcessor(), dstConf.getChildDst(),
+			        this.loadRecordHelper.size(), LoadingType.PRINCIPAL);
+			
+			List<LoadRecord> migrationRecords = this.getAllRecordsAsLoadRecord(dstConf);
+			
+			for (LoadRecord parentLoadRecord : migrationRecords) {
+				
+				EtlDatabaseObject srcRecord = null;
+				
+				for (DstConf childDst : dstConf.getChildDst()) {
+					srcRecord = childDst.loadRelatedSrcObject(parentLoadRecord.getDstRecord().getTransformationSrcObject(),
+					    dstConn);
+					
+					try {
+						EtlDatabaseObject dstObject = childDst.getTransformerInstance().transform(this.getProcessor(),
+						    srcRecord, childDst, parentLoadRecord.getDstRecord(), TransformationType.PRINCIPAL, srcConn,
+						    dstConn);
+						
+						if (dstObject != null) {
+							logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
+							
+							LoadRecord etlRec = LoadRecord.initEtlRecord(processor, dstObject.getSrcRelatedObject(),
+							    dstObject, childDst);
+							
+							loadHelper.addRecord(etlRec);
+							
+						} else {
+							logTrace("The dstRecord " + srcRecord + " could not be transformed");
+						}
+					}
+					catch (EtlTransformationException e) {
+						if (processor.getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().log()) {
+							logEtlError(processor, srcRecord, e, srcConn, dstConn);
+						}
+					}
+				}
+			}
+			
+			logDebug("Initializing the inner loading of " + migrationRecords.size() + " "
+			        + processor.getSrcConf().getFullTableName());
+			
+			loadHelper.load(srcConn, dstConn);
+			
+			logInfo("INNER ETL OPERATION [" + processor.getEtlItemConfiguration().getConfigCode() + "] DONE ON "
+			        + migrationRecords.size() + "' RECORDS");
 		}
 	}
 	
@@ -538,4 +596,19 @@ public class EtlLoadHelper {
 		
 		return sucess;
 	}
+	
+	public static void logEtlError(EtlProcessor processor, EtlDatabaseObject srcRecord, EtlException exception,
+	        Connection srcConn, Connection dstConn) throws DBException {
+		
+		LoadRecord etlRec = LoadRecord.initEtlRecord(processor, srcRecord, null, null);
+		
+		EtlLoadHelperRecord rec = new EtlLoadHelperRecord(etlRec);
+		
+		rec.setActiveException(exception);
+		
+		EtlStageAreaInfo stage = EtlStageAreaInfo.generate(rec, srcConn, dstConn);
+		
+		EtlStageAreaObjectDAO.saveSrcInfo(stage, srcConn);
+	}
+	
 }

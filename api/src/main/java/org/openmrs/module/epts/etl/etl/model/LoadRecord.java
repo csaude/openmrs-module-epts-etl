@@ -214,7 +214,7 @@ public class LoadRecord {
 					
 					recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
 					
-					dstParent = dst.getTransformerInstance().transform(this.getProcessor(), recordAsSrc, dst,
+					dstParent = dst.getTransformerInstance().transform(this.getProcessor(), recordAsSrc, dst, null,
 					    TransformationType.INNER, srcConn, dstConn);
 					
 					if (dstParent != null) {
@@ -617,6 +617,12 @@ public class LoadRecord {
 	
 	public boolean hasParentLoadRecord() {
 		return this.getParentLoadRecord() != null;
+	}
+	
+	public static LoadRecord initEtlRecord(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject destObject,
+	        DstConf mappingInfo) {
+		
+		return new LoadRecord(srcObject, destObject, processor.getSrcConf(), mappingInfo, processor);
 	}
 	
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
@@ -31,7 +32,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class DstConf extends AbstractTableConfiguration {
+public class DstConf extends AbstractTableConfiguration implements EtlAdditionalDataSource {
 	
 	/*
 	 * The user defined joinFields with #getSrcConf()
@@ -84,12 +85,48 @@ public class DstConf extends AbstractTableConfiguration {
 	 */
 	private boolean includeAllFieldsFromDataSource;
 	
+	private List<DstConf> childDst;
+	
+	private DstConf parentDstConf;
+	
+	private String srcObjectDataSourceName;
+	
+	private boolean required;
+	
 	public DstConf() {
 		this.currThreadStartId = DEFAULT_NEXT_TREAD_ID;
 	}
 	
 	public DstConf(String tableName) {
 		setTableName(tableName);
+	}
+	
+	public DstConf getParentDstConf() {
+		return parentDstConf;
+	}
+	
+	public void setParentDstConf(DstConf parentDstConf) {
+		this.parentDstConf = parentDstConf;
+	}
+	
+	public boolean hasParentDstConf() {
+		return this.parentDstConf != null;
+	}
+	
+	public String getSrcObjectDataSourceName() {
+		return srcObjectDataSourceName;
+	}
+	
+	public void setSrcObjectDataSourceName(String srcObjectDataSourceName) {
+		this.srcObjectDataSourceName = srcObjectDataSourceName;
+	}
+	
+	public List<DstConf> getChildDst() {
+		return childDst;
+	}
+	
+	public void setChildDst(List<DstConf> childDst) {
+		this.childDst = childDst;
 	}
 	
 	public boolean isIncludeAllFieldsFromDataSource() {
@@ -490,6 +527,24 @@ public class DstConf extends AbstractTableConfiguration {
 			try {
 				this.setFieldsLoaded(true);
 				
+				if (!utilities.stringHasValue(this.getSrcObjectDataSourceName())) {
+					
+					//Only the childDst can override the srcObject
+					if (!this.hasParentDstConf() && utilities.isStringIn(this.getSrcObjectDataSourceName(),
+					    this.getSrcConf().getTableName(), this.getSrcConf().getAlias())) {
+						throw new ForbiddenOperationException("Primary dstConf ");
+					}
+					
+					this.setSrcObjectDataSourceName(this.getSrcConf().getName());
+					
+					if (this.getObjectDataSource() == null) {
+						throw new ForbiddenOperationException("The src object " + this.getSrcObjectDataSourceName() + " for "
+						        + this.getTableName() + " Cannot be found withing the Src Configuration "
+						        + this.getSrcConf().getTableName() + "!");
+					}
+					
+				}
+				
 				loadDataSourceInfo(conn);
 				
 				if (this.hasMapping()) {
@@ -625,6 +680,10 @@ public class DstConf extends AbstractTableConfiguration {
 		determinePrefferredDataSources();
 	}
 	
+	public EtlDataSource getObjectDataSource() {
+		return findDataSource(this.getSrcObjectDataSourceName());
+	}
+	
 	@SuppressWarnings({ "unchecked", "deprecation" })
 	private void tryToLoadTransformer(Connection conn) {
 		if (this.hasTransformer()) {
@@ -657,6 +716,10 @@ public class DstConf extends AbstractTableConfiguration {
 		if (utilities.arrayHasNoElement(this.getPrefferredDataSource())) {
 			String prefferredDs = null;
 			
+			this.prefferredDataSource = new ArrayList<>();
+			
+			this.prefferredDataSource.add(this.getSrcObjectDataSourceName());
+			
 			for (EtlDataSource tDs : this.getAllAvaliableDataSource()) {
 				if (tDs.getName().equals(this.getTableName())) {
 					prefferredDs = tDs.getName();
@@ -664,8 +727,6 @@ public class DstConf extends AbstractTableConfiguration {
 					break;
 				}
 			}
-			
-			this.prefferredDataSource = new ArrayList<>();
 			
 			if (prefferredDs != null) {
 				this.prefferredDataSource.add(prefferredDs);
@@ -745,7 +806,8 @@ public class DstConf extends AbstractTableConfiguration {
 	/**
 	 * @param uk
 	 */
-	public void tryToAutoGenerateJoinFields(AbstractTableConfiguration ukTable, AbstractTableConfiguration targetTable, Connection conn) {
+	public void tryToAutoGenerateJoinFields(AbstractTableConfiguration ukTable, AbstractTableConfiguration targetTable,
+	        Connection conn) {
 		
 		for (UniqueKeyInfo uk : ukTable.getUniqueKeys()) {
 			
@@ -961,6 +1023,57 @@ public class DstConf extends AbstractTableConfiguration {
 	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
 		FieldsMapping.tryToReplacePlaceholders(this.getJoinFields(), schemaInfoSrc);
 		FieldsMapping.tryToReplacePlaceholders(this.getMapping(), schemaInfoSrc);
+	}
+	
+	public boolean hasChildDst() {
+		return utilities.arrayHasElement(this.getChildDst());
+	}
+	
+	@Override
+	public String getName() {
+		return this.getTableName();
+	}
+	
+	@Override
+	public SrcConf getRelatedSrcConf() {
+		return this.getParentConf().getSrcConf();
+	}
+	
+	@Override
+	public void setRelatedSrcConf(SrcConf relatedSrcConf) {
+		throw new ForbiddenOperationException("You cannot change the relatedSrcConf of dstConf");
+	}
+	
+	@Override
+	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn)
+	        throws DBException {
+		
+		for (EtlDatabaseObject obj : avaliableSrcObjects) {
+			if (obj.getRelatedConfiguration() == this.getObjectDataSource()) {
+				return obj;
+			}
+		}
+		
+		throw new ForbiddenOperationException("No src object found for this dstConf");
+	}
+	
+	@Override
+	public boolean isRequired() {
+		return this.required;
+	}
+	
+	public void setRequired(boolean required) {
+		this.required = required;
+	}
+	
+	@Override
+	public boolean allowMultipleSrcObjects() {
+		return true;
+	}
+	
+	@Override
+	public String getQuery() {
+		return null;
 	}
 	
 }

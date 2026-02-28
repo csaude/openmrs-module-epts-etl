@@ -28,8 +28,8 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 	
 	@Override
 	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject rec,
-	        DstConf mappingInfo, TransformationType transformationType, Connection srcConn, Connection dstConn)
-	        throws DBException {
+	        DstConf mappingInfo, EtlDatabaseObject migratedDstParent, TransformationType transformationType,
+	        Connection srcConn, Connection dstConn) throws DBException {
 		
 		TableConfiguration srcConf = (TableConfiguration) rec.getRelatedConfiguration();
 		
