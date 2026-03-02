@@ -79,10 +79,10 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		
 		for (EtlAdditionalDataSource mappingInfo : dstConf.getSrcConf().getAvaliableExtraDataSource()) {
 			
-			List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjects() ? srcObjects
+			List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjectsForLoading() ? srcObjects
 			        : utilities.parseToList(srcObject);
 			
-			EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(avaliableObjects, srcConn);
+			List<EtlDatabaseObject> relatedSrcObject = mappingInfo.loadRelatedSrcObjects(avaliableObjects, srcConn);
 			
 			if (relatedSrcObject == null) {
 				
@@ -92,12 +92,13 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 				if (mappingInfo.isRequired() && transformationType.isPrincipal()) {
 					return null;
 				} else {
-					relatedSrcObject = mappingInfo.newInstance();
-					relatedSrcObject.setRelatedConfiguration(mappingInfo);
+					relatedSrcObject = new ArrayList<>();
+					relatedSrcObject.add(mappingInfo.newInstance());
+					relatedSrcObject.get(0).setRelatedConfiguration(mappingInfo);
 				}
 			}
 			
-			srcObjects.add(relatedSrcObject);
+			srcObjects.addAll(relatedSrcObject);
 		}
 		
 		return srcObjects;
@@ -115,8 +116,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		if (utilities.arrayHasElement(srcObject.getTransformationSrcObject())) {
 			srcObjects = srcObject.getTransformationSrcObject();
 		} else {
-			srcObjects = loadAvaliableTransformationSrcObjects(srcObject, dstConf, migratedDstParent, transformationType, srcConn,
-			    dstConn);
+			srcObjects = loadAvaliableTransformationSrcObjects(srcObject, dstConf, migratedDstParent, transformationType,
+			    srcConn, dstConn);
 			
 			if (utilities.arrayHasNoElement(srcObjects)) {
 				return null;

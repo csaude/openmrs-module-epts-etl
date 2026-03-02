@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
@@ -32,7 +31,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class DstConf extends AbstractTableConfiguration implements EtlAdditionalDataSource {
+public class DstConf extends AbstractTableConfiguration {
 	
 	/*
 	 * The user defined joinFields with #getSrcConf()
@@ -91,7 +90,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlAdditional
 	
 	private String srcObjectDataSourceName;
 	
-	private boolean required;
+	private String srcObjectCondition;
 	
 	public DstConf() {
 		this.currThreadStartId = DEFAULT_NEXT_TREAD_ID;
@@ -127,6 +126,18 @@ public class DstConf extends AbstractTableConfiguration implements EtlAdditional
 	
 	public void setChildDst(List<DstConf> childDst) {
 		this.childDst = childDst;
+	}
+	
+	public String getSrcObjectCondition() {
+		return srcObjectCondition;
+	}
+	
+	public void setSrcObjectCondition(String srcObjectCondition) {
+		this.srcObjectCondition = srcObjectCondition;
+	}
+	
+	public boolean hasSrcObjectCondition() {
+		return utilities.stringHasValue(this.getSrcObjectCondition());
 	}
 	
 	public boolean isIncludeAllFieldsFromDataSource() {
@@ -532,7 +543,12 @@ public class DstConf extends AbstractTableConfiguration implements EtlAdditional
 					//Only the childDst can override the srcObject
 					if (!this.hasParentDstConf() && utilities.isStringIn(this.getSrcObjectDataSourceName(),
 					    this.getSrcConf().getTableName(), this.getSrcConf().getAlias())) {
-						throw new ForbiddenOperationException("Primary dstConf ");
+						throw new ForbiddenOperationException(
+						        "Primary dstConf cannot override the custom srcObjectDataSource.");
+					}
+					
+					if (!this.hasParentDstConf() && utilities.stringHasValue(this.getSrcObjectCondition())) {
+						throw new ForbiddenOperationException("SrcObjectCondition is only allowed for childDstConf!");
 					}
 					
 					this.setSrcObjectDataSourceName(this.getSrcConf().getName());
@@ -1029,51 +1045,76 @@ public class DstConf extends AbstractTableConfiguration implements EtlAdditional
 		return utilities.arrayHasElement(this.getChildDst());
 	}
 	
-	@Override
-	public String getName() {
-		return this.getTableName();
-	}
-	
-	@Override
-	public SrcConf getRelatedSrcConf() {
-		return this.getParentConf().getSrcConf();
-	}
-	
-	@Override
-	public void setRelatedSrcConf(SrcConf relatedSrcConf) {
-		throw new ForbiddenOperationException("You cannot change the relatedSrcConf of dstConf");
-	}
-	
-	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn)
 	        throws DBException {
 		
 		for (EtlDatabaseObject obj : avaliableSrcObjects) {
+			
 			if (obj.getRelatedConfiguration() == this.getObjectDataSource()) {
-				return obj;
+				
+				if (this.hasSrcObjectCondition()) {
+					
+					if (matchesCondition(obj, this.getSrcObjectCondition())) {
+						return obj;
+					}
+					
+				} else {
+					return obj;
+				}
 			}
 		}
 		
 		throw new ForbiddenOperationException("No src object found for this dstConf");
 	}
 	
-	@Override
-	public boolean isRequired() {
-		return this.required;
+	private boolean matchesCondition(EtlDatabaseObject obj, String condition) {
+		
+		condition = condition.replaceAll("(?i)\\s+or\\s+", "||");
+		condition = condition.replaceAll("(?i)\\s+and\\s+", "&&");
+		
+		String[] orConditions = condition.split("\\|\\|");
+		
+		for (String orCond : orConditions) {
+			
+			boolean andResult = true;
+			
+			String[] andConditions = orCond.split("&&");
+			
+			for (String andCond : andConditions) {
+				if (!evaluateSimpleCondition(obj, andCond.trim())) {
+					andResult = false;
+					break;
+				}
+			}
+			
+			if (andResult) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
-	public void setRequired(boolean required) {
-		this.required = required;
-	}
-	
-	@Override
-	public boolean allowMultipleSrcObjects() {
-		return true;
-	}
-	
-	@Override
-	public String getQuery() {
-		return null;
+	private boolean evaluateSimpleCondition(EtlDatabaseObject obj, String condition) {
+		
+		String[] parts = condition.split("=");
+		
+		if (parts.length != 2) {
+			throw new IllegalArgumentException("Invalid condition: " + condition);
+		}
+		
+		String field = parts[0].trim();
+		String expectedValue = parts[1].trim();
+		
+		Object fieldValue = obj.getFieldValue(field);
+		
+		if (fieldValue == null) {
+			return false;
+		}
+		
+		expectedValue = expectedValue.replaceAll("^['\"]|['\"]$", "");
+		
+		return fieldValue.toString().equals(expectedValue);
 	}
 	
 }

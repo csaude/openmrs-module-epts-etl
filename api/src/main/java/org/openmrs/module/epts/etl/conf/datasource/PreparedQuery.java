@@ -659,7 +659,8 @@ public class PreparedQuery {
 		this.getCountFunctionInfo().detemineLimits(conn);
 	}
 	
-	public EtlDatabaseObject query(Connection conn) throws DBException {
+	@SuppressWarnings("unchecked")
+	public List<EtlDatabaseObject> query(Connection conn) throws DBException {
 		
 		if (this.isCountQuery()) {
 			this.detemineLimits(conn);
@@ -674,15 +675,15 @@ public class PreparedQuery {
 			
 			obj.setFieldValue(this.getCountFunctionInfo().getAliasName(), count);
 			
-			return obj;
+			return utilities.parseToList(obj);
 		}
 		
 		List<Object> paramsAsList = this.generateQueryParameters();
 		
 		Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
 		
-		return DatabaseObjectDAO.find(this.getDataSource().getLoadHealper(), this.getDataSource().getSyncRecordClass(),
-		    this.generatePreparedQuery(), params, conn);
+		return (List<EtlDatabaseObject>) DatabaseObjectDAO.search(this.getDataSource().getLoadHealper(),
+		    this.getDataSource().getSyncRecordClass(), this.generatePreparedQuery(), params, conn);
 	}
 	
 }

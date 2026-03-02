@@ -288,7 +288,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public boolean allowMultipleSrcObjects() {
+	public boolean allowMultipleSrcObjectsForLoading() {
 		return true;
 	}
 	
@@ -407,7 +407,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
+	public List<EtlDatabaseObject> loadRelatedSrcObjects(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
 	        throws DBException {
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
@@ -541,7 +541,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		setQuery(utilities.tryToReplacePlaceholders(getQuery(), schemaInfoSrc));
 		setScript(utilities.tryToReplacePlaceholders(this.getScript(), schemaInfoSrc));
 	}
-
+	
 	@Override
 	public ActionOnEtlException getGeneralBehaviourOnEtlException() {
 		return relatedSrcConf.getGeneralBehaviourOnEtlException();

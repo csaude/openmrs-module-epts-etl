@@ -267,7 +267,7 @@ public class EtlLoadHelper {
 			}
 			
 			logDebug("Initializing the inner loading of " + migrationRecords.size() + " "
-			        + processor.getSrcConf().getFullTableName());
+			        + processor	.getSrcConf().getFullTableName());
 			
 			loadHelper.load(srcConn, dstConn);
 			
