@@ -409,13 +409,12 @@ If the "dstConf '' has more than one element or if the mapping cannot be automat
          "dstType":"",
          "includeAllFieldsFromDataSource":"",
          "autoIncrementHandlingType":"",
-         "primaryKeyInitialIncrementValue":,
+         "primaryKeyInitialIncrementValue":"",
          "mapping":[
             {
                "dataSourceName":"",
                "srcField":"",
                "dstField":"",
-               "defaultValue": "",
                "mapToNullValue":""
             }
          ],
@@ -427,14 +426,20 @@ If the "dstConf '' has more than one element or if the mapping cannot be automat
                "dstValue":""
             }
          ],
-         "onConflict": "",
+         "onConflict":"",
          "winningRecordFieldsInfo":[
             
+         ],
+         "childDst":[
+            {
+               "tableName":"",
+               "srcObjectDataSourceName":"",
+               "srcObjectCondition":""
+            }
          ]
       }
    ]
-}
-```		
+}```		
 
 Bellow is the explanation for each field:
 - **tableName** the destination table name;
