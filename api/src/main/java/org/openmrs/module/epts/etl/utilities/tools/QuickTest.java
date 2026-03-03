@@ -334,10 +334,13 @@ public class QuickTest {
 					
 					EtlDatabaseObject destObject = null;
 					
-					destObject = mappingInfo.getTransformerInstance().transform(null, destObject, mappingInfo, null,
-					    TransformationType.PRINCIPAL, srcConn, dstConn);
+					List<EtlDatabaseObject> destObjects = mappingInfo.getTransformerInstance().transform(null, destObject,
+					    mappingInfo, null, TransformationType.PRINCIPAL, srcConn, dstConn);
 					
-					if (destObject != null) {
+					if (utilities.arrayHasElement(destObjects)) {
+						
+						destObject = destObjects.get(0);
+						
 						destObject.loadObjectIdData(mappingInfo);
 						
 						LoadRecord mr = new LoadRecord(rec, destObject, etlConf.getSrcConf(), mappingInfo, null);

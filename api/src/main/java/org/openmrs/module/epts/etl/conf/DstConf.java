@@ -539,26 +539,13 @@ public class DstConf extends AbstractTableConfiguration {
 				this.setFieldsLoaded(true);
 				
 				if (!utilities.stringHasValue(this.getSrcObjectDataSourceName())) {
-					
-					//Only the childDst can override the srcObject
-					if (!this.hasParentDstConf() && utilities.isStringIn(this.getSrcObjectDataSourceName(),
-					    this.getSrcConf().getTableName(), this.getSrcConf().getAlias())) {
-						throw new ForbiddenOperationException(
-						        "Primary dstConf cannot override the custom srcObjectDataSource.");
-					}
-					
-					if (!this.hasParentDstConf() && utilities.stringHasValue(this.getSrcObjectCondition())) {
-						throw new ForbiddenOperationException("SrcObjectCondition is only allowed for childDstConf!");
-					}
-					
 					this.setSrcObjectDataSourceName(this.getSrcConf().getName());
-					
-					if (this.getObjectDataSource() == null) {
-						throw new ForbiddenOperationException("The src object " + this.getSrcObjectDataSourceName() + " for "
-						        + this.getTableName() + " Cannot be found withing the Src Configuration "
-						        + this.getSrcConf().getTableName() + "!");
-					}
-					
+				}
+				
+				if (this.getObjectDataSource() == null) {
+					throw new ForbiddenOperationException("The src object " + this.getSrcObjectDataSourceName() + " for "
+					        + this.getTableName() + " Cannot be found withing the Src Configuration "
+					        + this.getSrcConf().getTableName() + "!");
 				}
 				
 				loadDataSourceInfo(conn);
@@ -1045,8 +1032,10 @@ public class DstConf extends AbstractTableConfiguration {
 		return utilities.arrayHasElement(this.getChildDst());
 	}
 	
-	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn)
+	public List<EtlDatabaseObject> loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn)
 	        throws DBException {
+		
+		List<EtlDatabaseObject> srcObjects = new ArrayList<>();
 		
 		for (EtlDatabaseObject obj : avaliableSrcObjects) {
 			
@@ -1055,13 +1044,17 @@ public class DstConf extends AbstractTableConfiguration {
 				if (this.hasSrcObjectCondition()) {
 					
 					if (matchesCondition(obj, this.getSrcObjectCondition())) {
-						return obj;
+						srcObjects.add(obj);
 					}
 					
 				} else {
-					return obj;
+					srcObjects.add(obj);
 				}
 			}
+		}
+		
+		if (srcObjects.size() > 1) {
+			return srcObjects;
 		}
 		
 		throw new ForbiddenOperationException("No src object found for this dstConf");

@@ -214,10 +214,12 @@ public class LoadRecord {
 					
 					recordAsSrc.copyFrom(parentInfo.getParentRecordInOrigin());
 					
-					dstParent = dst.getTransformerInstance().transform(this.getProcessor(), recordAsSrc, dst, null,
-					    TransformationType.INNER, srcConn, dstConn);
+					List<EtlDatabaseObject> dstParents = dst.getTransformerInstance().transform(this.getProcessor(),
+					    recordAsSrc, dst, null, TransformationType.INNER, srcConn, dstConn);
 					
-					if (dstParent != null) {
+					if (utilities.arrayHasElement(dstParents)) {
+						
+						dstParent = dstParents.get(0);
 						
 						LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, getTaskProcessor());
 						

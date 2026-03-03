@@ -105,18 +105,18 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	}
 	
 	@Override
-	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject,
+	public List<EtlDatabaseObject> transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject_,
 	        DstConf dstConf, EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
-		processor.logTrace("Transforming dstRecord " + srcObject);
+		processor.logTrace("Transforming dstRecord for srcObject " + srcObject_);
 		
 		List<EtlDatabaseObject> srcObjects;
 		
-		if (utilities.arrayHasElement(srcObject.getTransformationSrcObject())) {
-			srcObjects = srcObject.getTransformationSrcObject();
+		if (utilities.arrayHasElement(srcObject_.getTransformationSrcObject())) {
+			srcObjects = srcObject_.getTransformationSrcObject();
 		} else {
-			srcObjects = loadAvaliableTransformationSrcObjects(srcObject, dstConf, migratedDstParent, transformationType,
+			srcObjects = loadAvaliableTransformationSrcObjects(srcObject_, dstConf, migratedDstParent, transformationType,
 			    srcConn, dstConn);
 			
 			if (utilities.arrayHasNoElement(srcObjects)) {
@@ -124,65 +124,75 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			}
 		}
 		
-		EtlDatabaseObject transformedRec = dstConf.createRecordInstance();
+		List<EtlDatabaseObject> transformableSrcObjects = dstConf.loadRelatedSrcObject(srcObjects, dstConn);
+		List<EtlDatabaseObject> transformedObjects = new ArrayList<>();
 		
-		transformedRec.setRelatedConfiguration(dstConf);
-		transformedRec.setSrcRelatedObject(srcObject);
-		transformedRec.setTransformationSrcObject(srcObjects);
-		
-		for (FieldsMapping fieldsMapping : dstConf.getAllMapping()) {
-			fieldsMapping.getTransformerInstance().transform(transformedRec, srcObjects, fieldsMapping, srcConn, dstConn);
-		}
-		
-		if (dstConf.useSharedPKKey()) {
-			List<SrcConf> srcForSharedPk = dstConf.getSharedKeyRefInfo(dstConn)
-			        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(processor.getRelatedEtlOperationConfig());
+		for (EtlDatabaseObject srcObject : transformableSrcObjects) {
+			EtlDatabaseObject transformedRec = dstConf.createRecordInstance();
 			
-			if (CommonUtilities.getInstance().arrayHasNoElement(srcForSharedPk)) {
-				throw new EtlTransformationException(
-				        "There are relashioship which cannot auto resolved as there is no configured etl for "
-				                + dstConf.getSharedKeyRefInfo(dstConn).getTableName() + " as source and destination!",
-				        srcObject, ActionOnEtlException.ABORT);
+			transformedRec.setRelatedConfiguration(dstConf);
+			transformedRec.setSrcRelatedObject(srcObject);
+			transformedRec.setTransformationSrcObject(srcObjects);
+			
+			for (FieldsMapping fieldsMapping : dstConf.getAllMapping()) {
+				fieldsMapping.getTransformerInstance().transform(transformedRec, srcObjects, fieldsMapping, srcConn,
+				    dstConn);
 			}
 			
-			EtlDatabaseObject dstParent = null;
-			
-			for (SrcConf src : srcForSharedPk) {
-				DstConf sharedPkDstConf = ((EtlItemConfiguration) src.getParentConf()).findDstTable(
-				    processor.getRelatedEtlOperationConfig(), dstConf.getSharedKeyRefInfo(dstConn).getTableName());
+			if (dstConf.useSharedPKKey()) {
+				List<SrcConf> srcForSharedPk = dstConf.getSharedKeyRefInfo(dstConn)
+				        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(processor.getRelatedEtlOperationConfig());
 				
-				EtlDatabaseObject recordAsSrc = src.createRecordInstance();
-				recordAsSrc.setRelatedConfiguration(src);
+				if (CommonUtilities.getInstance().arrayHasNoElement(srcForSharedPk)) {
+					throw new EtlTransformationException(
+					        "There are relashioship which cannot auto resolved as there is no configured etl for "
+					                + dstConf.getSharedKeyRefInfo(dstConn).getTableName() + " as source and destination!",
+					        srcObject, ActionOnEtlException.ABORT);
+				}
 				
-				recordAsSrc.copyFrom(srcObject.getSharedPkObj());
-				dstParent = sharedPkDstConf.getTransformerInstance().transform(processor, recordAsSrc, sharedPkDstConf,
-				    migratedDstParent, TransformationType.INNER, srcConn, dstConn);
+				EtlDatabaseObject dstParent = null;
 				
-				if (dstParent != null) {
+				for (SrcConf src : srcForSharedPk) {
+					DstConf sharedPkDstConf = ((EtlItemConfiguration) src.getParentConf()).findDstTable(
+					    processor.getRelatedEtlOperationConfig(), dstConf.getSharedKeyRefInfo(dstConn).getTableName());
 					
-					dstParent.setSrcRelatedObject(srcObject.getSharedPkObj());
-					break;
+					EtlDatabaseObject recordAsSrc = src.createRecordInstance();
+					recordAsSrc.setRelatedConfiguration(src);
+					
+					recordAsSrc.copyFrom(srcObject.getSharedPkObj());
+					
+					List<EtlDatabaseObject> dstParents = sharedPkDstConf.getTransformerInstance().transform(processor,
+					    recordAsSrc, sharedPkDstConf, migratedDstParent, TransformationType.INNER, srcConn, dstConn);
+					
+					if (utilities.arrayHasElement(dstParents)) {
+						dstParent = dstParents.get(0);
+						
+						dstParent.setSrcRelatedObject(srcObject.getSharedPkObj());
+						break;
+					}
+				}
+				
+				if (dstParent == null) {
+					throw new EtlTransformationException(
+					        "The related shared pk object for record " + srcObject + " cannot be transformed", srcObject,
+					        ActionOnEtlException.ABORT);
+				} else {
+					transformedRec.setSharedPkObj(dstParent);
 				}
 			}
 			
-			if (dstParent == null) {
-				throw new EtlTransformationException(
-				        "The related shared pk object for record " + srcObject + " cannot be transformed", srcObject,
-				        ActionOnEtlException.ABORT);
-			} else {
-				transformedRec.setSharedPkObj(dstParent);
+			transformedRec.loadObjectIdData(dstConf);
+			
+			if (dstConf.useManualGeneratedObjectId() && !dstConf.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
+				transformedRec.getObjectId().asSimpleKey().setValue(dstConf.retriveNextRecordId(processor));
 			}
+			
+			transformedObjects.add(transformedRec);
+			
+			processor.logTrace("Record " + srcObject + " transformed to " + transformedRec);
 		}
 		
-		transformedRec.loadObjectIdData(dstConf);
-		
-		if (dstConf.useManualGeneratedObjectId() && !dstConf.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
-			transformedRec.getObjectId().asSimpleKey().setValue(dstConf.retriveNextRecordId(processor));
-		}
-		
-		processor.logTrace("Record " + srcObject + " transformed to " + transformedRec);
-		
-		return transformedRec;
+		return transformedObjects;
 	}
 	
 }

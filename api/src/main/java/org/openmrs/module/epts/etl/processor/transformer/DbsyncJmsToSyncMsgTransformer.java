@@ -20,14 +20,17 @@ import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 	
 	static List<GenericDatabaseObject> loadedSites = new ArrayList<>();
 	
+	CommonUtilities utilities = CommonUtilities.getInstance();
+	
 	@Override
-	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject rec,
+	public List<EtlDatabaseObject> transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject rec,
 	        DstConf mappingInfo, EtlDatabaseObject migratedDstParent, TransformationType transformationType,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
@@ -63,7 +66,7 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 		
 		syncMessage.setSrcRelatedObject(rec);
 		
-		return syncMessage;
+		return utilities.parseToList(syncMessage);
 	}
 	
 	static void addToLoadedSites(GenericDatabaseObject loadedSite) {

@@ -235,39 +235,43 @@ public class EtlLoadHelper {
 			
 			for (LoadRecord parentLoadRecord : migrationRecords) {
 				
-				EtlDatabaseObject srcRecord = null;
+				List<EtlDatabaseObject> srcRecords = null;
 				
 				for (DstConf childDst : dstConf.getChildDst()) {
-					srcRecord = childDst.loadRelatedSrcObject(parentLoadRecord.getDstRecord().getTransformationSrcObject(),
+					srcRecords = childDst.loadRelatedSrcObject(parentLoadRecord.getDstRecord().getTransformationSrcObject(),
 					    dstConn);
 					
-					try {
-						EtlDatabaseObject dstObject = childDst.getTransformerInstance().transform(this.getProcessor(),
-						    srcRecord, childDst, parentLoadRecord.getDstRecord(), TransformationType.PRINCIPAL, srcConn,
-						    dstConn);
+					for (EtlDatabaseObject srcObject : srcRecords) {
 						
-						if (dstObject != null) {
-							logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
+						try {
+							List<EtlDatabaseObject> dstObjects = childDst.getTransformerInstance().transform(
+							    this.getProcessor(), srcObject, childDst, parentLoadRecord.getDstRecord(),
+							    TransformationType.PRINCIPAL, srcConn, dstConn);
 							
-							LoadRecord etlRec = LoadRecord.initEtlRecord(processor, dstObject.getSrcRelatedObject(),
-							    dstObject, childDst);
-							
-							loadHelper.addRecord(etlRec);
-							
-						} else {
-							logTrace("The dstRecord " + srcRecord + " could not be transformed");
+							if (utilities.arrayHasElement(dstObjects)) {
+								for (EtlDatabaseObject dstObject : dstObjects) {
+									logTrace("dstRecord " + srcObject + " transforming to " + dstObject);
+									
+									LoadRecord etlRec = LoadRecord.initEtlRecord(processor, srcObject, dstObject, childDst);
+									
+									loadHelper.addRecord(etlRec);
+								}
+								
+							} else {
+								logTrace("The dstRecord " + srcObject + " could not be transformed");
+							}
 						}
-					}
-					catch (EtlTransformationException e) {
-						if (processor.getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().log()) {
-							logEtlError(processor, srcRecord, e, srcConn, dstConn);
+						catch (EtlTransformationException e) {
+							if (processor.getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().log()) {
+								logEtlError(processor, srcObject, e, srcConn, dstConn);
+							}
 						}
 					}
 				}
 			}
 			
 			logDebug("Initializing the inner loading of " + migrationRecords.size() + " "
-			        + processor	.getSrcConf().getFullTableName());
+			        + processor.getSrcConf().getFullTableName());
 			
 			loadHelper.load(srcConn, dstConn);
 			

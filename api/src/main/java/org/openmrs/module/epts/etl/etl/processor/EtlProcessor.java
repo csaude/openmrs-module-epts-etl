@@ -62,16 +62,18 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				try {
 					
 					for (DstConf mappingInfo : getEtlItemConfiguration().getDstConf()) {
-						EtlDatabaseObject dstObject = mappingInfo.getTransformerInstance().transform(this, srcRecord,
+						List<EtlDatabaseObject> dstObjects = mappingInfo.getTransformerInstance().transform(this, srcRecord,
 						    mappingInfo, null, TransformationType.PRINCIPAL, srcConn, dstConn);
 						
-						if (dstObject != null) {
-							logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
-							
-							LoadRecord etlRec = LoadRecord.initEtlRecord(this, dstObject.getSrcRelatedObject(), dstObject,
-							    mappingInfo);
-							
-							loadHelper.addRecord(etlRec);
+						if (utilities.arrayHasElement(dstObjects)) {
+							for (EtlDatabaseObject dstObject : dstObjects) {
+								logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
+								
+								LoadRecord etlRec = LoadRecord.initEtlRecord(this, dstObject.getSrcRelatedObject(),
+								    dstObject, mappingInfo);
+								
+								loadHelper.addRecord(etlRec);
+							}
 							
 						} else {
 							logTrace("The dstRecord " + srcRecord + " could not be transformed");
