@@ -23,9 +23,7 @@ public class DefaultObjectFieldsValuesGenerator implements JavaObjectFieldsValue
 		Map<String, Object> map = new HashMap<>();
 		
 		for (DataSourceField field : dataSource.getObjectFields()) {
-			Object o = field.getTransformerInstance().transform(avaliableSrcObjects, field, srcConn, dstConn);
-			
-			map.put(field.getName(), o);
+			map.put(field.getName(), field.getTransformerInstance().transform(avaliableSrcObjects, field, srcConn, dstConn));
 		}
 		
 		return map;
@@ -44,5 +42,4 @@ public class DefaultObjectFieldsValuesGenerator implements JavaObjectFieldsValue
 			return defaultGenerator;
 		}
 	}
-	
 }

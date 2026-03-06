@@ -51,6 +51,8 @@ public class FieldsMapping implements TransformableField {
 	
 	private Object defaultValue;
 	
+	private Object overrideTriggerValue;
+	
 	public FieldsMapping() {
 		this.possibleSrc = new ArrayList<>(5);
 	}
@@ -62,6 +64,16 @@ public class FieldsMapping implements TransformableField {
 		this.dataSourceName = dataSourceName;
 		this.dstField = destField;
 		this.possibleSrc.add(dataSourceName);
+	}
+	
+	@Override
+	public Object getOverrideTriggerValue() {
+		return this.overrideTriggerValue;
+	}
+	
+	@Override
+	public void setOverrideTriggerValue(Object overrideTriggerValue) {
+		this.overrideTriggerValue = overrideTriggerValue;
 	}
 	
 	@Override

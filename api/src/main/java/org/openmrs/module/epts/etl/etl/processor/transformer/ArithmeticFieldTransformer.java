@@ -49,8 +49,8 @@ public class ArithmeticFieldTransformer implements EtlFieldTransformer {
 			        srcObjects.get(0), ActionOnEtlException.ABORT);
 		}
 		
-		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform())
-		        .toString();
+		String srcValueWithParamsReplaced = EtlFieldTransformer
+		        .tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform()).toString();
 		
 		try {
 			return evaluateExpression(srcValueWithParamsReplaced);

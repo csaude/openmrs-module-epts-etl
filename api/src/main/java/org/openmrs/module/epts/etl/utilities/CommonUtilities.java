@@ -144,6 +144,7 @@ public class CommonUtilities implements Serializable {
 		return FuncoesGenericas.isStringIn(value, inValues);
 	}
 	
+	@SuppressWarnings("removal")
 	public Character parseToCharacter(char chr) {
 		return new Character(chr);
 	}
@@ -913,6 +914,7 @@ public class CommonUtilities implements Serializable {
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	public <T extends Object> T createInstance(Class<T> instanceClass) {
 		try {
 			return instanceClass.newInstance();
@@ -1010,7 +1012,7 @@ public class CommonUtilities implements Serializable {
 		return csvBuilder.toString();
 	}
 	
-	public String parseToCSVWithoutHeader(List<? extends VO> objs,  List<String> excludedFields, String delimiter) {
+	public String parseToCSVWithoutHeader(List<? extends VO> objs, List<String> excludedFields, String delimiter) {
 		if (objs == null || objs.isEmpty()) {
 			return "";
 		}
@@ -1277,7 +1279,7 @@ public class CommonUtilities implements Serializable {
 		} else if (destinationType.equals(Long.class) && value instanceof String) {
 			return Long.parseLong(value);
 		} else if (destinationType.equals(Boolean.class) && value instanceof String) {
-			return Boolean.parseBoolean(value);
+			return Boolean.parseBoolean(isStringIn(value.toUpperCase(), "true", "1") ? "true" : "false");
 		} else if (destinationType.equals(Short.class) && value instanceof String) {
 			return Short.parseShort(value);
 		} else if (destinationType.equals(Float.class) && value instanceof String) {
@@ -1392,6 +1394,10 @@ public class CommonUtilities implements Serializable {
 		return Number.class.isAssignableFrom(fieldType) || fieldType == int.class || fieldType == long.class
 		        || fieldType == double.class || fieldType == float.class || fieldType == short.class
 		        || fieldType == byte.class;
+	}
+	
+	public boolean isBooleanType(Class<?> fieldType) {
+		return Boolean.class.isAssignableFrom(fieldType) || fieldType == boolean.class;
 	}
 	
 	public String tryToReplacePlaceholders(String toReplace, EtlDatabaseObject src) {

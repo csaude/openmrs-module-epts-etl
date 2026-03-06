@@ -69,10 +69,6 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 				        "The field '" + field.getName() + " does not belong to any configured source table",
 				        srcObjects.get(0), ActionOnEtlException.ABORT);
 			}
-			
-			if (dstValue == null) {
-				dstValue = tryToLoadDefaultValue(field, srcObjects);
-			}
 		}
 		
 		return dstValue;

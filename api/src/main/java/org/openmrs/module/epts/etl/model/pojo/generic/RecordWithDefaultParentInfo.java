@@ -37,6 +37,16 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		
 		rec.setRelatedConfiguration(recursiveRecordTableInfo);
 		
+		srcObject.loadObjectIdData();
+		
+		if (parentInOrigin == null) {
+			throw new ForbiddenOperationException("parentInOrigin cannot be null");
+		}
+		
+		if (srcObject.getParentValue(parentRefInfo) == null) {
+			throw new ForbiddenOperationException("The src_parent_id cannot be empty");
+		}
+		
 		rec.setFieldValue("record_origin_location_code", parentRefInfo.getRelatedEtlConf().getOriginAppLocationCode());
 		rec.setFieldValue("src_table_name", srcObject.generateTableName());
 		rec.setFieldValue("dst_table_name", dstObject.generateTableName());
@@ -108,8 +118,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		}
 		
 		this.parentRecordInOrigin = DatabaseObjectDAO.getByOid(this.parentRefInfo,
-		    Oid.fastCreate(this.getParentField(), this.getSrcParentId()), dstConn);
-		
+		    Oid.fastCreate(this.parentRefInfo.getPrimaryKey().asSimpleKey().getName(), this.getSrcParentId()), srcConn);
 	}
 	
 	public EtlDatabaseObject getParentRecordInOrigin() {

@@ -833,7 +833,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 												    manualConfiguredRefInfo.getDefaultValueDueInconsistency());
 												mixedConfiguredRef.setSetNullDueInconsistency(
 												    manualConfiguredRefInfo.isSetNullDueInconsistency());
-												mixedConfiguredRef.setIgnorableFields(manualConfiguredRefInfo.getIgnorableFields());
+												mixedConfiguredRef
+												        .setIgnorableFields(manualConfiguredRefInfo.getIgnorableFields());
 											}
 											
 											if (autoLoadedRefInfo.equals(mixedConfiguredRef)) {
@@ -845,7 +846,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 												autoLoadedRefInfo.setSetNullDueInconsistency(
 												    manualConfiguredRefInfo.isSetNullDueInconsistency());
 												
-												autoLoadedRefInfo.setIgnorableFields(manualConfiguredRefInfo.getIgnorableFields());
+												autoLoadedRefInfo
+												        .setIgnorableFields(manualConfiguredRefInfo.getIgnorableFields());
 												
 												for (RefMapping map : autoLoadedRefInfo.getRefMapping()) {
 													RefMapping configuredMap = mixedConfiguredRef.findRefMapping(
@@ -1655,6 +1657,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 			if (parentTableName.equals(ref.getParentTableConf().getTableName())) {
 				return ref.getParentTableConf();
 			}
+		}
+		
+		return null;
+	}
+	
+	default ParentTable findParentRefInfoByField(String fieldName) {
+		for (ParentTable ref : this.getParentRefInfo()) {
+			try {
+				if (ref.getChildColumnOnSimpleMapping().equals(fieldName)) {
+					return ref;
+				}
+			}
+			catch (ForbiddenOperationException e) {}
 		}
 		
 		return null;

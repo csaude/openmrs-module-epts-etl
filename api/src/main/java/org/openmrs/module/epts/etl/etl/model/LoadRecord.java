@@ -282,71 +282,82 @@ public class LoadRecord {
 		}
 		
 		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
-			performeParentInfoInitialization(dstConn, refInfo);
 			
-			if (!getDstRecord().hasAllPerentFieldsFilled(refInfo)) {
-				continue;
-			}
+			boolean loadedWithDefaultValue = this.getDstRecord().getField(refInfo).loadedWithDefaultValue();
 			
-			if (refInfo.isMetadata()) {
-				tryToLoadMissingMetadataInfo(refInfo, srcConn, dstConn);
+			//We check if this parent is same to the parent dstConf
+			//The FK for parent dstConf is already loaded with the dst PK
+			boolean parentIsDstParentConf = this.getDstConf().hasParentDstConf()
+			        && this.getDstConf().getTableName().equals(refInfo.getTableName());
+			
+			boolean skipDstParentLoad = loadedWithDefaultValue || parentIsDstParentConf;
+			
+			if (!skipDstParentLoad) {
+				performeParentInfoInitialization(dstConn, refInfo);
 				
-				continue;
-			}
-			
-			if (!checkIfParentMustBeLoaded(refInfo)) {
-				continue;
-			}
-			
-			EtlDatabaseObject parentInSrc = this.getDstRecord().retrieveParentInSrcUsingDstParentInfo(refInfo,
-			    this.getSrcConf(), dstConn);
-			
-			EtlDatabaseObject parentInDst = null;
-			
-			if (parentInSrc != null) {
-				parentInDst = this.getDstRecord().retrieveParentInDestination(refInfo, parentInSrc, dstConn);
-			} else {
+				if (!getDstRecord().hasAllPerentFieldsFilled(refInfo)) {
+					continue;
+				}
 				
-				try {
-					if (refInfo.hasDefaultValueDueInconsistency()) {
-						
-						Oid key = refInfo.generateParentOidFromChild(getDstRecord());
-						
-						if (refInfo.useSimplePk()) {
-							key.asSimpleKey().setValue(refInfo.getDefaultValueDueInconsistency());
-						} else
-							throw new ForbiddenOperationException(
-							        "There is a defaultValueDueInconsistency but the key is not simple on table "
-							                + refInfo.getTableName());
-						
-						parentInDst = getDstRecord().retrieveParentByOid(refInfo, dstConn);
-					} else {
-						continue;
+				if (refInfo.isMetadata()) {
+					tryToLoadMissingMetadataInfo(refInfo, srcConn, dstConn);
+					
+					continue;
+				}
+				
+				if (!checkIfParentMustBeLoaded(refInfo)) {
+					continue;
+				}
+				
+				EtlDatabaseObject parentInSrc = this.getDstRecord().retrieveParentInSrcUsingDstParentInfo(refInfo,
+				    this.getSrcConf(), dstConn);
+				
+				EtlDatabaseObject parentInDst = null;
+				
+				if (parentInSrc != null) {
+					parentInDst = this.getDstRecord().retrieveParentInDestination(refInfo, parentInSrc, dstConn);
+				} else {
+					
+					try {
+						if (refInfo.hasDefaultValueDueInconsistency()) {
+							
+							Oid key = refInfo.generateParentOidFromChild(getDstRecord());
+							
+							if (refInfo.useSimplePk()) {
+								key.asSimpleKey().setValue(refInfo.getDefaultValueDueInconsistency());
+							} else
+								throw new ForbiddenOperationException(
+								        "There is a defaultValueDueInconsistency but the key is not simple on table "
+								                + refInfo.getTableName());
+							
+							parentInDst = getDstRecord().retrieveParentByOid(refInfo, dstConn);
+						} else {
+							continue;
+						}
+					}
+					finally {
+						this.getResultItem().addInconsistence(
+						    InconsistenceInfo.generate(getDstRecord().generateTableName(), getDstRecord().getObjectId(),
+						        refInfo.getTableName(), refInfo.generateParentOidFromChild(getDstRecord()).getSimpleValue(),
+						        refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
 					}
 				}
-				finally {
-					this.getResultItem()
-					        .addInconsistence(InconsistenceInfo.generate(getDstRecord().generateTableName(),
-					            getDstRecord().getObjectId(), refInfo.getTableName(),
-					            refInfo.generateParentOidFromChild(getDstRecord()).getSimpleValue(),
-					            refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
-				}
-			}
-			
-			if (parentInDst == null) {
-				parentInDst = refInfo.getDefaultObject(dstConn);
 				
 				if (parentInDst == null) {
-					parentInDst = refInfo.generateAndSaveDefaultObject(dstConn);
+					parentInDst = refInfo.getDefaultObject(dstConn);
+					
+					if (parentInDst == null) {
+						parentInDst = refInfo.generateAndSaveDefaultObject(dstConn);
+					}
+					
+					//The parentInSrc will be null if it does not exists and were used default parent
+					if (parentInSrc != null) {
+						this.getParentsWithDefaultValues().add(new ParentInfo(refInfo, parentInSrc));
+					}
 				}
 				
-				//The parentInSrc will be null if it does not exists and were used default parent
-				if (parentInSrc != null) {
-					this.getParentsWithDefaultValues().add(new ParentInfo(refInfo, parentInSrc));
-				}
+				getDstRecord().changeParentValue(refInfo, parentInDst);
 			}
-			
-			getDstRecord().changeParentValue(refInfo, parentInDst);
 		}
 	}
 	

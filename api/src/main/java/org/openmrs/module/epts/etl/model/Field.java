@@ -50,15 +50,29 @@ public class Field implements Serializable {
 	
 	private boolean autoIncrement;
 	
+	private boolean loadedWithDefaultValue;
+	
 	public Field() {
 	}
 	
-	public Class<?> getTypeClass() {
-		return typeClass;
+	public boolean loadedWithDefaultValue() {
+		return loadedWithDefaultValue;
+	}
+	
+	public boolean isLoadedWithDefaultValue() {
+		return loadedWithDefaultValue;
+	}
+	
+	public void setLoadedWithDefaultValue(boolean loadedWithDefaultValue) {
+		this.loadedWithDefaultValue = loadedWithDefaultValue;
 	}
 	
 	public void setTypeClass(Class<?> typeClass) {
 		this.typeClass = typeClass;
+	}
+	
+	public Class<?> getTypeClass() {
+		return typeClass;
 	}
 	
 	@JsonIgnore

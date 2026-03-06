@@ -73,28 +73,27 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 			this.tableConfig.fullLoad(srcConn);
 		}
 		
-		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform())
-		        .toString();
+		String srcValueWithParamsReplaced = EtlFieldTransformer
+		        .tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform()).toString();
 		
 		List<EtlDatabaseObject> list = DatabaseObjectDAO.getByField(this.tableConfig, this.mappingSrcField,
 		    srcValueWithParamsReplaced, srcConn);
 		
+		Object dstValue = null;
+		
 		if (list != null && list.size() > 0) {
-			Object value = list.get(0).getFieldValue(this.mappingDstField);
-			
-			if (value != null) {
-				return value;
-			}
+			dstValue = list.get(0).getFieldValue(this.mappingDstField);
 		}
 		
-		Object defaultValue = tryToLoadDefaultValue(field, srcObjects);
-		
-		if (defaultValue != null) {
-			return defaultValue;
-		} else {
+		if (dstValue != null) {
+			return dstValue;
+		} else if (field.getDefaultValue() == null) {
+			//We assume that the defaultValue will be loaded from EtlFieldTransformer.transform
 			throw new MissingMappingException(srcObjects.get(0), field.getSrcField(), srcValueWithParamsReplaced, this,
 			        srcObjects.get(0).getRelatedConfiguration().getGeneralBehaviourOnEtlException());
-		}
+		} else
+			return null;
+		
 	}
 	
 }

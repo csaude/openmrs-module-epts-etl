@@ -35,13 +35,7 @@ public class SimpleValueTransformer implements EtlFieldTransformer {
 	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
-		if (field == null || field.getValueToTransform().toString().isEmpty()
-		        || field.getValueToTransform().equals("null")) {
-			
-			return tryToLoadDefaultValue(field, srcObjects);
-		} else {
-			return tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform());
-		}
+		return EtlFieldTransformer.tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform());
 	}
 	
 }

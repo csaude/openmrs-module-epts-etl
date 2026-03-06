@@ -785,4 +785,8 @@ public interface EtlDatabaseObject extends EtlObject {
 	 * @param key the correspondent key to replace the field
 	 */
 	void tryToReplaceFieldWithKey(Key k);
+	
+	default Field getField(ParentTable refInfo) {
+		return refInfo.getChildInstanceField(this);
+	}
 }

@@ -24,6 +24,8 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	private ObjectDataSource dataSource;
 	
+	private Object overrideTriggerValue;
+	
 	public DataSourceField() {
 	}
 	
@@ -33,6 +35,16 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	public ObjectDataSource getDataSource() {
 		return dataSource;
+	}
+	
+	@Override
+	public Object getOverrideTriggerValue() {
+		return this.overrideTriggerValue;
+	}
+	
+	@Override
+	public void setOverrideTriggerValue(Object overrideTriggerValue) {
+		this.overrideTriggerValue = overrideTriggerValue;
 	}
 	
 	@Override

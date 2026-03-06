@@ -32,60 +32,53 @@ public interface EtlFieldTransformer {
 	
 	static final String MAPPING_TRANSFORMER = MappingFieldTransformer.class.getCanonicalName();
 	
-	/**
-	 * Generates the transformed value for a given dtsField and set it to dstObject.
-	 * 
-	 * @param transformedRecord the transformed record were the field will be set to
-	 * @param srcObjects the available src objects
-	 * @param fieldsMapping the field mapping containing the mapping information
-	 * @param srcConn
-	 * @param dstConn
-	 * @return the transformed value for dstField
-	 */
-	default void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects,
-	        FieldsMapping fieldsMapping, Connection srcConn, Connection dstConn)
-	        throws DBException, EtlTransformationException {
+	static final String FAST_SQL_TRANSFORMER = FastSqlFieldTransformer.class.getCanonicalName();
+	
+	Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn, Connection dstConn)
+	        throws DBException, EtlTransformationException;
+	
+	default void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects, FieldsMapping field,
+	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
-		if (fieldsMapping.getSrcValue() == null && fieldsMapping.hasDataSourceName()) {
-			fieldsMapping.setSrcValue("@" + fieldsMapping.getSrcField());
+		if (field.getSrcValue() == null && field.hasDataSourceName()) {
+			field.setSrcValue("@" + field.getSrcField());
 		}
 		
-		Object dstValue = this.transform(srcObjects, fieldsMapping, srcConn, dstConn);
+		Object dstValue = this.transform(srcObjects, field, srcConn, dstConn);
+		
+		//Override the value if it should be override
+		if (dstValue != null && field.shouldOverrideValue(dstValue)) {
+			dstValue = null;
+		}
 		
 		if (dstValue == null) {
-			dstValue = tryToLoadDefaultValue(fieldsMapping, srcObjects);
+			dstValue = tryToLoadDefaultValue(field, srcObjects);
+			
+			if (dstValue != null) {
+				transformedRecord.getField(field.getDstField()).setLoadedWithDefaultValue(true);
+			}
 		}
 		
-		if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(fieldsMapping.getDstField()))) {
-			dstValue = utilities.parseValue(dstValue.toString(),
-			    transformedRecord.getFieldType(fieldsMapping.getDstField()));
+		if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(field.getDstField()))) {
+			dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
+		} else if (dstValue != null && utilities.isBooleanType(transformedRecord.getFieldType(field.getDstField()))) {
+			dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
 		}
 		
-		transformedRecord.setFieldValue(fieldsMapping.getDstField(), dstValue);
+		transformedRecord.setFieldValue(field.getDstField(), dstValue);
 	}
 	
-	default Object tryToLoadDefaultValue(TransformableField transformableField, List<EtlDatabaseObject> srcObjects) {
+	public static Object tryToLoadDefaultValue(TransformableField transformableField, List<EtlDatabaseObject> srcObjects) {
 		if (transformableField.getDefaultValue() != null) {
-			return tryToReplaceParametersOnSrcValue(srcObjects, transformableField.getDefaultValue().toString());
+			return EtlFieldTransformer.tryToReplaceParametersOnSrcValue(srcObjects,
+			    transformableField.getDefaultValue().toString());
 		}
 		
 		return null;
 		
 	}
 	
-	/**
-	 * Generates the transformed value for a given value from a field.
-	 * 
-	 * @param srcObjects the available src objects
-	 * @param fieldsMapping the field mapping containing the mapping information
-	 * @param srcConn
-	 * @param dstConn
-	 * @return the transformed value for dstField
-	 */
-	Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn, Connection dstConn)
-	        throws DBException, EtlTransformationException;
-	
-	default Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final String srcValue)
+	public static Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final String srcValue)
 	        throws EtlTransformationException {
 		
 		if (srcValue == null || srcValue.isEmpty()) {

@@ -23,7 +23,7 @@ public interface RelatedTable extends TableConfiguration {
 		return utilities.stringHasValue(getRefCode());
 	}
 	
-	default RefMapping getSimpleRefMapping() {
+	default RefMapping getSimpleRefMapping() throws ForbiddenOperationException {
 		if (!isSimpleMapping()) {
 			throw new ForbiddenOperationException("The ref is not simple!");
 		}
@@ -184,6 +184,19 @@ public interface RelatedTable extends TableConfiguration {
 		oid.setTabConf((TableConfiguration) obj.getRelatedConfiguration());
 		
 		return oid;
+	}
+	
+	/**
+	 * Retrieves child field instance
+	 * 
+	 * @param obj the object from which the child field instance is to be retrieved from
+	 * @return the child field from the given object
+	 */
+	default org.openmrs.module.epts.etl.model.Field getChildInstanceField(EtlDatabaseObject obj) {
+		if (isCompositeMapping())
+			throw new ForbiddenOperationException("Not supported for composite mapping!");
+		
+		return obj.getField(getSimpleRefMapping().getChildFieldName());
 	}
 	
 	/**

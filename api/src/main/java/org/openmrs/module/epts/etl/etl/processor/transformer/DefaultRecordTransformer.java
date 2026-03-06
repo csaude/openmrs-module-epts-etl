@@ -8,6 +8,7 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -42,8 +43,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	}
 	
 	private List<EtlDatabaseObject> loadAvaliableTransformationSrcObjects(EtlDatabaseObject srcObject, DstConf dstConf,
-	        EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	        TransformationType transformationType, Connection srcConn, Connection dstConn) throws DBException {
 		
 		List<EtlDatabaseObject> srcObjects = new ArrayList<>();
 		
@@ -51,10 +51,6 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		
 		if (srcObject.shasSharedPkObj()) {
 			srcObjects.add(srcObject.getSharedPkObj());
-		}
-		
-		if (migratedDstParent != null) {
-			srcObjects.add(migratedDstParent);
 		}
 		
 		if (srcObject.hasAuxLoadObject()) {
@@ -105,19 +101,18 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject_,
+	public List<EtlDatabaseObject> transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject,
 	        DstConf dstConf, EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
-		processor.logTrace("Transforming dstRecord for srcObject " + srcObject_);
+		processor.logTrace("Transforming dstRecord for srcObject " + srcObject);
 		
 		List<EtlDatabaseObject> srcObjects;
 		
-		if (utilities.arrayHasElement(srcObject_.getTransformationSrcObject())) {
-			srcObjects = srcObject_.getTransformationSrcObject();
+		if (utilities.arrayHasElement(srcObject.getTransformationSrcObject())) {
+			srcObjects = srcObject.getTransformationSrcObject();
 		} else {
-			srcObjects = loadAvaliableTransformationSrcObjects(srcObject_, dstConf, migratedDstParent, transformationType,
-			    srcConn, dstConn);
+			srcObjects = loadAvaliableTransformationSrcObjects(srcObject, dstConf, transformationType, srcConn, dstConn);
 			
 			if (utilities.arrayHasNoElement(srcObjects)) {
 				return null;
@@ -127,14 +122,27 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		List<EtlDatabaseObject> transformableSrcObjects = dstConf.loadRelatedSrcObject(srcObjects, dstConn);
 		List<EtlDatabaseObject> transformedObjects = new ArrayList<>();
 		
-		for (EtlDatabaseObject srcObject : transformableSrcObjects) {
+		for (EtlDatabaseObject tranformableObject : transformableSrcObjects) {
 			EtlDatabaseObject transformedRec = dstConf.createRecordInstance();
 			
 			transformedRec.setRelatedConfiguration(dstConf);
-			transformedRec.setSrcRelatedObject(srcObject);
+			transformedRec.setSrcRelatedObject(tranformableObject);
 			transformedRec.setTransformationSrcObject(srcObjects);
 			
 			for (FieldsMapping fieldsMapping : dstConf.getAllMapping()) {
+				//We try to auto map the migratedDstParent PK with a related FK on this transformedRec
+				if (migratedDstParent != null) {
+					ParentTable parent = dstConf.findParentRefInfoByField(fieldsMapping.getDstField());
+					
+					if (parent != null) {
+						//We only pass the migratedDstParent as source object to give it high priority
+						fieldsMapping.getTransformerInstance().transform(transformedRec,
+						    utilities.parseToList(migratedDstParent), fieldsMapping, srcConn, dstConn);
+						
+						continue;
+					}
+				}
+				
 				fieldsMapping.getTransformerInstance().transform(transformedRec, srcObjects, fieldsMapping, srcConn,
 				    dstConn);
 			}
@@ -147,7 +155,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 					throw new EtlTransformationException(
 					        "There are relashioship which cannot auto resolved as there is no configured etl for "
 					                + dstConf.getSharedKeyRefInfo(dstConn).getTableName() + " as source and destination!",
-					        srcObject, ActionOnEtlException.ABORT);
+					        tranformableObject, ActionOnEtlException.ABORT);
 				}
 				
 				EtlDatabaseObject dstParent = null;
@@ -159,7 +167,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 					EtlDatabaseObject recordAsSrc = src.createRecordInstance();
 					recordAsSrc.setRelatedConfiguration(src);
 					
-					recordAsSrc.copyFrom(srcObject.getSharedPkObj());
+					recordAsSrc.copyFrom(tranformableObject.getSharedPkObj());
 					
 					List<EtlDatabaseObject> dstParents = sharedPkDstConf.getTransformerInstance().transform(processor,
 					    recordAsSrc, sharedPkDstConf, migratedDstParent, TransformationType.INNER, srcConn, dstConn);
@@ -167,15 +175,15 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 					if (utilities.arrayHasElement(dstParents)) {
 						dstParent = dstParents.get(0);
 						
-						dstParent.setSrcRelatedObject(srcObject.getSharedPkObj());
+						dstParent.setSrcRelatedObject(tranformableObject.getSharedPkObj());
 						break;
 					}
 				}
 				
 				if (dstParent == null) {
 					throw new EtlTransformationException(
-					        "The related shared pk object for record " + srcObject + " cannot be transformed", srcObject,
-					        ActionOnEtlException.ABORT);
+					        "The related shared pk object for record " + tranformableObject + " cannot be transformed",
+					        tranformableObject, ActionOnEtlException.ABORT);
 				} else {
 					transformedRec.setSharedPkObj(dstParent);
 				}
@@ -189,7 +197,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			
 			transformedObjects.add(transformedRec);
 			
-			processor.logTrace("Record " + srcObject + " transformed to " + transformedRec);
+			processor.logTrace("Record " + tranformableObject + " transformed to " + transformedRec);
 		}
 		
 		return transformedObjects;

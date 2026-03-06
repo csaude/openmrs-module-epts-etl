@@ -45,7 +45,7 @@ public class StringTranformer implements EtlFieldTransformer {
 			        srcObjects.get(0), ActionOnEtlException.ABORT);
 		}
 		
-		String srcValueWithParamsReplaced = tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform())
+		String srcValueWithParamsReplaced = EtlFieldTransformer.tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform())
 		        .toString();
 		
 		try {

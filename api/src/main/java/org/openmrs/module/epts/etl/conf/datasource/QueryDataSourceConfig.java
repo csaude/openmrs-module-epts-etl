@@ -66,6 +66,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	public QueryDataSourceConfig(String query, SrcConf relatedSrcVonf) {
+		this();
+		
 		setRelatedSrcConf(relatedSrcVonf);
 		
 		setQuery(query);

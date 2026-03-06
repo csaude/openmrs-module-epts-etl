@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTran
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.FastSqlFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.MappingFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer;
@@ -51,13 +52,73 @@ public interface TransformableField {
 	
 	Object getDefaultValue();
 	
+	/**
+	 * Returns the value that triggers the override mechanism. If the source field value equals this
+	 * value, the field value will be replaced by the configured {@code defaultValue}. Example:
+	 * <pre>
+	 * overrideTriggerValue = ""
+	 * defaultValue = "UNKNOWN"
+	 * </pre> If the source value is an empty string, the resulting value will be "UNKNOWN".
+	 *
+	 * @return the value that triggers overriding the source value with the default value
+	 */
+	Object getOverrideTriggerValue();
+	
+	/**
+	 * Sets the value that should trigger the override mechanism.
+	 *
+	 * @param obj the value that, when matched against the source value, causes the default value to
+	 *            be used instead
+	 */
+	void setOverrideTriggerValue(Object obj);
+	
+	/**
+	 * Determines whether the provided value should be overridden by the configured
+	 * {@code defaultValue}. The override happens only if:
+	 * <ul>
+	 * <li>{@code overrideValueIfEqualsTo} is defined</li>
+	 * <li>{@code defaultValue} is defined</li>
+	 * <li>The provided value equals {@code overrideValueIfEqualsTo}</li>
+	 * </ul>
+	 *
+	 * @param obj the source field value to evaluate
+	 * @return {@code true} if the value should be replaced by {@code defaultValue}, {@code false}
+	 *         otherwise
+	 * @throws ForbiddenOperationException if an override value is defined but no default value is
+	 *             configured
+	 */
+	default boolean shouldOverrideValue(Object obj) throws ForbiddenOperationException {
+		
+		if (this.getOverrideTriggerValue() != null) {
+			
+			if (this.getDefaultValue() == null) {
+				throw new ForbiddenOperationException("Cannot override!! No defaultValue is set to this field.");
+			}
+			
+			if (obj instanceof Boolean) {
+				if (this.getOverrideTriggerValue() instanceof Boolean) {
+					return this.getOverrideTriggerValue().equals(obj);
+				}
+				if (this.getOverrideTriggerValue() instanceof String) {
+					Boolean true_ = utilities.isStringIn(this.getOverrideTriggerValue().toString(), "true", "1");
+					
+					return true_.equals(obj);
+				}
+			} else
+				return this.getOverrideTriggerValue().equals(obj);
+		}
+		
+		return false;
+	}
+	
 	default boolean hasDataType() {
 		return utilities.stringHasValue(this.getDataType());
 	}
 	
 	default void loadType(DstConf dstConf, EtlDataSource dataSource) {
 		if (this.hasDataType()) {
-			if (!utilities.isStringIn(this.getDataType().toLowerCase(), "int", "double", "string", "date", "long")) {
+			if (!utilities.isStringIn(this.getDataType().toLowerCase(), "int", "double", "string", "date", "long",
+			    "boolean")) {
 				throw new ForbiddenOperationException("Unsupported dataType for field " + this.getDstField());
 			}
 		} else if (dstConf != null && dstConf.containsField(this.getDstField())) {
@@ -122,6 +183,8 @@ public interface TransformableField {
 				this.setTransformerInstance(ArithmeticFieldTransformer.getInstance());
 			} else if (this.getTransformer().startsWith(EtlFieldTransformer.MAPPING_TRANSFORMER)) {
 				this.setTransformerInstance(MappingFieldTransformer.getInstance(this.tryToLoadTransformerParameters()));
+			} else if (this.getTransformer().startsWith(EtlFieldTransformer.FAST_SQL_TRANSFORMER)) {
+				this.setTransformerInstance(FastSqlFieldTransformer.getInstance(this.tryToLoadTransformerParameters()));
 			} else {
 				try {
 					ClassLoader loader = EtlRecordTransformer.class.getClassLoader();

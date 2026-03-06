@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.openmrs.module.epts.etl.conf.datasource.DataSourceField;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
@@ -15,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultRecordTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
@@ -444,6 +446,20 @@ public class DstConf extends AbstractTableConfiguration {
 				
 				fm.loadType(this, pref);
 				
+				if (fm.getDefaultValue() == null) {
+					
+					Field f = pref.getField(fm.getSrcField());
+					
+					if (f instanceof DataSourceField) {
+						DataSourceField prefField = (DataSourceField) f;
+						
+						if (prefField.getDefaultValue() != null) {
+							fm.setDefaultValue(prefField.getDefaultValue());
+							fm.setOverrideTriggerValue(prefField.getOverrideTriggerValue());
+						}
+					}
+				}
+				
 				qtyOccurences++;
 				
 				break;
@@ -534,19 +550,23 @@ public class DstConf extends AbstractTableConfiguration {
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		
+		tryToLoadChild();
+		
+		if (!utilities.stringHasValue(this.getSrcObjectDataSourceName())) {
+			this.setSrcObjectDataSourceName(this.getSrcConf().getName());
+			
+			DstConf parentDstConf = this.getParentDstConf();
+			
+			while (this.getSrcObjectDataSourceName() == null && parentDstConf != null) {
+				this.setSrcObjectDataSourceName(this.getSrcConf().getName());
+				
+				parentDstConf = this.getParentDstConf();
+			}
+		}
+		
 		if (isInMemoryTable()) {
 			try {
 				this.setFieldsLoaded(true);
-				
-				if (!utilities.stringHasValue(this.getSrcObjectDataSourceName())) {
-					this.setSrcObjectDataSourceName(this.getSrcConf().getName());
-				}
-				
-				if (this.getObjectDataSource() == null) {
-					throw new ForbiddenOperationException("The src object " + this.getSrcObjectDataSourceName() + " for "
-					        + this.getTableName() + " Cannot be found withing the Src Configuration "
-					        + this.getSrcConf().getTableName() + "!");
-				}
 				
 				loadDataSourceInfo(conn);
 				
@@ -609,6 +629,16 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 			
 			super.fullLoad(conn);
+		}
+	}
+	
+	void tryToLoadChild() {
+		if (hasChildDst()) {
+			for (DstConf child : this.getChildDst()) {
+				child.setParentDstConf(this);
+				
+				child.tryToLoadChild();
+			}
 		}
 	}
 	
@@ -680,6 +710,12 @@ public class DstConf extends AbstractTableConfiguration {
 		
 		this.fullLoadAllRelatedTables(getRelatedEtlConf(), null, conn);
 		
+		if (this.getObjectDataSource() == null) {
+			throw new ForbiddenOperationException(
+			        "The src object " + this.getSrcObjectDataSourceName() + " for " + this.getTableName()
+			                + " Cannot be found withing the Src Configuration " + this.getSrcConf().getTableName() + "!");
+		}
+		
 		determinePrefferredDataSources();
 	}
 	
@@ -721,7 +757,11 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			this.prefferredDataSource = new ArrayList<>();
 			
-			this.prefferredDataSource.add(this.getSrcObjectDataSourceName());
+			if (utilities.stringHasValue(this.getSrcObjectDataSourceName())) {
+				this.prefferredDataSource.add(this.getSrcObjectDataSourceName());
+			} else {
+				throw new ForbiddenOperationException("No datasource object name was configured for dstConf " + this);
+			}
 			
 			for (EtlDataSource tDs : this.getAllAvaliableDataSource()) {
 				if (tDs.getName().equals(this.getTableName())) {
@@ -1042,8 +1082,8 @@ public class DstConf extends AbstractTableConfiguration {
 			if (obj.getRelatedConfiguration() == this.getObjectDataSource()) {
 				
 				if (this.hasSrcObjectCondition()) {
-					
-					if (matchesCondition(obj, this.getSrcObjectCondition())) {
+					if (matchesCondition(obj, EtlFieldTransformer
+					        .tryToReplaceParametersOnSrcValue(srcObjects, this.getSrcObjectCondition()).toString())) {
 						srcObjects.add(obj);
 					}
 					
@@ -1053,7 +1093,7 @@ public class DstConf extends AbstractTableConfiguration {
 			}
 		}
 		
-		if (srcObjects.size() > 1) {
+		if (srcObjects.size() > 0) {
 			return srcObjects;
 		}
 		
@@ -1074,7 +1114,8 @@ public class DstConf extends AbstractTableConfiguration {
 			String[] andConditions = orCond.split("&&");
 			
 			for (String andCond : andConditions) {
-				if (!evaluateSimpleCondition(obj, andCond.trim())) {
+				
+				if (!evaluateCondition(obj, andCond.trim())) {
 					andResult = false;
 					break;
 				}
@@ -1088,26 +1129,136 @@ public class DstConf extends AbstractTableConfiguration {
 		return false;
 	}
 	
-	private boolean evaluateSimpleCondition(EtlDatabaseObject obj, String condition) {
+	private boolean evaluateCondition(EtlDatabaseObject obj, String condition) {
 		
-		String[] parts = condition.split("=");
-		
-		if (parts.length != 2) {
-			throw new IllegalArgumentException("Invalid condition: " + condition);
+		// IN
+		if (condition.matches("(?i).+\\s+in\\s*\\(.+\\)")) {
+			return evaluateIn(obj, condition);
 		}
 		
+		// LIKE
+		if (condition.matches("(?i).+\\s+like\\s+.+")) {
+			return evaluateLike(obj, condition);
+		}
+		
+		// operadores de comparação
+		String operator = null;
+		
+		if (condition.contains(">="))
+			operator = ">=";
+		else if (condition.contains("<="))
+			operator = "<=";
+		else if (condition.contains("!="))
+			operator = "!=";
+		else if (condition.contains(">"))
+			operator = ">";
+		else if (condition.contains("<"))
+			operator = "<";
+		else if (condition.contains("="))
+			operator = "=";
+		
+		if (operator == null) {
+			throw new IllegalArgumentException("Unsupported condition: " + condition);
+		}
+		
+		String[] parts = condition.split("\\Q" + operator + "\\E");
+		
 		String field = parts[0].trim();
-		String expectedValue = parts[1].trim();
+		String expected = stripQuotes(parts[1].trim());
 		
-		Object fieldValue = obj.getFieldValue(field);
+		Object value = obj.getFieldValue(field);
 		
-		if (fieldValue == null) {
+		if (value == null) {
 			return false;
 		}
 		
-		expectedValue = expectedValue.replaceAll("^['\"]|['\"]$", "");
+		String actual = value.toString();
 		
-		return fieldValue.toString().equals(expectedValue);
+		switch (operator) {
+			
+			case "=":
+				return actual.equals(expected);
+			
+			case "!=":
+				return !actual.equals(expected);
+			
+			case ">":
+				return compare(actual, expected) > 0;
+			
+			case "<":
+				return compare(actual, expected) < 0;
+			
+			case ">=":
+				return compare(actual, expected) >= 0;
+			
+			case "<=":
+				return compare(actual, expected) <= 0;
+			
+			default:
+				throw new IllegalArgumentException("Unsupported operator");
+		}
 	}
 	
+	private int compare(String a, String b) {
+		
+		try {
+			Double da = Double.valueOf(a);
+			Double db = Double.valueOf(b);
+			
+			return da.compareTo(db);
+			
+		}
+		catch (NumberFormatException e) {
+			return a.compareTo(b);
+		}
+	}
+	
+	private boolean evaluateIn(EtlDatabaseObject obj, String condition) {
+		
+		String[] parts = condition.split("(?i)in");
+		
+		String field = parts[0].trim();
+		String valuesPart = parts[1].trim();
+		
+		valuesPart = valuesPart.replaceAll("[()]", "");
+		
+		Object value = obj.getFieldValue(field);
+		
+		if (value == null)
+			return false;
+		
+		String actual = value.toString();
+		
+		for (String v : valuesPart.split(",")) {
+			
+			if (actual.equals(stripQuotes(v.trim()))) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	private boolean evaluateLike(EtlDatabaseObject obj, String condition) {
+		
+		String[] parts = condition.split("(?i)like");
+		
+		String field = parts[0].trim();
+		String pattern = stripQuotes(parts[1].trim());
+		
+		Object value = obj.getFieldValue(field);
+		
+		if (value == null)
+			return false;
+		
+		String actual = value.toString();
+		
+		String regex = pattern.replace("%", ".*").replace("_", ".");
+		
+		return actual.matches(regex);
+	}
+	
+	private String stripQuotes(String s) {
+		return s.replaceAll("^['\"]|['\"]$", "");
+	}
 }
