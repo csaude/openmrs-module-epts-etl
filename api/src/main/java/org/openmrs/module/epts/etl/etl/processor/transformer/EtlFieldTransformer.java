@@ -51,6 +51,11 @@ public interface EtlFieldTransformer {
 			dstValue = null;
 		}
 		
+		//The mappingTransformer assumes destination value
+		if (this instanceof MappingFieldTransformer) {
+			transformedRecord.getField(field.getDstField()).setLoadedWithDefaultValue(true);
+		}
+		
 		if (dstValue == null) {
 			dstValue = tryToLoadDefaultValue(field, srcObjects);
 			

@@ -280,6 +280,12 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private EtlDataSource findDataSource(String dsName) {
 		for (EtlDataSource ds : this.allAvaliableDataSource) {
+			if (ds.getAlias().equals(dsName)) {
+				return ds;
+			}
+		}
+		
+		for (EtlDataSource ds : this.allAvaliableDataSource) {
 			if (ds.getName().equals(dsName)) {
 				return ds;
 			}
@@ -553,12 +559,12 @@ public class DstConf extends AbstractTableConfiguration {
 		tryToLoadChild();
 		
 		if (!utilities.stringHasValue(this.getSrcObjectDataSourceName())) {
-			this.setSrcObjectDataSourceName(this.getSrcConf().getName());
+			this.setSrcObjectDataSourceName(this.getSrcConf().getAlias());
 			
 			DstConf parentDstConf = this.getParentDstConf();
 			
 			while (this.getSrcObjectDataSourceName() == null && parentDstConf != null) {
-				this.setSrcObjectDataSourceName(this.getSrcConf().getName());
+				this.setSrcObjectDataSourceName(this.getSrcConf().getAlias());
 				
 				parentDstConf = this.getParentDstConf();
 			}

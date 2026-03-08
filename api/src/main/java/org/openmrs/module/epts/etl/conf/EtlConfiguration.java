@@ -888,6 +888,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		String code = "";
 		
+		List<String> alreadyIncludedTables = new ArrayList<>();
+		
 		if (utilities.arrayHasElement(item.getDstConf())) {
 			for (DstConf dst : item.getDstConf()) {
 				
@@ -903,7 +905,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 				dst.setParentConf(item);
 				
-				code = utilities.stringHasValue(code) ? code + "_and_" + dst.getTableName() : dst.getTableName();
+				if (!alreadyIncludedTables.contains(dst.getTableName())) {
+					alreadyIncludedTables.add(dst.getTableName());
+					
+					code = utilities.stringHasValue(code) ? code + "_and_" + dst.getTableName() : dst.getTableName();
+				}
 			}
 		}
 		

@@ -170,12 +170,17 @@ public class CommonUtilities implements Serializable {
 	 * @return true se a lista contem todos os elementos ou false no caso contrario
 	 */
 	public <T> boolean containsAll(List<T> list, @SuppressWarnings("unchecked") T... o) {
-		for (T t : o) {
-			if (!list.contains(t))
-				return false;
+		if (utilities.arrayHasElement(list)) {
+			
+			for (T t : o) {
+				if (!list.contains(t))
+					return false;
+			}
+			
+			return true;
 		}
 		
-		return true;
+		return false;
 	}
 	
 	public String concatStrings(String value, String... inValues) {
