@@ -292,7 +292,10 @@ This allows for greater flexibility in customizing the join logic.
 
 #### The extra datasource table configuration
 
-The **"extraTableDataSource"** element, allows the specification of extra tables to be used as data source in addition to the main table. The relevant configuration info for extra table datasource is shown below    
+The **"extraTableDataSource"** element allows the definition of additional tables that will be used as data sources alongside the main table defined in the ETL configuration. These tables are typically joined with the main table in order to enrich the extracted dataset with additional attributes or to apply extra filtering conditions during the extraction phase.
+
+The relevant configuration for an extra table datasource is illustrated below.
+
 ```
 {
    "srcConf":{
@@ -318,8 +321,22 @@ The **"extraTableDataSource"** element, allows the specification of extra tables
 }
 ```
 
-As can be seen on the code above, each extraTableDataSource can have the **tableName** which represents the name of extra datasource table; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table; (See [The Joining Fields](#joinFields)) Final there is **joiningType** which can be INNER, LEFT or RIGHT.  The **joinExtraConditionScope** tells weather the "joinExtraCondition" will be inserted on the JOIN clause or on the MAIN query clause; the possible values are: JOIN_CLAUSE or WHERE_CLAUSE; The **auxExtractTable** allows the inclusion of additional tables which can be joined with the extraTableDataSource for the purpose of inclusion of extra conditions; this is also used as an extra datasource. (See [AuxExtractTable](#aux-extract-table)) 
 
+As shown in the configuration above, each **extraTableDataSource** may define the following properties:
+
+- **tableName** specifies the name of the additional table that will be used as an auxiliary data source during extraction.
+
+- **joinExtraCondition** defines an additional SQL condition that will be applied when joining this table with the main data source. This condition can be used to restrict or refine the joined records beyond the standard join criteria.
+
+- **joinFields** defines optional join fields used to establish the relationship between the main table and the extra table. These fields should only be specified when the relationship between the tables cannot be automatically inferred from the data model or when a custom join condition is required. (See [The Joining Fields](#joinFields))
+
+- **joinType** defines the type of SQL join used to link the extra table with the main table. The supported values are *INNER*, *LEFT*, or *RIGHT*. If this property is not specified, the default join type is *LEFT*. When the join type is set to *INNER*, the ETL process will skip the main record if no matching record is found in the extra table.
+
+- **joinExtraConditionScope** specifies where the **joinExtraCondition** should be applied within the generated SQL statement. The condition can be placed either in the JOIN clause itself or in the main WHERE clause of the query. The supported values are *JOIN_CLAUSE* and *WHERE_CLAUSE*.
+
+- **auxExtractTable** allows the definition of additional auxiliary tables that can be joined with the **extraTableDataSource**. These auxiliary tables are typically used to introduce extra filtering conditions or to provide additional data required for the extraction logic. They may also act as supplementary data sources. (See [AuxExtractTable](#aux-extract-table))
+
+- 
 #### The extraQueryDataSource configuration
 
 The **"extraQueryDataSource"** element, allows the specification of extra queries to be used as data source in addition to the main table. There relevant configuration info for extra table datasource is shown below.    
