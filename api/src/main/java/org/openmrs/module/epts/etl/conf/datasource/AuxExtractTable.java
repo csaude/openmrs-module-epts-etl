@@ -80,6 +80,12 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
+	public void setExtraConditionForExtract(String extraConditionForExtract) {
+		throw new ForbiddenOperationException(
+		        "Forbiden method for auxExtractTable(" + this + ") please use joinExtraCondition parameter!!!");
+	}
+	
+	@Override
 	public List<? extends JoinableEntity> getJoiningTable() {
 		return this.getAuxExtractTable();
 	}

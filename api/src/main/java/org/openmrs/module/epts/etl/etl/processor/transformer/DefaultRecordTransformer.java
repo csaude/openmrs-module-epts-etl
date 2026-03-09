@@ -80,7 +80,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			
 			List<EtlDatabaseObject> relatedSrcObject = mappingInfo.loadRelatedSrcObjects(avaliableObjects, srcConn);
 			
-			if (relatedSrcObject == null) {
+			if (utilities.arrayHasNoElement(relatedSrcObject)) {
 				
 				/*
 				 * If the transformation is not principal, then mean the record is being transformed as parent of other record. So we force the tranformation

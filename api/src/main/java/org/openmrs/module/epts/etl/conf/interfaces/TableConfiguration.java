@@ -17,6 +17,9 @@ import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.RefType;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
+import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
+import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
@@ -37,6 +40,7 @@ import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -2799,6 +2803,25 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	
 	default long getExtremeRecord(SqlFunctionType function, Connection conn) throws DBException {
 		
+		String extraCondition = getExtraConditionForExtract();
+		
+		Object[] params = null;
+		
+		if (extraCondition != null) {
+			
+			if (this instanceof SrcConf) {
+				
+				PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraCondition, (SrcConf) this),
+				    getRelatedEtlConf(), true, DbmsType.determineFromConnection(conn));
+				
+				List<Object> paramsAsList = pQ.generateQueryParameters();
+				
+				params = paramsAsList != null ? paramsAsList.toArray() : null;
+				
+				extraCondition = pQ.generatePreparedQuery();
+			}
+		}
+		
 		if (this.getPrimaryKey() == null) {
 			throw new ForbiddenOperationException("No Primary Key is defined on " + this.getTableName()
 			        + " table. If there is a numeric Primary Key candidate you can spefify it on 'manualMapPrimaryKeyOnField' configuration.");
@@ -2813,7 +2836,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		
 		sql += " FROM " + this.generateSelectFromClauseContent() + "\n";
 		
-		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, null, conn);
+		if (utilities.stringHasValue(extraCondition)) {
+			sql += " WHERE " + extraCondition;
+		}
+		
+		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, params, conn);
 		
 		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
 			return simpleValue.intValue();
