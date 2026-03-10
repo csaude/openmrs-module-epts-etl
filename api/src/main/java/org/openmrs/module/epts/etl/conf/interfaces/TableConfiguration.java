@@ -42,6 +42,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.utils.Utils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -1376,6 +1377,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					        && !(this instanceof EtlConfigurationTableConf)) {
 						this.setIncludePrimaryKeyOnInsert(true);
 					}
+				}
+				
+				if (hasExtraConditionForExtract()) {
+					setExtraConditionForExtract(
+					    Utils.qualifyUnqualifiedSqlFields(getExtraConditionForExtract(), getTableName()));
 				}
 				
 				if (this.hasExtraConditionForExtract() && !this.isUsingManualDefinedAlias()) {
@@ -2856,4 +2862,5 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	default long getMaxRecordId(Connection conn) throws DBException {
 		return this.getExtremeRecord(SqlFunctionType.MAX, conn);
 	}
+	
 }

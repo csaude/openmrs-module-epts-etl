@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utils.Utils;
 
 /**
  * Represents an database object which can be joined to other database object (the
@@ -121,6 +122,8 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 		tryToLoadJoinFields();
 		
 		if (hasJoinExtraCondition() && !isUsingManualDefinedAlias()) {
+			setJoinExtraCondition(Utils.qualifyUnqualifiedSqlFields(getJoinExtraCondition(), getTableName()));
+			
 			this.setJoinExtraCondition(
 			    this.getJoinExtraCondition().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
 			

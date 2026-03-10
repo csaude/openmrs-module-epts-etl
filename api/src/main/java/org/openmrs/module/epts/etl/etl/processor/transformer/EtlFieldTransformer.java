@@ -64,6 +64,11 @@ public interface EtlFieldTransformer {
 			}
 		}
 		
+		//This mean that this field was manualy filed 
+		if (this instanceof SimpleValueTransformer) {
+			transformedRecord.getField(field.getDstField()).setLoadedWithDefaultValue(true);
+		}
+		
 		if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(field.getDstField()))) {
 			dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
 		} else if (dstValue != null && utilities.isBooleanType(transformedRecord.getFieldType(field.getDstField()))) {

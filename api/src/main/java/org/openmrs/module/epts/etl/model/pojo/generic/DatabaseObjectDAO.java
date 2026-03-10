@@ -243,7 +243,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		return search(tableConfiguration.getLoadHealper(), openMRSClass, sql, params, conn);
 	}
 	
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "deprecation" })
 	public static <T extends EtlDatabaseObject> T getByOid(TableConfiguration tabConf, Oid oid, Connection conn)
 	        throws DBException {
 		try {
@@ -561,10 +561,6 @@ public class DatabaseObjectDAO extends BaseDAO {
 			try {
 				logger.trace("Executing insertion of " + objects.size() + " " + tabConf.getTableName() + " Using query\n\n"
 				        + utilities.garantirXCaracteres(sql, 250));
-				
-				if (tabConf.getTableName().equals("location")) {
-					System.out.println("Stop");
-				}
 				
 				List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 				

@@ -86,12 +86,6 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	 */
 	private boolean includeAllFieldsFromDataSource;
 	
-	private List<DstConf> childDst;
-	
-	private DstConf parentDstConf;
-	
-	private String srcObjectDataSourceName;
-	
 	private String srcObjectCondition;
 	
 	public DstConf() {
@@ -103,31 +97,15 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public DstConf getParentDstConf() {
-		return parentDstConf;
-	}
-	
-	public void setParentDstConf(DstConf parentDstConf) {
-		this.parentDstConf = parentDstConf;
+		if (hasParentDstConf()) {
+			return this.getSrcConf().getParentConf().getRelatedParentDstConf();
+		}
+		
+		return null;
 	}
 	
 	public boolean hasParentDstConf() {
-		return this.parentDstConf != null;
-	}
-	
-	public String getSrcObjectDataSourceName() {
-		return srcObjectDataSourceName;
-	}
-	
-	public void setSrcObjectDataSourceName(String srcObjectDataSourceName) {
-		this.srcObjectDataSourceName = srcObjectDataSourceName;
-	}
-	
-	public List<DstConf> getChildDst() {
-		return childDst;
-	}
-	
-	public void setChildDst(List<DstConf> childDst) {
-		this.childDst = childDst;
+		return this.getSrcConf().getParentConf().hasParentItemConf();
 	}
 	
 	public String getSrcObjectCondition() {
@@ -556,18 +534,6 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		
-		if (!utilities.stringHasValue(this.getSrcObjectDataSourceName())) {
-			this.setSrcObjectDataSourceName(this.getSrcConf().getAlias());
-			
-			DstConf parentDstConf = this.getParentDstConf();
-			
-			while (this.getSrcObjectDataSourceName() == null && parentDstConf != null) {
-				this.setSrcObjectDataSourceName(this.getSrcConf().getAlias());
-				
-				parentDstConf = this.getParentDstConf();
-			}
-		}
-		
 		if (isInMemoryTable()) {
 			try {
 				this.setFieldsLoaded(true);
@@ -669,26 +635,11 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		loadDataSourceInfo(conn);
 		
-		tryToLoadChild(conn);
-		
 		tryToLoadTransformer(conn);
 		
 		if (this.getDstType().isCsv()) {
 			if (this.getCsvDelimiter() == null) {
 				this.setCsvDelimiter(";");
-			}
-		}
-	}
-	
-	void tryToLoadChild(Connection conn) throws DBException {
-		if (hasChildDst()) {
-			for (DstConf child : this.getChildDst()) {
-				child.setParentDstConf(this);
-				child.setParentConf(this.getParentConf());
-				child.setRelatedEtlConfig(this.getRelatedEtlConf());
-				child.setRelatedConnInfo(this.getRelatedConnInfo());
-				child.setDstType(this.getDstType());
-				child.fullLoad(conn);
 			}
 		}
 	}
@@ -724,17 +675,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		this.fullLoadAllRelatedTables(getRelatedEtlConf(), null, conn);
 		
-		if (this.getObjectDataSource() == null) {
-			throw new ForbiddenOperationException(
-			        "The src object " + this.getSrcObjectDataSourceName() + " for " + this.getTableName()
-			                + " Cannot be found withing the Src Configuration " + this.getSrcConf().getTableName() + "!");
-		}
-		
 		determinePrefferredDataSources();
-	}
-	
-	public EtlDataSource getObjectDataSource() {
-		return findDataSource(this.getSrcObjectDataSourceName());
 	}
 	
 	@SuppressWarnings({ "unchecked", "deprecation" })
@@ -770,12 +711,6 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			String prefferredDs = null;
 			
 			this.prefferredDataSource = new ArrayList<>();
-			
-			if (utilities.stringHasValue(this.getSrcObjectDataSourceName())) {
-				this.prefferredDataSource.add(this.getSrcObjectDataSourceName());
-			} else {
-				throw new ForbiddenOperationException("No datasource object name was configured for dstConf " + this);
-			}
 			
 			for (EtlDataSource tDs : this.getAllAvaliableDataSource()) {
 				if (tDs.getName().equals(this.getTableName())) {
@@ -1082,36 +1017,20 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		FieldsMapping.tryToReplacePlaceholders(this.getMapping(), schemaInfoSrc);
 	}
 	
-	public boolean hasChildDst() {
-		return utilities.arrayHasElement(this.getChildDst());
-	}
-	
-	public List<EtlDatabaseObject> loadRelatedSrcObject_(EtlDatabaseObject parentSrcObject,
-	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException {
-		
-		List<EtlDatabaseObject> srcObjects = new ArrayList<>();
-		
-		for (EtlDatabaseObject obj : avaliableSrcObjects) {
-			
-			if (obj.getRelatedConfiguration() == this.getObjectDataSource()) {
-				
-				if (this.hasSrcObjectCondition()) {
-					if (matchesCondition(obj, EtlFieldTransformer
-					        .tryToReplaceParametersOnSrcValue(srcObjects, this.getSrcObjectCondition()).toString())) {
-						srcObjects.add(obj);
-					}
-					
-				} else {
-					srcObjects.add(obj);
-				}
+	public boolean checkIfSrcObjectCanBeLoaded(EtlDatabaseObject srcObject) throws DBException {
+		if (this.hasSrcObjectCondition()) {
+			if (matchesCondition(srcObject,
+			    EtlFieldTransformer
+			            .tryToReplaceParametersOnSrcValue(utilities.parseToList(srcObject), this.getSrcObjectCondition())
+			            .toString())) {
+				return true;
 			}
+			
+		} else {
+			return true;
 		}
 		
-		if (srcObjects.size() > 0) {
-			return srcObjects;
-		}
-		
-		throw new ForbiddenOperationException("No src object found for this dstConf");
+		return false;
 	}
 	
 	private boolean matchesCondition(EtlDatabaseObject obj, String condition) {

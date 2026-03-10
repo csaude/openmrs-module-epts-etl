@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
@@ -81,8 +80,10 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	
 	@Override
 	public void setExtraConditionForExtract(String extraConditionForExtract) {
-		throw new ForbiddenOperationException(
-		        "Forbiden method for auxExtractTable(" + this + ") please use joinExtraCondition parameter!!!");
+		if (extraConditionForExtract != null) {
+			throw new ForbiddenOperationException(
+			        "Forbiden method for auxExtractTable(" + this + ") please use joinExtraCondition parameter!!!");
+		}
 	}
 	
 	@Override
@@ -131,23 +132,13 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public AbstractTableConfiguration getParentConf() {
-		return (AbstractTableConfiguration) getMainExtractTable();
-	}
-	
-	@Override
-	public void setParentConf(EtlDataConfiguration parentConf) {
-		this.setMainExtractTable((MainJoiningEntity) parentConf);
-	}
-	
-	@Override
 	public EtlConfiguration getRelatedEtlConf() {
-		return this.getParentConf() != null ? this.getParentConf().getRelatedEtlConf() : null;
+		return this.mainExtractTable != null ? this.mainExtractTable.getRelatedEtlConf() : null;
 	}
 	
 	@Override
 	public DBConnectionInfo getRelatedConnInfo() {
-		return this.getParentConf().getRelatedConnInfo();
+		return this.mainExtractTable.getRelatedConnInfo();
 	}
 	
 	@Override

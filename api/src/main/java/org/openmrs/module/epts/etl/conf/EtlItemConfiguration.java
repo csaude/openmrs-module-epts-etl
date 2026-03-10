@@ -308,6 +308,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		try {
 			
+			getSrcConf().setParentConf(this);
+			
 			if (this.getRelatedEtlConf().hasDstConnInfo()) {
 				
 				dstConn = this.getRelatedEtlConf().openDstConn();
@@ -377,6 +379,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				srcConn.markAsSuccessifullyTerminated();
 			}
 			
+			tryToLoadChildItemConf(operationConfig);
+			
 			this.setFullLoaded(true);
 		}
 		catch (SQLException e) {
@@ -393,10 +397,20 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		}
 	}
 	
-	void tryToLoadChildItemConf(EtlOperationConfig operationConfig) throws DBException {
+	private void tryToLoadChildItemConf(EtlOperationConfig operationConfig) throws DBException {
 		if (this.hasChildItemConf()) {
 			for (EtlItemConfiguration childItem : this.childItemConf) {
 				childItem.setParentItemConf(this);
+				
+				if (utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
+					if (utilities.arrayHasExactlyOneElement(this.getDstConf())) {
+						childItem.setRelatedParentDstConfName(this.getDstConf().get(0).getAlias());
+					} else {
+						throw new ForbiddenOperationException(
+						        "The relatedParentDstConfName was not defined for the conf " + this.getConfigCode());
+					}
+				}
+				
 				childItem.setRelatedParentDstConf(this.findDstConf(childItem.getRelatedParentDstConfName()));
 				childItem.setRelatedEtlConfig(this.getRelatedEtlConf());
 				
@@ -435,6 +449,10 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	public boolean hasChildItemConf() {
 		return utilities.arrayHasElement(this.childItemConf);
+	}
+	
+	public boolean hasParentItemConf() {
+		return this.parentItemConf != null;
 	}
 	
 	@Override

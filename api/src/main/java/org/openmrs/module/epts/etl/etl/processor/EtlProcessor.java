@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
@@ -12,6 +13,7 @@ import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
 import org.openmrs.module.epts.etl.etl.model.LoadRecord;
+import org.openmrs.module.epts.etl.etl.model.LoadStatus;
 import org.openmrs.module.epts.etl.etl.model.LoadingType;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
@@ -89,8 +91,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			
 			loadHelper.load(srcConn, dstConn);
 			
-			tryToPerfomeEtlOnChild()
-			
+			tryToPerfomeEtlOnChild(loadHelper, srcConn, dstConn);
 			
 			logInfo("ETL OPERATION [" + getEtlItemConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size()
 			        + "' RECORDS");
@@ -102,7 +103,68 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			
 			getTaskResultInfo().setFatalException(e);
 		}
+	}
+	
+	private void tryToPerfomeEtlOnChild(EtlLoadHelper loadHelper, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		
+		if (this.getEtlItemConfiguration().hasChildItemConf()) {
+			for (EtlItemConfiguration itemConf : this.getEtlItemConfiguration().getChildItemConf()) {
+				
+				for (LoadRecord rec : loadHelper.getAllRecordsAsLoadRecord(itemConf.getRelatedParentDstConf(),
+				    LoadStatus.SUCCESS)) {
+					performeEtlOnChildItem(itemConf, rec, srcConn, dstConn);
+				}
+				
+			}
+		}
+	}
+	
+	private void performeEtlOnChildItem(EtlItemConfiguration itemConf, LoadRecord loadRecord, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		
+		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(loadRecord.getSrcRecord(), srcConn);
+		
+		EtlLoadHelper loadHelper = new EtlLoadHelper(this, itemConf.getDstConf(), etlObjects.size(), LoadingType.PRINCIPAL);
+		
+		for (EtlDatabaseObject srcRecord : etlObjects) {
+			srcRecord.loadObjectIdData(itemConf.getSrcConf());
+			
+			try {
+				
+				for (DstConf mappingInfo : getEtlItemConfiguration().getDstConf()) {
+					
+					if (mappingInfo.checkIfSrcObjectCanBeLoaded(srcRecord)) {
+						
+						EtlDatabaseObject dstObject = mappingInfo.getTransformerInstance().transform(this, srcRecord,
+						    mappingInfo, loadRecord.getDstRecord(), TransformationType.PRINCIPAL, srcConn, dstConn);
+						
+						if (dstObject != null) {
+							logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
+							
+							LoadRecord etlRec = LoadRecord.initEtlRecord(this, dstObject.getSrcRelatedObject(), dstObject,
+							    mappingInfo);
+							
+							loadHelper.addRecord(etlRec);
+							
+						} else {
+							logTrace("The dstRecord " + srcRecord + " could not be transformed");
+						}
+					}
+				}
+			}
+			catch (EtlTransformationException e) {
+				if (getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().log()) {
+					EtlLoadHelper.logEtlError(this, srcRecord, e, srcConn, dstConn);
+				}
+			}
+		}
+		
+		logDebug("Initializing the loading of " + etlObjects.size() + " " + getSrcConf().getFullTableName());
+		
+		loadHelper.load(srcConn, dstConn);
+		
+		tryToPerfomeEtlOnChild(loadHelper, srcConn, dstConn);
 	}
 	
 	@Override

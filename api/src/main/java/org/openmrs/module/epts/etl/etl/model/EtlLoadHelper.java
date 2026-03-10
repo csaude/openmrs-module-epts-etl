@@ -16,9 +16,7 @@ import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaInfo;
 import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaObjectDAO;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
-import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
-import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -138,14 +136,23 @@ public class EtlLoadHelper {
 	/**
 	 * Finds all LoadRecord records which as same {@link DstConf} from the #loadRecordHelper
 	 */
-	private List<LoadRecord> getAllRecordsAsLoadRecord(DstConf dstConf) {
+	public List<LoadRecord> getAllRecordsAsLoadRecord(DstConf dstConf) {
+		return getAllRecordsAsLoadRecord(dstConf, null);
+	}
+	
+	/**
+	 * Finds all LoadRecord records which as same {@link DstConf} from the #loadRecordHelper
+	 */
+	public List<LoadRecord> getAllRecordsAsLoadRecord(DstConf dstConf, LoadStatus status) {
 		List<LoadRecord> allOfDst = new ArrayList<>();
 		
 		for (EtlLoadHelperRecord lr : getLoadRecordHelper()) {
 			LoadRecord rec = lr.getLoadRecord(dstConf);
 			
 			if (rec != null) {
-				allOfDst.add(rec);
+				if (status == null || status.equals(rec.getStatus())) {
+					allOfDst.add(rec);
+				}
 			}
 		}
 		
@@ -530,7 +537,7 @@ public class EtlLoadHelper {
 		return sucess;
 	}
 	
-	private List<EtlLoadHelperRecord> getAllSuccessfullyProcessedRecords() {
+	public List<EtlLoadHelperRecord> getAllSuccessfullyProcessedRecords() {
 		List<EtlLoadHelperRecord> sucess = new ArrayList<>(qtyRecordsToLoad());
 		
 		for (EtlLoadHelperRecord lr : getLoadRecordHelper()) {
