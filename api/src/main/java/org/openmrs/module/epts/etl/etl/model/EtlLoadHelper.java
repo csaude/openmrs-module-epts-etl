@@ -219,65 +219,6 @@ public class EtlLoadHelper {
 		} else {
 			throw new ForbiddenOperationException("Unsupported dstType '" + dstType + "'");
 		}
-		
-		tryToLoadChild(dstConf, srcConn, dstConn);
-		
-	}
-	
-	private void tryToLoadChild(DstConf dstConf, Connection srcConn, Connection dstConn) throws DBException {
-		
-		if (dstConf.hasChildDst()) {
-			
-			EtlLoadHelper loadHelper = new EtlLoadHelper(this.getProcessor(), dstConf.getChildDst(),
-			        this.loadRecordHelper.size(), LoadingType.PRINCIPAL);
-			
-			List<LoadRecord> migrationRecords = this.getAllRecordsAsLoadRecord(dstConf);
-			
-			for (LoadRecord parentLoadRecord : migrationRecords) {
-				
-				List<EtlDatabaseObject> srcRecords = null;
-				
-				for (DstConf childDst : dstConf.getChildDst()) {
-					srcRecords = childDst.loadRelatedSrcObject(parentLoadRecord.getDstRecord().getTransformationSrcObject(),
-					    dstConn);
-					
-					for (EtlDatabaseObject srcObject : srcRecords) {
-						
-						try {
-							List<EtlDatabaseObject> dstObjects = childDst.getTransformerInstance().transform(
-							    this.getProcessor(), srcObject, childDst, parentLoadRecord.getDstRecord(),
-							    TransformationType.PRINCIPAL, srcConn, dstConn);
-							
-							if (utilities.arrayHasElement(dstObjects)) {
-								for (EtlDatabaseObject dstObject : dstObjects) {
-									logTrace("dstRecord " + srcObject + " transforming to " + dstObject);
-									
-									LoadRecord etlRec = LoadRecord.initEtlRecord(processor, srcObject, dstObject, childDst);
-									
-									loadHelper.addRecord(etlRec);
-								}
-								
-							} else {
-								logTrace("The dstRecord " + srcObject + " could not be transformed");
-							}
-						}
-						catch (EtlTransformationException e) {
-							if (processor.getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().log()) {
-								logEtlError(processor, srcObject, e, srcConn, dstConn);
-							}
-						}
-					}
-				}
-			}
-			
-			logDebug("Initializing the inner loading of " + migrationRecords.size() + " "
-			        + processor.getSrcConf().getFullTableName());
-			
-			loadHelper.load(srcConn, dstConn);
-			
-			logInfo("INNER ETL OPERATION [" + processor.getEtlItemConfiguration().getConfigCode() + "] DONE ON "
-			        + migrationRecords.size() + "' RECORDS");
-		}
 	}
 	
 	private void loadToDb(DstConf dstConf, Connection srcConn, Connection dstConn)

@@ -33,10 +33,10 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> loadRelatedSrcObjects(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
+	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
 	        throws DBException {
 		
-		return utilities.parseToList(avaliableSrcObjects.get(0).getSharedPkObj());
+		return avaliableSrcObjects.get(0).getSharedPkObj();
 	}
 	
 	@Override

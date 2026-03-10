@@ -409,13 +409,22 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> loadRelatedSrcObjects(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
+	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
 	        throws DBException {
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
+		
+		if (utilities.arrayHasNoElement(list)) {
+			return null;
+		} else if (utilities.arrayHasMoreThanOneElements(list)) {
+			throw new ForbiddenOperationException(
+			        "The datasource (" + this.getName() + ") returned more than one src objects");
+		}
+		
+		return list.get(0);
 	}
 	
 	@Override

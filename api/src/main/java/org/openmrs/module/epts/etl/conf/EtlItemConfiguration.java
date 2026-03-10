@@ -66,7 +66,47 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	 */
 	private Integer primaryKeyInitialIncrementValue;
 	
+	private List<EtlItemConfiguration> childItemConf;
+	
+	private EtlItemConfiguration parentItemConf;
+	
+	private DstConf relatedParentDstConf;
+	
+	private String relatedParentDstConfName;
+	
 	public EtlItemConfiguration() {
+	}
+	
+	public String getRelatedParentDstConfName() {
+		return relatedParentDstConfName;
+	}
+	
+	public void setRelatedParentDstConfName(String relatedParentDstConfName) {
+		this.relatedParentDstConfName = relatedParentDstConfName;
+	}
+	
+	public EtlItemConfiguration getParentItemConf() {
+		return parentItemConf;
+	}
+	
+	public void setParentItemConf(EtlItemConfiguration parentItemConf) {
+		this.parentItemConf = parentItemConf;
+	}
+	
+	public DstConf getRelatedParentDstConf() {
+		return relatedParentDstConf;
+	}
+	
+	public void setRelatedParentDstConf(DstConf relatedParentDstConf) {
+		this.relatedParentDstConf = relatedParentDstConf;
+	}
+	
+	public List<EtlItemConfiguration> getChildItemConf() {
+		return childItemConf;
+	}
+	
+	public void setChildItemConf(List<EtlItemConfiguration> childItemConf) {
+		this.childItemConf = childItemConf;
 	}
 	
 	public Integer getPrimaryKeyInitialIncrementValue() {
@@ -351,6 +391,50 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				srcConn.finalizeConnection();
 			}
 		}
+	}
+	
+	void tryToLoadChildItemConf(EtlOperationConfig operationConfig) throws DBException {
+		if (this.hasChildItemConf()) {
+			for (EtlItemConfiguration childItem : this.childItemConf) {
+				childItem.setParentItemConf(this);
+				childItem.setRelatedParentDstConf(this.findDstConf(childItem.getRelatedParentDstConfName()));
+				childItem.setRelatedEtlConfig(this.getRelatedEtlConf());
+				
+				childItem.fullLoad(operationConfig);
+			}
+		}
+	}
+	
+	private DstConf findDstConf(String dstConfName) {
+		if (this.hasDstConf()) {
+			for (DstConf conf : this.getDstConf()) {
+				if (conf.getTableAlias().equals(dstConfName)) {
+					return conf;
+				}
+			}
+			
+			DstConf found = null;
+			
+			for (DstConf conf : this.getDstConf()) {
+				
+				if (conf.getTableName().equals(dstConfName)) {
+					if (found != null) {
+						throw new ForbiddenOperationException("Multiple dstParent found with name '" + dstConfName
+						        + "'. Please use tableAlias to refere one of them.");
+					}
+					
+					found = conf;
+				}
+			}
+			
+			return found;
+		}
+		
+		return null;
+	}
+	
+	public boolean hasChildItemConf() {
+		return utilities.arrayHasElement(this.childItemConf);
 	}
 	
 	@Override

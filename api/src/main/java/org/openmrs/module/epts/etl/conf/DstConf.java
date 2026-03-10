@@ -33,7 +33,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class DstConf extends AbstractTableConfiguration {
+public class DstConf extends AbstractTableConfiguration implements EtlDataSource {
 	
 	/*
 	 * The user defined joinFields with #getSrcConf()
@@ -556,8 +556,6 @@ public class DstConf extends AbstractTableConfiguration {
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		
-		tryToLoadChild();
-		
 		if (!utilities.stringHasValue(this.getSrcObjectDataSourceName())) {
 			this.setSrcObjectDataSourceName(this.getSrcConf().getAlias());
 			
@@ -636,16 +634,7 @@ public class DstConf extends AbstractTableConfiguration {
 			
 			super.fullLoad(conn);
 		}
-	}
-	
-	void tryToLoadChild() {
-		if (hasChildDst()) {
-			for (DstConf child : this.getChildDst()) {
-				child.setParentDstConf(this);
-				
-				child.tryToLoadChild();
-			}
-		}
+		
 	}
 	
 	/**
@@ -680,6 +669,8 @@ public class DstConf extends AbstractTableConfiguration {
 		
 		loadDataSourceInfo(conn);
 		
+		tryToLoadChild(conn);
+		
 		tryToLoadTransformer(conn);
 		
 		if (this.getDstType().isCsv()) {
@@ -689,9 +680,26 @@ public class DstConf extends AbstractTableConfiguration {
 		}
 	}
 	
+	void tryToLoadChild(Connection conn) throws DBException {
+		if (hasChildDst()) {
+			for (DstConf child : this.getChildDst()) {
+				child.setParentDstConf(this);
+				child.setParentConf(this.getParentConf());
+				child.setRelatedEtlConfig(this.getRelatedEtlConf());
+				child.setRelatedConnInfo(this.getRelatedConnInfo());
+				child.setDstType(this.getDstType());
+				child.fullLoad(conn);
+			}
+		}
+	}
+	
 	private void loadDataSourceInfo(Connection conn) throws DBException {
 		this.allAvaliableDataSource = new ArrayList<>();
 		this.allAvaliableDataSource.add(getSrcConf());
+		
+		if (hasParentDstConf()) {
+			this.allAvaliableDataSource.add(this.getParentDstConf());
+		}
 		
 		if (this.getSrcConf().hasAuxExtractTable()) {
 			for (JoinableEntity auxExtractTable : this.getSrcConf().getJoiningTable()) {
@@ -1078,8 +1086,8 @@ public class DstConf extends AbstractTableConfiguration {
 		return utilities.arrayHasElement(this.getChildDst());
 	}
 	
-	public List<EtlDatabaseObject> loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn)
-	        throws DBException {
+	public List<EtlDatabaseObject> loadRelatedSrcObject_(EtlDatabaseObject parentSrcObject,
+	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException {
 		
 		List<EtlDatabaseObject> srcObjects = new ArrayList<>();
 		
@@ -1266,5 +1274,15 @@ public class DstConf extends AbstractTableConfiguration {
 	
 	private String stripQuotes(String s) {
 		return s.replaceAll("^['\"]|['\"]$", "");
+	}
+	
+	@Override
+	public String getName() {
+		return this.getTableAlias();
+	}
+	
+	@Override
+	public String getQuery() {
+		return null;
 	}
 }

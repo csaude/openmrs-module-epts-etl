@@ -69,12 +69,12 @@ public class FastSqlFieldTransformer implements EtlFieldTransformer {
 			}
 		}
 		
-		List<EtlDatabaseObject> list = this.dataSourceConfig.loadRelatedSrcObjects(srcObjects, srcConn);
+		EtlDatabaseObject srcObject = this.dataSourceConfig.loadRelatedSrcObject(srcObjects, srcConn);
 		
 		Object dstValue = null;
 		
-		if (list != null && list.size() > 0) {
-			dstValue = list.get(0).getFields().get(0).getValue();
+		if (srcObject != null) {
+			dstValue = srcObject.getFields().get(0).getValue();
 		}
 		
 		if (dstValue != null) {

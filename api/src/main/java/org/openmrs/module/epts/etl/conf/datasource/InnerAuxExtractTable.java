@@ -166,4 +166,9 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 		setJoinExtraCondition(utilities.tryToReplacePlaceholders(getJoinExtraCondition(), schemaInfoSrc));
 	}
 	
+	@Override
+	public String getQuery() {
+		return null;
+	}
+	
 }

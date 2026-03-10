@@ -144,13 +144,10 @@ public class ReloadRecordsWithDefaultParentProcessor extends TaskProcessor<EtlDa
 				
 				recordAsSrc.copyFrom(recWithDefaultParentInfo.getParentRecordInOrigin());
 				
-				List<EtlDatabaseObject> dstParents = dst.getTransformerInstance().transform(this, recordAsSrc, dst, null,
-				    TransformationType.INNER, srcConn, dstConn);
+				dstParent = dst.getTransformerInstance().transform(this, recordAsSrc, dst, null, TransformationType.INNER,
+				    srcConn, dstConn);
 				
-				if (utilities.arrayHasElement(dstParents)) {
-					
-					dstParent = dstParents.get(0);
-					
+				if (dstParent != null) {
 					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, this.getRelatedEtlProcessor());
 					
 					DBException exception = null;

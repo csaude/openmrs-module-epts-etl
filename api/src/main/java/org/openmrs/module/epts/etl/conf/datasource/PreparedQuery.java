@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -42,7 +43,7 @@ public class PreparedQuery {
 	
 	private SqlFunctionInfo countFunctionInfo;
 	
-	private EtlAdditionalDataSource dataSource;
+	private EtlDataSource dataSource;
 	
 	private String originalQuery;
 	
@@ -57,7 +58,7 @@ public class PreparedQuery {
 		return getDataSource().getRelatedEtlConf();
 	}
 	
-	PreparedQuery(EtlAdditionalDataSource dataSource, List<EtlDatabaseObject> srcObject, EtlConfiguration configuration,
+	PreparedQuery(EtlDataSource dataSource, List<EtlDatabaseObject> srcObject, EtlConfiguration configuration,
 	    boolean ignoreMissingParameters, DbmsType dbmsType) {
 		this.dbmsType = dbmsType;
 		this.setDataSource(dataSource);
@@ -192,11 +193,11 @@ public class PreparedQuery {
 		}
 	}
 	
-	public EtlAdditionalDataSource getDataSource() {
+	public EtlDataSource getDataSource() {
 		return dataSource;
 	}
 	
-	public void setDataSource(EtlAdditionalDataSource dataSource) {
+	public void setDataSource(EtlDataSource dataSource) {
 		this.dataSource = dataSource;
 	}
 	
@@ -326,7 +327,7 @@ public class PreparedQuery {
 		return queryParams;
 	}
 	
-	public static PreparedQuery prepare(EtlAdditionalDataSource queryDs, List<EtlDatabaseObject> srcObject,
+	public static PreparedQuery prepare(EtlDataSource queryDs, List<EtlDatabaseObject> srcObject,
 	        EtlConfiguration configuration, DbmsType dbmsType) {
 		
 		return new PreparedQuery(queryDs, srcObject, configuration, false, dbmsType);

@@ -37,8 +37,9 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	private List<AuxExtractTable> auxExtractTable;
 	
 	/*
-	 * The join type between this additional src table with the main src table. It could be INNER or LEFT.
-	 * If empty, a INNER join will be applied if the main table has only one additional src, and will be LEFT join if there are more than one additional src tables 
+	 * Defines the type of SQL join used to link the extra table with the main table. 
+	 * The supported values are INNER, LEFT, or RIGHT. If this property is not specified, the default join type is LEFT. 
+	 * When the join type is set to INNER, the ETL process will skip the main record if no matching record is found in the extra table.
 	 */
 	private JoinType joinType;
 	
@@ -48,6 +49,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	public TableDataSourceConfig() {
 		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
+		this.joinType = JoinType.LEFT;
 	}
 	
 	@Override
@@ -181,14 +183,26 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> loadRelatedSrcObjects(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
+	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
 	        throws DBException {
 		
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
+		
+		if (utilities.arrayHasNoElement(list)) {
+			return null;
+		}
+		
+		if (utilities.arrayHasMoreThanOneElements(list)) {
+			throw new ForbiddenOperationException(
+			        "The datasource (" + this.getName() + ") returned more than one src objects");
+			
+		}
+		
+		return list.get(0);
 	}
 	
 	@Override

@@ -263,4 +263,9 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 		
 	}
 	
+	@Override
+	public String getQuery() {
+		return null;
+	}
+	
 }

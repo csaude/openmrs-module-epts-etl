@@ -599,4 +599,9 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 	}
 	
+	@Override
+	public String getQuery() {
+		return null;
+	}
+	
 }

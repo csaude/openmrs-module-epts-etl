@@ -259,7 +259,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> loadRelatedSrcObjects(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn)
+	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn)
 	        throws DBException {
 		
 		Map<String, Object> values = this.getFieldsValuesGeneratorInstance().generateObjectFields(this, avaliableSrcObjects,
@@ -272,7 +272,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 			obj.setFieldValue(f.getName(), value);
 		}
 		
-		return utilities.parseToList(obj);
+		return obj;
 	}
 	
 	@Override

@@ -62,18 +62,16 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				try {
 					
 					for (DstConf mappingInfo : getEtlItemConfiguration().getDstConf()) {
-						List<EtlDatabaseObject> dstObjects = mappingInfo.getTransformerInstance().transform(this, srcRecord,
+						EtlDatabaseObject dstObject = mappingInfo.getTransformerInstance().transform(this, srcRecord,
 						    mappingInfo, null, TransformationType.PRINCIPAL, srcConn, dstConn);
 						
-						if (utilities.arrayHasElement(dstObjects)) {
-							for (EtlDatabaseObject dstObject : dstObjects) {
-								logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
-								
-								LoadRecord etlRec = LoadRecord.initEtlRecord(this, dstObject.getSrcRelatedObject(),
-								    dstObject, mappingInfo);
-								
-								loadHelper.addRecord(etlRec);
-							}
+						if (dstObject != null) {
+							logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
+							
+							LoadRecord etlRec = LoadRecord.initEtlRecord(this, dstObject.getSrcRelatedObject(), dstObject,
+							    mappingInfo);
+							
+							loadHelper.addRecord(etlRec);
 							
 						} else {
 							logTrace("The dstRecord " + srcRecord + " could not be transformed");
@@ -90,6 +88,9 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			logDebug("Initializing the loading of " + etlObjects.size() + " " + getSrcConf().getFullTableName());
 			
 			loadHelper.load(srcConn, dstConn);
+			
+			tryToPerfomeEtlOnChild()
+			
 			
 			logInfo("ETL OPERATION [" + getEtlItemConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size()
 			        + "' RECORDS");
