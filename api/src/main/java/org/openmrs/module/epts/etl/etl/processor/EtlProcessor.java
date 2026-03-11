@@ -110,6 +110,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		
 		if (this.getEtlItemConfiguration().hasChildItemConf()) {
 			for (EtlItemConfiguration itemConf : this.getEtlItemConfiguration().getChildItemConf()) {
+				itemConf.fullLoad(this.getRelatedEtlOperationConfig());
 				
 				for (LoadRecord rec : loadHelper.getAllRecordsAsLoadRecord(itemConf.getRelatedParentDstConf(),
 				    LoadStatus.SUCCESS)) {

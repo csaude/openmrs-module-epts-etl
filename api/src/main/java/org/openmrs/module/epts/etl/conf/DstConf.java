@@ -1197,7 +1197,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	@Override
 	public String getName() {
-		return this.getTableAlias();
+		return this.getTableAlias() != null ? this.getTableAlias() : this.getTableName();
 	}
 	
 	@Override

@@ -40,7 +40,7 @@ public class EtlConfigurationSrcConf extends SrcConf {
 	
 	@Override
 	public DBConnectionInfo getRelatedConnInfo() {
-		return ((EtlConfiguration) this.getParentConf()).getMainConnInfo();
+		return (this.getParentConf()).getRelatedEtlConf().getMainConnInfo();
 	}
 	
 	@Override

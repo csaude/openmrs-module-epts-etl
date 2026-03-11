@@ -839,7 +839,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return this.getTestingEtlItemConfiguration() != null && !this.getTestingEtlItemConfiguration().isDisabled();
 	}
 	
-	void initItem(EtlItemConfiguration item, boolean testing) {
+	public void initItem(EtlItemConfiguration item, boolean testing) {
 		item.setRelatedEtlConfig(this);
 		item.getSrcConf().setParentConf(item);
 		item.setTesting(testing);
@@ -918,6 +918,30 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		code = item.getSrcConf().getTableName() + "_to_" + code;
 		
 		item.setConfigCode(finalizeItemCodeGeneration(code));
+		
+		tryToLoadChildItemConf(item, testing);
+	}
+	
+	private void tryToLoadChildItemConf(EtlItemConfiguration item, boolean testing) {
+		if (item.hasChildItemConf()) {
+			for (EtlItemConfiguration childItem : item.getChildItemConf()) {
+				childItem.setParentItemConf(item);
+				
+				if (utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
+					if (utilities.arrayHasExactlyOneElement(item.getDstConf())) {
+						childItem.setRelatedParentDstConfName(item.getDstConf().get(0).getName());
+					} else {
+						throw new ForbiddenOperationException(
+						        "The relatedParentDstConfName was not defined for the conf " + item.getConfigCode());
+					}
+				}
+				
+				childItem.setRelatedParentDstConf(item.findDstConf(childItem.getRelatedParentDstConfName()));
+				childItem.setRelatedEtlConfig(this.getRelatedEtlConf());
+				
+				initItem(childItem, testing);
+			}
+		}
 	}
 	
 	synchronized String finalizeItemCodeGeneration(String code) {

@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 
-public abstract class AbstractBaseConfiguration implements BaseConfiguration{
-
+public abstract class AbstractBaseConfiguration implements BaseConfiguration {
+	
+	private Object comments;
+	
 	private List<Extension> extension;
 	
 	public AbstractBaseConfiguration() {
@@ -17,5 +19,13 @@ public abstract class AbstractBaseConfiguration implements BaseConfiguration{
 	
 	public void setExtension(List<Extension> extension) {
 		this.extension = extension;
+	}
+	
+	public Object getComments() {
+		return comments;
+	}
+	
+	public void setComments(Object comments) {
+		this.comments = comments;
 	}
 }

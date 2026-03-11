@@ -379,8 +379,6 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				srcConn.markAsSuccessifullyTerminated();
 			}
 			
-			tryToLoadChildItemConf(operationConfig);
-			
 			this.setFullLoaded(true);
 		}
 		catch (SQLException e) {
@@ -397,32 +395,10 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		}
 	}
 	
-	private void tryToLoadChildItemConf(EtlOperationConfig operationConfig) throws DBException {
-		if (this.hasChildItemConf()) {
-			for (EtlItemConfiguration childItem : this.childItemConf) {
-				childItem.setParentItemConf(this);
-				
-				if (utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
-					if (utilities.arrayHasExactlyOneElement(this.getDstConf())) {
-						childItem.setRelatedParentDstConfName(this.getDstConf().get(0).getAlias());
-					} else {
-						throw new ForbiddenOperationException(
-						        "The relatedParentDstConfName was not defined for the conf " + this.getConfigCode());
-					}
-				}
-				
-				childItem.setRelatedParentDstConf(this.findDstConf(childItem.getRelatedParentDstConfName()));
-				childItem.setRelatedEtlConfig(this.getRelatedEtlConf());
-				
-				childItem.fullLoad(operationConfig);
-			}
-		}
-	}
-	
-	private DstConf findDstConf(String dstConfName) {
+	public DstConf findDstConf(String dstConfName) {
 		if (this.hasDstConf()) {
 			for (DstConf conf : this.getDstConf()) {
-				if (conf.getTableAlias().equals(dstConfName)) {
+				if (conf.getTableAlias() != null && conf.getTableAlias().equals(dstConfName)) {
 					return conf;
 				}
 			}
