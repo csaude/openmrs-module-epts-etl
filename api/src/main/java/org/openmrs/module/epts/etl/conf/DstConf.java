@@ -256,7 +256,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		this.getAllMapping().add(fm);
 	}
 	
-	private EtlDataSource findDataSource(String dsName) {
+	public EtlDataSource findDataSource(String dsName) {
 		for (EtlDataSource ds : this.getAllAvaliableDataSource()) {
 			if (ds.getAlias().equals(dsName)) {
 				return ds;
@@ -290,7 +290,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 					                + this.getParentConf().getConfigCode() + "' configuration does not have dstField");
 				}
 				
-				fm.tryToLoadTransformer();
+				fm.tryToLoadTransformer(this);
 				
 				fm.tryToLoadDataSourceInfoFromSrcField();
 				
@@ -378,7 +378,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			if (!this.getAllMapping().contains(fm)) {
 				try {
 					
-					fm.tryToLoadTransformer();
+					fm.tryToLoadTransformer(this);
 					
 					tryToLoadDataSourceToFieldMapping(fm);
 					
@@ -409,7 +409,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 	}
 	
-	private void tryToLoadDataSourceToFieldMapping(FieldsMapping fm)
+	public void tryToLoadDataSourceToFieldMapping(FieldsMapping fm)
 	        throws FieldNotAvaliableInAnyDataSource, FieldAvaliableInMultipleDataSources {
 		int qtyOccurences = 0;
 		
@@ -556,7 +556,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 						for (EtlField field : this.getSrcConf().getEtlFields()) {
 							if (!this.containsField(field.getName())) {
 								this.getFields().add(field);
-								this.addMapping(FieldsMapping.converteFromEtlField(field));
+								this.addMapping(FieldsMapping.converteFromEtlField(field, this));
 							}
 						}
 					}

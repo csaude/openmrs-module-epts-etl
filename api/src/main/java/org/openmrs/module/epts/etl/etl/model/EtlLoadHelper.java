@@ -279,7 +279,11 @@ public class EtlLoadHelper {
 					for (EtlOperationItemResult<EtlDatabaseObject> r : result.getRecordsWithUnexpectedErrors()) {
 						EtlLoadHelperRecord item = findRelatedLoadITem(r);
 						
-						item.getLoadRecord(dstConf).markAsFailed();
+						LoadRecord rec = item.getLoadRecord(dstConf);
+						
+						if (rec != null) {
+							rec.markAsFailed();
+						}
 					}
 				}
 				

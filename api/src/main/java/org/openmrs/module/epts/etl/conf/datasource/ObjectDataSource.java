@@ -15,6 +15,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.JavaObjectFieldsValuesGenerat
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ObjectLanguageType;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -123,7 +124,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		if (hasObjectFields()) {
 			for (DataSourceField f : this.getObjectFields()) {
 				f.setDataSource(this);
-				f.tryToLoadTransformer();
+				f.tryToLoadTransformer(null);
 				f.loadType(null, this);
 			}
 		} else {
@@ -259,8 +260,8 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection conn)
-	        throws DBException {
+	public EtlDatabaseObject loadRelatedSrcObject(Engine<? extends EtlDatabaseObject> engine,
+	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException {
 		
 		Map<String, Object> values = this.getFieldsValuesGeneratorInstance().generateObjectFields(this, avaliableSrcObjects,
 		    conn, conn);

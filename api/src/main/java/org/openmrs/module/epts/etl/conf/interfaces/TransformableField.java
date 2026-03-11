@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.CoalesceFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
@@ -165,7 +166,7 @@ public interface TransformableField {
 	}
 	
 	@SuppressWarnings({ "unchecked" })
-	default void tryToLoadTransformer() {
+	default void tryToLoadTransformer(DstConf dstConf) {
 		if (this.hasTransformer()) {
 			
 			String transformerStr = this.getTransformer();
@@ -185,6 +186,9 @@ public interface TransformableField {
 				this.setTransformerInstance(MappingFieldTransformer.getInstance(this.tryToLoadTransformerParameters()));
 			} else if (this.getTransformer().startsWith(EtlFieldTransformer.FAST_SQL_TRANSFORMER)) {
 				this.setTransformerInstance(FastSqlFieldTransformer.getInstance(this.tryToLoadTransformerParameters()));
+			} else if (this.getTransformer().startsWith(EtlFieldTransformer.COALESCE_TRANSFORMER)) {
+				this.setTransformerInstance(
+				    CoalesceFieldTransformer.getInstance(this.tryToLoadTransformerParameters(), dstConf, this));
 			} else {
 				try {
 					ClassLoader loader = EtlRecordTransformer.class.getClassLoader();

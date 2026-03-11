@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -183,14 +184,15 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
-	        throws DBException {
+	public EtlDatabaseObject loadRelatedSrcObject(Engine<? extends EtlDatabaseObject> engine,
+	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
 		
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(engine,
+		    srcConn);
 		
 		if (utilities.arrayHasNoElement(list)) {
 			return null;

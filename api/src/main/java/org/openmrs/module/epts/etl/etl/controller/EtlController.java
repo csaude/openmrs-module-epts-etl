@@ -60,7 +60,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		try {
 			conn = openSrcConnection();
 			
-			return engine.getSrcConf().getMinRecordId(conn);
+			return engine.getSrcConf().getMinRecordId(engine, conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();
@@ -80,7 +80,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		try {
 			conn = openSrcConnection();
 			
-			return engine.getSrcConf().getMaxRecordId(conn);
+			return engine.getSrcConf().getMaxRecordId(engine, conn);
 		}
 		catch (DBException e) {
 			e.printStackTrace();

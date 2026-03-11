@@ -4,6 +4,8 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class SqlFunctionInfo {
@@ -82,13 +84,13 @@ public class SqlFunctionInfo {
 		return this.getType().isCount();
 	}
 	
-	public void detemineLimits(Connection conn) throws DBException {
+	public void detemineLimits(Engine<? extends EtlDatabaseObject> engine, Connection conn) throws DBException {
 		if (!this.getMainTable().isFullLoaded()) {
 			this.getMainTable().fullLoad(conn);
 		}
 		
-		this.setMinRecordId(this.getMainTable().getMinRecordId(conn));
-		this.setMaxRecordId(this.getMainTable().getMaxRecordId(conn));
+		this.setMinRecordId(this.getMainTable().getMinRecordId(engine, conn));
+		this.setMaxRecordId(this.getMainTable().getMaxRecordId(engine, conn));
 	}
 	
 }

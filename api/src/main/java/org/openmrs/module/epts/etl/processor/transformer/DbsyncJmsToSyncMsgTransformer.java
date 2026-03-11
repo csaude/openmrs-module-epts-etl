@@ -30,7 +30,7 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 	CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	@Override
-	public List<EtlDatabaseObject> transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject rec,
+	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject rec,
 	        DstConf mappingInfo, EtlDatabaseObject migratedDstParent, TransformationType transformationType,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
@@ -66,7 +66,7 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 		
 		syncMessage.setSrcRelatedObject(rec);
 		
-		return utilities.parseToList(syncMessage);
+		return syncMessage;
 	}
 	
 	static void addToLoadedSites(GenericDatabaseObject loadedSite) {

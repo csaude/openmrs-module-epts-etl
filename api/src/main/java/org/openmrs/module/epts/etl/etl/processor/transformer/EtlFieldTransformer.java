@@ -34,6 +34,8 @@ public interface EtlFieldTransformer {
 	
 	static final String FAST_SQL_TRANSFORMER = FastSqlFieldTransformer.class.getCanonicalName();
 	
+	static final String COALESCE_TRANSFORMER = CoalesceFieldTransformer.class.getCanonicalName();
+	
 	FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException;
 	

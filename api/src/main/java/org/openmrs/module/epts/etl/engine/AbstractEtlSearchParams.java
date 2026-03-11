@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
 import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.datasource.TableDataSourceConfig;
+import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadCurrentIntervals;
@@ -254,6 +255,10 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		}
 		
 		return BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, searchClauses.getParameters(), srcConn);
+	}
+	
+	public long retrieveExtremeRecord(SqlFunctionType sqlFunction, Connection conn) throws DBException {
+		return SearchParamsDAO.retrieveExtremRecord(this, sqlFunction, null, conn);
 	}
 	
 	public List<T> searchNextRecordsInMultiThreads(IntervalExtremeRecord interval, Connection srcConn, Connection dstConn)

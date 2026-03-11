@@ -18,6 +18,7 @@ import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -730,13 +731,14 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 	}
 	
-	public List<EtlDatabaseObject> searchRecords(EtlDatabaseObject parentSrcObject, Connection srcConn) throws DBException {
+	public List<EtlDatabaseObject> searchRecords(Engine<? extends EtlDatabaseObject> engine,
+	        EtlDatabaseObject parentSrcObject, Connection srcConn) throws DBException {
 		List<EtlDatabaseObject> avaliableSrcObjects = utilities.parseToList(parentSrcObject);
 		
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
+		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(engine, srcConn);
 	}
 }

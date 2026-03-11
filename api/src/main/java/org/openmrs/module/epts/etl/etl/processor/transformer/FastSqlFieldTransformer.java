@@ -69,7 +69,7 @@ public class FastSqlFieldTransformer implements EtlFieldTransformer {
 			}
 		}
 		
-		EtlDatabaseObject srcObject = this.dataSourceConfig.loadRelatedSrcObject(srcObjects, srcConn);
+		EtlDatabaseObject srcObject = this.dataSourceConfig.loadRelatedSrcObject(null, srcObjects, srcConn);
 		
 		Object dstValue = null;
 		

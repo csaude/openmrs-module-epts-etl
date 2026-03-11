@@ -17,30 +17,26 @@ import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.RefType;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
-import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
-import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
-import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utils.Utils;
 
@@ -1384,7 +1380,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 					    Utils.qualifyUnqualifiedSqlFields(getExtraConditionForExtract(), getTableName()));
 				}
 				
-				if (this.hasExtraConditionForExtract() && !this.isUsingManualDefinedAlias()) {
+				if (this.hasExtraConditionForExtract()) {
 					this.setExtraConditionForExtract(
 					    this.getExtraConditionForExtract().replaceAll(getTableName() + "\\.", this.getTableAlias() + "\\."));
 				}
@@ -2807,60 +2803,23 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 		    generateLastUpdateDateInsertTriggerMonitor(), conn);
 	}
 	
-	default long getExtremeRecord(SqlFunctionType function, Connection conn) throws DBException {
+	@SuppressWarnings("unchecked")
+	default long getExtremeRecord(Engine<? extends EtlDatabaseObject> engine, SqlFunctionType function, Connection conn)
+	        throws DBException {
 		
-		String extraCondition = getExtraConditionForExtract();
+		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams((Engine<EtlDatabaseObject>) engine,
+		        null);
 		
-		Object[] params = null;
+		return searchParams.retrieveExtremeRecord(function, conn);
 		
-		if (extraCondition != null) {
-			
-			if (this instanceof SrcConf) {
-				
-				PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraCondition, (SrcConf) this),
-				    getRelatedEtlConf(), true, DbmsType.determineFromConnection(conn));
-				
-				List<Object> paramsAsList = pQ.generateQueryParameters();
-				
-				params = paramsAsList != null ? paramsAsList.toArray() : null;
-				
-				extraCondition = pQ.generatePreparedQuery();
-			}
-		}
-		
-		if (this.getPrimaryKey() == null) {
-			throw new ForbiddenOperationException("No Primary Key is defined on " + this.getTableName()
-			        + " table. If there is a numeric Primary Key candidate you can spefify it on 'manualMapPrimaryKeyOnField' configuration.");
-		}
-		
-		if (!this.getPrimaryKey().isSimpleNumericKey()) {
-			throw new ForbiddenOperationException("Composite and non numeric keys are not supported for src tables");
-		}
-		
-		String sql = "SELECT " + (function.toString() + "(" + this.getTableAlias() + "."
-		        + this.getPrimaryKey().retrieveSimpleKeyColumnName() + ") as value");
-		
-		sql += " FROM " + this.generateSelectFromClauseContent() + "\n";
-		
-		if (utilities.stringHasValue(extraCondition)) {
-			sql += " WHERE " + extraCondition;
-		}
-		
-		SimpleValue simpleValue = BaseDAO.find(SimpleValue.class, sql, params, conn);
-		
-		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
-			return simpleValue.intValue();
-		}
-		
-		return 0;
 	}
 	
-	default long getMinRecordId(Connection conn) throws DBException {
-		return this.getExtremeRecord(SqlFunctionType.MIN, conn);
+	default long getMinRecordId(Engine<? extends EtlDatabaseObject> engine, Connection conn) throws DBException {
+		return this.getExtremeRecord(engine, SqlFunctionType.MIN, conn);
 	}
 	
-	default long getMaxRecordId(Connection conn) throws DBException {
-		return this.getExtremeRecord(SqlFunctionType.MAX, conn);
+	default long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine, Connection conn) throws DBException {
+		return this.getExtremeRecord(engine, SqlFunctionType.MAX, conn);
 	}
 	
 }

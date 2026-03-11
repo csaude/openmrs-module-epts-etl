@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -409,13 +410,14 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
-	        throws DBException {
+	public EtlDatabaseObject loadRelatedSrcObject(Engine<? extends EtlDatabaseObject> engine,
+	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(srcConn);
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(engine,
+		    srcConn);
 		
 		if (utilities.arrayHasNoElement(list)) {
 			return null;

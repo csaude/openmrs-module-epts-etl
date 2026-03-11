@@ -309,7 +309,7 @@ public class FieldsMapping implements TransformableField {
 		
 	}
 	
-	public static FieldsMapping converteFromEtlField(EtlField field) {
+	public static FieldsMapping converteFromEtlField(EtlField field, DstConf dstConf) {
 		
 		if (field.getSrcDataSource() == null) {
 			throw new ForbiddenOperationException("The EtlField " + field.getName() + " has no datasource!");
@@ -320,7 +320,7 @@ public class FieldsMapping implements TransformableField {
 		fm.setSrcField(field.getSrcField().getName());
 		fm.setDataSourceName(field.getSrcDataSource().getName());
 		fm.setDstField(field.getName());
-		fm.tryToLoadTransformer();
+		fm.tryToLoadTransformer(dstConf);
 		
 		return fm;
 	}

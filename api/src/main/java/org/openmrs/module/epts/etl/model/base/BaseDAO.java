@@ -95,6 +95,7 @@ public abstract class BaseDAO {
 	 * @return generated object with retrieved data from DB
 	 */
 	
+	@SuppressWarnings("deprecation")
 	public static <T extends VO> T find(VOLoaderHelper loaderHelper, Class<T> voClass, String condition, Connection conn)
 	        throws DBException {
 		T obj;

@@ -332,14 +332,10 @@ public class QuickTest {
 				
 				for (DstConf mappingInfo : etlConf.getDstConf()) {
 					
-					EtlDatabaseObject destObject = null;
+					EtlDatabaseObject destObject = mappingInfo.getTransformerInstance().transform(null, null, mappingInfo,
+					    null, TransformationType.PRINCIPAL, srcConn, dstConn);
 					
-					List<EtlDatabaseObject> destObjects = mappingInfo.getTransformerInstance().transform(null, destObject,
-					    mappingInfo, null, TransformationType.PRINCIPAL, srcConn, dstConn);
-					
-					if (utilities.arrayHasElement(destObjects)) {
-						
-						destObject = destObjects.get(0);
+					if (destObject != null) {
 						
 						destObject.loadObjectIdData(mappingInfo);
 						

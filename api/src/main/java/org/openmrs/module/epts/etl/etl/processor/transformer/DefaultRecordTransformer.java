@@ -85,7 +85,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjectsForLoading() ? srcObjects
 			        : utilities.parseToList(srcObject);
 			
-			EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(avaliableObjects, srcConn);
+			EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(processor.getEngine(), avaliableObjects,
+			    srcConn);
 			
 			if (relatedSrcObject == null) {
 				

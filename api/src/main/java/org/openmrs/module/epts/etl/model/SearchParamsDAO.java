@@ -3,6 +3,9 @@ package org.openmrs.module.epts.etl.model;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
+import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -27,6 +30,33 @@ public class SearchParamsDAO extends BaseDAO {
 		
 		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
 			return simpleValue.intValue();
+		}
+		
+		return 0;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T extends EtlDatabaseObject> long retrieveExtremRecord(@SuppressWarnings("rawtypes") AbstractEtlSearchParams parametros,
+	        SqlFunctionType sqlFunctionType, IntervalExtremeRecord interval, Connection conn) throws DBException {
+		
+		SearchClauses<T> searchClauses = parametros.generateSearchClauses(interval, conn, null);
+		
+		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
+		searchClauses.getSearchParameters().setQtdRecordPerSelected(0);
+		
+		SrcConf tabConf = parametros.getSrcConf();
+		
+		String selectClause = sqlFunctionType.toString() + "(" + tabConf.getTableAlias() + "_"
+		        + tabConf.getPrimaryKey().retrieveSimpleKeyColumnName() + ") as value";
+		
+		String sql = "select " + selectClause + " from (" + searchClauses.generateSQL(conn) + ") inner_result;";
+		
+		SimpleValue simpleValue = find(SimpleValue.class, sql, searchClauses.getParameters(), conn);
+		
+		searchClauses.getSearchParameters().setQtdRecordPerSelected(bkpQtyRecsPerSelect);
+		
+		if (simpleValue != null && CommonUtilities.getInstance().stringHasValue(simpleValue.getValue())) {
+			return simpleValue.longValue();
 		}
 		
 		return 0;

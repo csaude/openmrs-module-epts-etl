@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParameterException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -652,19 +653,19 @@ public class PreparedQuery {
 		return this.getCountFunctionInfo() != null;
 	}
 	
-	public void detemineLimits(Connection conn) throws DBException {
+	public void detemineLimits(Engine<? extends EtlDatabaseObject> engine, Connection conn) throws DBException {
 		if (!this.isCountQuery()) {
 			throw new ForbiddenOperationException("The query does not use count function!");
 		}
 		
-		this.getCountFunctionInfo().detemineLimits(conn);
+		this.getCountFunctionInfo().detemineLimits(engine, conn);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public List<EtlDatabaseObject> query(Connection conn) throws DBException {
+	public List<EtlDatabaseObject> query(Engine<? extends EtlDatabaseObject> engine, Connection conn) throws DBException {
 		
 		if (this.isCountQuery()) {
-			this.detemineLimits(conn);
+			this.detemineLimits(engine, conn);
 			
 			PreparedCountQuerySearchParams searchParams = new PreparedCountQuerySearchParams(this);
 			

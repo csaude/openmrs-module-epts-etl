@@ -124,7 +124,8 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	private void performeEtlOnChildItem(EtlItemConfiguration itemConf, LoadRecord parentLoadRecord, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		
-		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(parentLoadRecord.getSrcRecord(), srcConn);
+		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(this.getEngine(),
+		    parentLoadRecord.getSrcRecord(), srcConn);
 		
 		EtlLoadHelper loadHelper = new EtlLoadHelper(this, itemConf.getDstConf(), etlObjects.size(), LoadingType.PRINCIPAL);
 		

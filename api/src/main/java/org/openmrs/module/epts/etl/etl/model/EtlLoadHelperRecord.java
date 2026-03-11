@@ -78,8 +78,11 @@ public class EtlLoadHelperRecord {
 				return r;
 			}
 		}
+		if (!dstConf.hasSrcObjectCondition()) {
+			throw new ForbiddenOperationException("No dstRecord found for DstConf " + dstConf);
+		}
 		
-		throw new ForbiddenOperationException("No dstRecord found for DstConf " + dstConf);
+		return null;
 	}
 	
 	public List<EtlDatabaseObject> getDstRecords() {

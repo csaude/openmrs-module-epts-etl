@@ -44,10 +44,4 @@ public class Utils {
 		matcher.appendTail(sb);
 		return sb.toString();
 	}
-	
-	public static void main(String[] args) {
-		System.out.println(qualifyUnqualifiedSqlFields(
-		    "encounter_id > 15461 and encounter.encounter_type = 53 and voided = 0 and location_in = @locations ",
-		    "encounter"));
-	}
 }

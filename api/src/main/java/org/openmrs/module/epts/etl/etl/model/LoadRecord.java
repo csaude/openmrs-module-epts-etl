@@ -281,8 +281,7 @@ public class LoadRecord {
 		
 		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
 			
-			boolean loadedWithDsrValue = this.getDstRecord().getField(refInfo).getTransformingInfo()
-			        .isLoadedWithDstValue();
+			boolean loadedWithDsrValue = this.getDstRecord().getField(refInfo).getTransformingInfo().isLoadedWithDstValue();
 			
 			//We check if this parent is same to the parent dstConf
 			//The FK for parent dstConf is already loaded with the dst PK
@@ -309,7 +308,7 @@ public class LoadRecord {
 				}
 				
 				EtlDatabaseObject parentInSrc = this.getDstRecord().retrieveParentInSrcUsingDstParentInfo(refInfo,
-				    this.getSrcConf(), dstConn);
+				    this.getSrcConf(), srcConn);
 				
 				EtlDatabaseObject parentInDst = null;
 				
@@ -634,7 +633,7 @@ public class LoadRecord {
 	public static LoadRecord initEtlRecord(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject destObject,
 	        DstConf mappingInfo) {
 		
-		return new LoadRecord(srcObject, destObject, processor.getSrcConf(), mappingInfo, processor);
+		return new LoadRecord(srcObject, destObject, (SrcConf) srcObject.getRelatedConfiguration(), mappingInfo, processor);
 	}
 	
 }
