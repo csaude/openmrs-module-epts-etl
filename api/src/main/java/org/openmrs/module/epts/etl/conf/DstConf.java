@@ -257,13 +257,13 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	private EtlDataSource findDataSource(String dsName) {
-		for (EtlDataSource ds : this.allAvaliableDataSource) {
+		for (EtlDataSource ds : this.getAllAvaliableDataSource()) {
 			if (ds.getAlias().equals(dsName)) {
 				return ds;
 			}
 		}
 		
-		for (EtlDataSource ds : this.allAvaliableDataSource) {
+		for (EtlDataSource ds : this.getAllAvaliableDataSource()) {
 			if (ds.getName().equals(dsName)) {
 				return ds;
 			}
@@ -644,24 +644,34 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 	}
 	
+	public void addToAvaliableDataSource(EtlDataSource ds) {
+		if (this.getAllAvaliableDataSource() == null) {
+			this.allAvaliableDataSource = new ArrayList<>();
+		}
+		
+		if (ds == null)
+			throw new ForbiddenOperationException("Empty ds was provided");
+		
+		this.getAllAvaliableDataSource().add(ds);
+	}
+	
 	private void loadDataSourceInfo(Connection conn) throws DBException {
-		this.allAvaliableDataSource = new ArrayList<>();
-		this.allAvaliableDataSource.add(getSrcConf());
+		addToAvaliableDataSource(getSrcConf());
 		
 		if (hasParentDstConf()) {
-			this.allAvaliableDataSource.add(this.getParentDstConf());
+			addToAvaliableDataSource(this.getParentDstConf());
 		}
 		
 		if (this.getSrcConf().hasAuxExtractTable()) {
 			for (JoinableEntity auxExtractTable : this.getSrcConf().getJoiningTable()) {
 				if (!auxExtractTable.doNotUseAsDatasource()) {
-					this.allAvaliableDataSource.add(auxExtractTable);
+					addToAvaliableDataSource(auxExtractTable);
 				}
 				
 				if (auxExtractTable.isMainJoiningEntity() && auxExtractTable.parseToJoining().hasAuxExtractTable()) {
 					for (JoinableEntity innerAuxExtractTable : auxExtractTable.parseToJoining().getJoiningTable()) {
 						if (!innerAuxExtractTable.doNotUseAsDatasource()) {
-							this.allAvaliableDataSource.add(innerAuxExtractTable);
+							addToAvaliableDataSource(innerAuxExtractTable);
 						}
 					}
 				}
@@ -669,8 +679,9 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 		
 		if (utilities.arrayHasElement(getSrcConf().getAvaliableExtraDataSource())) {
-			allAvaliableDataSource
-			        .addAll(utilities.parseList(getSrcConf().getAvaliableExtraDataSource(), EtlDataSource.class));
+			for (EtlDataSource ds : utilities.parseList(getSrcConf().getAvaliableExtraDataSource(), EtlDataSource.class)) {
+				addToAvaliableDataSource(ds);
+			}
 		}
 		
 		this.fullLoadAllRelatedTables(getRelatedEtlConf(), null, conn);
@@ -759,7 +770,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		this.allNotPrefferredDataSource = new ArrayList<>();
 		this.allPrefferredDataSource = new ArrayList<>();
 		
-		for (EtlDataSource ds : allAvaliableDataSource) {
+		for (EtlDataSource ds : getAllAvaliableDataSource()) {
 			if (this.getPrefferredDataSource().contains(ds.getName())
 			        || this.getPrefferredDataSource().contains(ds.getAlias())) {
 				allPrefferredDataSource.add(ds);

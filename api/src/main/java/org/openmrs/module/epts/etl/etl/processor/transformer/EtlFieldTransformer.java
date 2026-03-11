@@ -34,8 +34,8 @@ public interface EtlFieldTransformer {
 	
 	static final String FAST_SQL_TRANSFORMER = FastSqlFieldTransformer.class.getCanonicalName();
 	
-	Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn, Connection dstConn)
-	        throws DBException, EtlTransformationException;
+	FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	        Connection dstConn) throws DBException, EtlTransformationException;
 	
 	default void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects, FieldsMapping field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
@@ -44,29 +44,21 @@ public interface EtlFieldTransformer {
 			field.setSrcValue("@" + field.getSrcField());
 		}
 		
-		Object dstValue = this.transform(srcObjects, field, srcConn, dstConn);
+		FieldTransformingInfo fieldTransformingInfo = this.transform(srcObjects, field, srcConn, dstConn);
+		
+		Object dstValue = fieldTransformingInfo != null ? fieldTransformingInfo.getTransformedValue() : null;
 		
 		//Override the value if it should be override
 		if (dstValue != null && field.shouldOverrideValue(dstValue)) {
 			dstValue = null;
 		}
 		
-		//The mappingTransformer assumes destination value
-		if (this instanceof MappingFieldTransformer) {
-			transformedRecord.getField(field.getDstField()).setLoadedWithDefaultValue(true);
-		}
-		
 		if (dstValue == null) {
 			dstValue = tryToLoadDefaultValue(field, srcObjects);
 			
 			if (dstValue != null) {
-				transformedRecord.getField(field.getDstField()).setLoadedWithDefaultValue(true);
+				fieldTransformingInfo.setLoadedWithDefaultValue(true);
 			}
-		}
-		
-		//This mean that this field was manualy filed 
-		if (this instanceof SimpleValueTransformer) {
-			transformedRecord.getField(field.getDstField()).setLoadedWithDefaultValue(true);
 		}
 		
 		if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(field.getDstField()))) {
@@ -76,6 +68,8 @@ public interface EtlFieldTransformer {
 		}
 		
 		transformedRecord.setFieldValue(field.getDstField(), dstValue);
+		
+		transformedRecord.getField(field.getDstField()).setTransformingInfo(fieldTransformingInfo);
 	}
 	
 	public static Object tryToLoadDefaultValue(TransformableField transformableField, List<EtlDatabaseObject> srcObjects) {

@@ -37,7 +37,7 @@ public class StringTranformer implements EtlFieldTransformer {
 	}
 	
 	@Override
-	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	public FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
 		if (field.getValueToTransform() == null) {
@@ -45,11 +45,11 @@ public class StringTranformer implements EtlFieldTransformer {
 			        srcObjects.get(0), ActionOnEtlException.ABORT);
 		}
 		
-		String srcValueWithParamsReplaced = EtlFieldTransformer.tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform())
-		        .toString();
+		String srcValueWithParamsReplaced = EtlFieldTransformer
+		        .tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform()).toString();
 		
 		try {
-			return evaluateStringExpression(srcValueWithParamsReplaced);
+			return new FieldTransformingInfo(field, evaluateStringExpression(srcValueWithParamsReplaced), null);
 		}
 		catch (Exception e) {
 			throw new EtlExceptionImpl("Failed to evaluate the string expression: " + field.getValueToTransform(), e);

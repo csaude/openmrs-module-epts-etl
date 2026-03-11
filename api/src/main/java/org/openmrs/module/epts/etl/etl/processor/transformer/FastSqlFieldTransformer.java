@@ -57,7 +57,7 @@ public class FastSqlFieldTransformer implements EtlFieldTransformer {
 	}
 	
 	@Override
-	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	public FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
 		synchronized (LOCK_STRING) {
@@ -78,7 +78,7 @@ public class FastSqlFieldTransformer implements EtlFieldTransformer {
 		}
 		
 		if (dstValue != null) {
-			return dstValue;
+			return new FieldTransformingInfo(field, dstValue, null);
 		} else if (field.getDefaultValue() == null) {
 			//We assume that the defaultValue will be loaded from EtlFieldTransformer.transform
 			throw new EmptyTransformedValueException(srcObjects.get(0), field.getSrcField(), this,

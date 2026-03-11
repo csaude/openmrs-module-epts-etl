@@ -91,7 +91,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			
 			loadHelper.load(srcConn, dstConn);
 			
-			tryToPerfomeEtlOnChild(loadHelper, srcConn, dstConn);
+			tryToPerfomeEtlOnChild(this.getEtlItemConfiguration(), loadHelper, srcConn, dstConn);
 			
 			logInfo("ETL OPERATION [" + getEtlItemConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size()
 			        + "' RECORDS");
@@ -105,26 +105,26 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		}
 	}
 	
-	private void tryToPerfomeEtlOnChild(EtlLoadHelper loadHelper, Connection srcConn, Connection dstConn)
-	        throws DBException {
+	private void tryToPerfomeEtlOnChild(EtlItemConfiguration itemConf, EtlLoadHelper loadHelper, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		
-		if (this.getEtlItemConfiguration().hasChildItemConf()) {
-			for (EtlItemConfiguration itemConf : this.getEtlItemConfiguration().getChildItemConf()) {
-				itemConf.fullLoad(this.getRelatedEtlOperationConfig());
+		if (itemConf.hasChildItemConf()) {
+			for (EtlItemConfiguration childItemConf : this.getEtlItemConfiguration().getChildItemConf()) {
+				childItemConf.fullLoad(this.getRelatedEtlOperationConfig());
 				
-				for (LoadRecord rec : loadHelper.getAllRecordsAsLoadRecord(itemConf.getRelatedParentDstConf(),
+				for (LoadRecord rec : loadHelper.getAllRecordsAsLoadRecord(childItemConf.getRelatedParentDstConf(),
 				    LoadStatus.SUCCESS)) {
-					performeEtlOnChildItem(itemConf, rec, srcConn, dstConn);
+					performeEtlOnChildItem(childItemConf, rec, srcConn, dstConn);
 				}
 				
 			}
 		}
 	}
 	
-	private void performeEtlOnChildItem(EtlItemConfiguration itemConf, LoadRecord loadRecord, Connection srcConn,
+	private void performeEtlOnChildItem(EtlItemConfiguration itemConf, LoadRecord parentLoadRecord, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		
-		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(loadRecord.getSrcRecord(), srcConn);
+		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(parentLoadRecord.getSrcRecord(), srcConn);
 		
 		EtlLoadHelper loadHelper = new EtlLoadHelper(this, itemConf.getDstConf(), etlObjects.size(), LoadingType.PRINCIPAL);
 		
@@ -133,12 +133,12 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			
 			try {
 				
-				for (DstConf mappingInfo : getEtlItemConfiguration().getDstConf()) {
+				for (DstConf mappingInfo : itemConf.getDstConf()) {
 					
 					if (mappingInfo.checkIfSrcObjectCanBeLoaded(srcRecord)) {
 						
 						EtlDatabaseObject dstObject = mappingInfo.getTransformerInstance().transform(this, srcRecord,
-						    mappingInfo, loadRecord.getDstRecord(), TransformationType.PRINCIPAL, srcConn, dstConn);
+						    mappingInfo, parentLoadRecord.getDstRecord(), TransformationType.PRINCIPAL, srcConn, dstConn);
 						
 						if (dstObject != null) {
 							logTrace("dstRecord " + srcRecord + " transforming to " + dstObject);
@@ -165,7 +165,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		
 		loadHelper.load(srcConn, dstConn);
 		
-		tryToPerfomeEtlOnChild(loadHelper, srcConn, dstConn);
+		tryToPerfomeEtlOnChild(itemConf, loadHelper, srcConn, dstConn);
 	}
 	
 	@Override

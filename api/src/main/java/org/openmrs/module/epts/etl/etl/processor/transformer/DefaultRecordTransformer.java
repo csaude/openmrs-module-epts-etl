@@ -56,6 +56,10 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			srcObjects.add(srcObject.getSharedPkObj());
 		}
 		
+		if (migratedDstParent != null) {
+			srcObjects.add(migratedDstParent);
+		}
+		
 		if (srcObject.hasAuxLoadObject()) {
 			for (EtlDatabaseObject auxObject : srcObject.getAuxLoadObject()) {
 				srcObjects.add(auxObject);

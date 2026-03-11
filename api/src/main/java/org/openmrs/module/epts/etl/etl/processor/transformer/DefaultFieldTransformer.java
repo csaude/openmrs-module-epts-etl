@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
@@ -37,10 +38,11 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 	}
 	
 	@Override
-	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	public FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
 		Object dstValue = null;
+		EtlDataSource ds = null;
 		
 		if (field.getValueToTransform() == null) {
 			dstValue = null;
@@ -61,6 +63,8 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 					catch (ForbiddenOperationException e) {
 						dstValue = srcObject.getFieldValue(fieldNameInCameCase);
 					}
+					
+					ds = (EtlDataSource) srcObject.getRelatedConfiguration();
 				}
 			}
 			
@@ -71,7 +75,7 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 			}
 		}
 		
-		return dstValue;
+		return new FieldTransformingInfo(field, dstValue, ds);
 	}
 	
 }

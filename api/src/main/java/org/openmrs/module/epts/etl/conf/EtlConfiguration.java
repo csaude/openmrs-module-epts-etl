@@ -927,7 +927,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			for (EtlItemConfiguration childItem : item.getChildItemConf()) {
 				childItem.setParentItemConf(item);
 				
-				if (utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
+				if (!utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
 					if (utilities.arrayHasExactlyOneElement(item.getDstConf())) {
 						childItem.setRelatedParentDstConfName(item.getDstConf().get(0).getName());
 					} else {

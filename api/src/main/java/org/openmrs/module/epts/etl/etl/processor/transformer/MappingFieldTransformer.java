@@ -63,7 +63,7 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 	}
 	
 	@Override
-	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	public FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
 		if (this.tableConfig == null) {
@@ -86,7 +86,7 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 		}
 		
 		if (dstValue != null) {
-			return dstValue;
+			return new FieldTransformingInfo(field, dstValue, null);
 		} else if (field.getDefaultValue() == null) {
 			//We assume that the defaultValue will be loaded from EtlFieldTransformer.transform
 			throw new MissingMappingException(srcObjects.get(0), field.getSrcField(), srcValueWithParamsReplaced, this,

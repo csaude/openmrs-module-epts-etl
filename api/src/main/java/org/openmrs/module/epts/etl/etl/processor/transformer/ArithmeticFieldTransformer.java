@@ -41,7 +41,7 @@ public class ArithmeticFieldTransformer implements EtlFieldTransformer {
 	}
 	
 	@Override
-	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	public FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
 		if (field.getValueToTransform() == null) {
@@ -53,7 +53,7 @@ public class ArithmeticFieldTransformer implements EtlFieldTransformer {
 		        .tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform()).toString();
 		
 		try {
-			return evaluateExpression(srcValueWithParamsReplaced);
+			return new FieldTransformingInfo(field, evaluateExpression(srcValueWithParamsReplaced), null);
 		}
 		catch (Exception e) {
 			throw new EtlTransformationException(

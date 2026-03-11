@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -50,21 +51,17 @@ public class Field implements Serializable {
 	
 	private boolean autoIncrement;
 	
-	private boolean loadedWithDefaultValue;
+	private FieldTransformingInfo transformingInfo;
 	
 	public Field() {
 	}
 	
-	public boolean loadedWithDefaultValue() {
-		return loadedWithDefaultValue;
+	public FieldTransformingInfo getTransformingInfo() {
+		return transformingInfo;
 	}
 	
-	public boolean isLoadedWithDefaultValue() {
-		return loadedWithDefaultValue;
-	}
-	
-	public void setLoadedWithDefaultValue(boolean loadedWithDefaultValue) {
-		this.loadedWithDefaultValue = loadedWithDefaultValue;
+	public void setTransformingInfo(FieldTransformingInfo transformingInfo) {
+		this.transformingInfo = transformingInfo;
 	}
 	
 	public void setTypeClass(Class<?> typeClass) {

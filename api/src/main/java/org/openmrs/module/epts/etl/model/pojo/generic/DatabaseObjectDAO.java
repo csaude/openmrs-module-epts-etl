@@ -605,8 +605,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 							}
 						}
 						catch (DBException e1) {
-							
-							if (generateOperationResult) {
+							if (tabConf.getRelatedEtlConf().getGeneralBehaviourOnEtlException().log()
+							        && generateOperationResult) {
 								result.addToRecordsWithUnresolvedErrors(record.getSrcRelatedObject(), e1);
 							} else
 								throw e;

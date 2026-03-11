@@ -32,10 +32,13 @@ public class SimpleValueTransformer implements EtlFieldTransformer {
 	}
 	
 	@Override
-	public Object transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
+	public FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
-		return EtlFieldTransformer.tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform());
+		Object result = EtlFieldTransformer.tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform());
+		
+		return new FieldTransformingInfo(field, result, null);
+		
 	}
 	
 }

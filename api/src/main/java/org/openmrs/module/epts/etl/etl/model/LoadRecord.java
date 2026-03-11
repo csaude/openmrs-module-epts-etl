@@ -281,14 +281,15 @@ public class LoadRecord {
 		
 		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
 			
-			boolean loadedWithDefaultValue = this.getDstRecord().getField(refInfo).loadedWithDefaultValue();
+			boolean loadedWithDsrValue = this.getDstRecord().getField(refInfo).getTransformingInfo()
+			        .isLoadedWithDstValue();
 			
 			//We check if this parent is same to the parent dstConf
 			//The FK for parent dstConf is already loaded with the dst PK
 			boolean parentIsDstParentConf = this.getDstConf().hasParentDstConf()
 			        && this.getDstConf().getTableName().equals(refInfo.getTableName());
 			
-			boolean skipDstParentLoad = loadedWithDefaultValue || parentIsDstParentConf;
+			boolean skipDstParentLoad = loadedWithDsrValue || parentIsDstParentConf;
 			
 			if (!skipDstParentLoad) {
 				performeParentInfoInitialization(dstConn, refInfo);
