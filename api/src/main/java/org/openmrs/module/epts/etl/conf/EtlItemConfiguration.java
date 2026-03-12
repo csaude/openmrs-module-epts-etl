@@ -74,7 +74,17 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private String relatedParentDstConfName;
 	
+	private boolean doNotFullLoadDstConf;
+	
 	public EtlItemConfiguration() {
+	}
+	
+	public boolean isDoNotFullLoadDstConf() {
+		return doNotFullLoadDstConf;
+	}
+	
+	public void setDoNotFullLoadDstConf(boolean doNotFullLoadDstConf) {
+		this.doNotFullLoadDstConf = doNotFullLoadDstConf;
 	}
 	
 	public String getRelatedParentDstConfName() {
@@ -201,7 +211,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	        throws DBException {
 		EtlItemConfiguration etl = new EtlItemConfiguration();
 		
-		SrcConf src = SrcConf.fastCreate(tableConfig, conn);
+		SrcConf src = SrcConf.fastCreate(tableConfig, etl, conn);
 		
 		etl.setSrcConf(src);
 		
@@ -303,6 +313,10 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			setManualMapPrimaryKeyOnField(getRelatedEtlConf().getManualMapPrimaryKeyOnField());
 		}
 		
+		if (!this.srcConf.hasDstType()) {
+			this.srcConf.setDstType(operationConfig.getDstType());
+		}
+		
 		this.srcConf.fullLoad();
 		
 		OpenConnection dstConn = null;
@@ -352,9 +366,13 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 							map.setParents(getSrcConf().tryToCloneAllParentsForOtherTable(map, dstConn));
 						}
 						
-						map.fullLoad(dstConn);
+						if (!isDoNotFullLoadDstConf()) {
+							map.fullLoad(dstConn);
+							
+							map.generateAllFieldsMapping(dstConn);
+						}
 						
-						map.generateAllFieldsMapping(dstConn);
+						
 					}
 					
 				}

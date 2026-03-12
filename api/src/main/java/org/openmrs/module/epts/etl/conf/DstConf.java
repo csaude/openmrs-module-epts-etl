@@ -344,7 +344,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public void generateAllFieldsMapping(Connection conn) throws DBException, FieldsMappingException {
-		if (!useDefaultTransformer()) {
+		if (!useDefaultTransformer() || utilities.arrayHasElement(this.allMapping)) {
 			return;
 		}
 		
@@ -646,6 +646,8 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		loadDataSourceInfo(conn);
 		
 		tryToLoadTransformer(conn);
+		
+		this.generateAllFieldsMapping(conn);
 		
 		if (this.getDstType().isCsv()) {
 			if (this.getCsvDelimiter() == null) {

@@ -309,10 +309,10 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return this.fullLoaded;
 	}
 	
-	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig, Connection conn) throws DBException {
+	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig, EtlItemConfiguration itemConf,  Connection conn) throws DBException {
 		SrcConf src = new SrcConf();
 		
-		src.copyFromOther(src, null, null, conn);
+		src.copyFromOther(tableConfig, null, itemConf, conn);
 		
 		return src;
 	}

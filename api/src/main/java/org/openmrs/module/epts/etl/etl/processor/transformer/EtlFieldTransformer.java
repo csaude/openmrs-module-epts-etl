@@ -39,6 +39,8 @@ public interface EtlFieldTransformer {
 	
 	static final String COALESCE_TRANSFORMER = CoalesceFieldTransformer.class.getCanonicalName();
 	
+	static final String PARENT_ON_DEMAND_TRANSFORMER = ParentOnDemandLoadTransformer.class.getCanonicalName();
+	
 	FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject transformedRecord,
 	        List<EtlDatabaseObject> additionalSrcObjects, TransformableField field, Connection srcConn, Connection dstConn)
 	        throws DBException, EtlTransformationException;

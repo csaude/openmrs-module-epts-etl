@@ -11,6 +11,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
+import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -65,6 +66,10 @@ public class FieldsMapping implements TransformableField {
 		this.dataSourceName = dataSourceName;
 		this.dstField = destField;
 		this.possibleSrc.add(dataSourceName);
+		
+		if (srcField == null) {
+			setMapToNullValue(true);
+		}
 	}
 	
 	@Override
@@ -119,19 +124,25 @@ public class FieldsMapping implements TransformableField {
 	}
 	
 	public static FieldsMapping fastCreate(String fullFieldName, String dstField, DstConf dstConf) {
-		String[] fieldParts = fullFieldName.toString().split("\\.");
+		String[] fieldParts = utilities.stringHasValue(fullFieldName) ? fullFieldName.toString().split("\\.") : null;
 		
 		String dataSourceName = null;
-		String srcFieldName;
+		String srcFieldName = null;
 		
-		if (fieldParts.length > 1) {
-			dataSourceName = fieldParts[0];
-			srcFieldName = fieldParts[1];
-		} else {
-			srcFieldName = fieldParts[0];
+		if (fieldParts != null) {
+			if (fieldParts.length > 1) {
+				dataSourceName = fieldParts[0];
+				srcFieldName = fieldParts[1];
+			} else {
+				srcFieldName = fieldParts[0];
+			}
 		}
 		
 		dstField = dstField != null ? dstField : srcFieldName;
+		
+		if (dstField == null) {
+			throw new EtlExceptionImpl("A FieldsMapping must have at least a srcFieldName or dstField");
+		}
 		
 		FieldsMapping fieldMap = FieldsMapping.fastCreate(srcFieldName, dstField);
 		
@@ -148,7 +159,14 @@ public class FieldsMapping implements TransformableField {
 			}
 			
 		} else {
-			dstConf.tryToLoadDataSourceToFieldMapping(fieldMap);
+			try {
+				dstConf.tryToLoadDataSourceToFieldMapping(fieldMap);
+			}
+			catch (FieldNotAvaliableInAnyDataSource e) {
+				fieldMap.setSrcField(null);
+				fieldMap.setSrcValue(srcFieldName);
+			}
+			
 		}
 		
 		return fieldMap;

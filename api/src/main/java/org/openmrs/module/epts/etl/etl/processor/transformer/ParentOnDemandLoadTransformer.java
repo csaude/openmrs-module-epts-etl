@@ -83,7 +83,9 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	
 	private String parentField;
 	
-	private EtlItemConfiguration parentRecordEtlItemConf;
+	private EtlItemConfiguration newParentRecordEtlItemConf;
+	
+	private EtlItemConfiguration existingParentRecordEtlItemConf;
 	
 	private FieldsMapping parentSourceFieldMapping;
 	
@@ -123,6 +125,10 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 				String dstField = mapping[0];
 				String srcFieldOrValue = mapping[1];
 				
+				if (!utilities.stringHasValue(srcFieldOrValue) || srcFieldOrValue.toLowerCase().equals("null")) {
+					srcFieldOrValue = null;
+				}
+				
 				FieldsMapping fm = fastCreateFieldMap(srcFieldOrValue, dstField, dstConf);
 				
 				this.parentFieldMappings.add(fm);
@@ -133,7 +139,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	private FieldsMapping fastCreateFieldMap(String parentFieldName, String dstField, DstConf dstConf) {
 		FieldsMapping fieldMap = FieldsMapping.fastCreate(parentFieldName, dstField, dstConf);
 		
-		if (!fieldMap.hasDataSourceName()) {
+		if (!fieldMap.hasDataSourceName() && !fieldMap.isMapToNullValue()) {
 			
 			if (utilities.isNumeric(parentFieldName)) {
 				fieldMap.setSrcValue(parentFieldName);
@@ -183,29 +189,53 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		    k -> new ParentOnDemandLoadTransformer(parentTable, parentTableField, defaultObjectData, dstConf));
 	}
 	
-	void tryToInitParentEtlItemConf(Connection srcConn, Connection dstConn) throws DBException {
+	void tryToInitNewParentEtlItemConf(Connection srcConn, Connection dstConn) throws DBException {
 		
-		if (this.parentRecordEtlItemConf == null) {
+		if (this.newParentRecordEtlItemConf == null) {
 			synchronized (lock) {
-				if (parentRecordEtlItemConf == null) {
+				if (newParentRecordEtlItemConf == null) {
 					
 					AbstractTableConfiguration parentConf = new GenericTableConfiguration(parentTable);
 					parentConf.setRelatedEtlConfig(dstConf.getRelatedEtlConf());
 					
 					EtlItemConfiguration conf = EtlItemConfiguration.fastCreate(parentConf, srcConn);
 					
-					conf.fullLoad(parentConf.getRelatedEtlConf().getOperations().get(0));
+					conf.setDoNotFullLoadDstConf(true);
+					
+					conf.fullLoad(dstConf.getRelatedEtlConf().getOperations().get(0));
 					
 					conf.getSrcConf().fullLoad(srcConn);
 					
-					this.parentRecordEtlItemConf = conf;
+					this.newParentRecordEtlItemConf = conf;
 				}
 			}
 		}
 	}
 	
-	void tryToInitFastParentDstConf(Connection dstConn) throws DBException {
-		DstConf fastParentDstConf = getFastParentDstConf();
+	void tryToInitExistingParentEtlItemConf(Connection srcConn, Connection dstConn) throws DBException {
+		
+		if (this.existingParentRecordEtlItemConf == null) {
+			synchronized (lock) {
+				if (existingParentRecordEtlItemConf == null) {
+					
+					AbstractTableConfiguration parentConf = new GenericTableConfiguration(parentTable);
+					parentConf.setRelatedEtlConfig(dstConf.getRelatedEtlConf());
+					
+					EtlItemConfiguration conf = EtlItemConfiguration.fastCreate(parentConf, srcConn);
+					
+					conf.setDoNotFullLoadDstConf(true);
+					conf.fullLoad(dstConf.getRelatedEtlConf().getOperations().get(0));
+					
+					conf.getSrcConf().fullLoad(srcConn);
+					
+					this.existingParentRecordEtlItemConf = conf;
+				}
+			}
+		}
+	}
+	
+	void tryToInitFastNewParentDstConf(Connection srcConn, Connection dstConn) throws DBException {
+		DstConf fastParentDstConf = getFastNewParentDstConf(dstConn, dstConn);
 		
 		if (!fastParentDstConf.isFullLoaded()) {
 			synchronized (lock) {
@@ -223,20 +253,60 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		}
 	}
 	
-	SrcConf getFastParentSrcConf() {
-		return this.parentRecordEtlItemConf.getSrcConf();
+	void tryToInitFastExistingParentDstConf(Connection dstConn) throws DBException {
+		if (this.existingParentRecordEtlItemConf == null) {
+			return;
+		}
+		
+		DstConf fastParentDstConf = getFastExistingParentDstConf(dstConn, dstConn);
+		
+		if (!fastParentDstConf.isFullLoaded()) {
+			synchronized (lock) {
+				if (!fastParentDstConf.isFullLoaded()) {
+					
+					fastParentDstConf.setDoNotUseSrcConfAsDataSource(true);
+					
+					fastParentDstConf.addAllToAvaliableDataSource(this.dstConf.getAllAvaliableDataSource());
+					
+					fastParentDstConf.setMapping(this.parentFieldMappings);
+					
+					fastParentDstConf.fullLoad(dstConn);
+				}
+			}
+		}
 	}
 	
-	DstConf getFastParentDstConf() {
-		return this.parentRecordEtlItemConf.getDstConf().get(0);
+	SrcConf getFastNewParentSrcConf(Connection srcConn, Connection dstConn) throws DBException {
+		tryToInitNewParentEtlItemConf(srcConn, dstConn);
+		
+		return this.newParentRecordEtlItemConf.getSrcConf();
+	}
+	
+	SrcConf getFastExistingParentSrcConf(Connection srcConn, Connection dstConn) throws DBException {
+		tryToInitExistingParentEtlItemConf(srcConn, dstConn);
+		
+		return this.existingParentRecordEtlItemConf.getSrcConf();
+	}
+	
+	DstConf getFastExistingParentDstConf(Connection srcConn, Connection dstConn) throws DBException {
+		
+		if (this.existingParentRecordEtlItemConf == null) {
+			tryToInitFastExistingParentDstConf(dstConn);
+		}
+		
+		return this.existingParentRecordEtlItemConf.getDstConf().get(0);
+	}
+	
+	DstConf getFastNewParentDstConf(Connection srcConn, Connection dstConn) throws DBException {
+		tryToInitFastNewParentDstConf(srcConn, dstConn);
+		
+		return this.newParentRecordEtlItemConf.getDstConf().get(0);
 	}
 	
 	@Override
 	public FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
-		
-		tryToInitParentEtlItemConf(srcConn, dstConn);
 		
 		EtlDatabaseObject dstParent = resolveParent(processor, srcObject, transformedRecord, additionalSrcObjects, srcConn,
 		    dstConn);
@@ -260,12 +330,12 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		
 		EtlDatabaseObject srcParent = null;
 		
-		Object srcParentValue = parentSourceFieldMapping.getTransformerInstance().transform(processor, srcObject,
+		FieldTransformingInfo fieldInfo = parentSourceFieldMapping.getTransformerInstance().transform(processor, srcObject,
 		    transformedRecord, additionalSrcObjects, parentSourceFieldMapping, srcConn, dstConn);
 		
-		if (srcParentValue != null) {
-			DatabaseObjectDAO.getByOid(getFastParentSrcConf(), Oid.fastCreate(getFastParentSrcConf(), srcParentValue),
-			    srcConn);
+		if (fieldInfo != null && fieldInfo.getTransformedValue() != null) {
+			srcParent = DatabaseObjectDAO.getByOid(getFastExistingParentSrcConf(srcConn, dstConn),
+			    Oid.fastCreate(getFastExistingParentSrcConf(srcConn, dstConn), fieldInfo.getTransformedValue()), srcConn);
 			
 			if (srcParent == null && this.missingFastSrcParentBehaviour.complainOnMissingSrcParent()) {
 				throw new EtlTransformationException("The related srcValue (" + srcParent
@@ -281,10 +351,10 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	        List<EtlDatabaseObject> additionalSrcObjects, Connection srcConn, Connection dstConn)
 	        throws EtlTransformationException, DBException {
 		
-		tryToInitFastParentDstConf(dstConn);
-		
 		EtlDatabaseObject srcParent = resolveSrcParent(processor, srcObject, transformedRecord, additionalSrcObjects,
 		    srcConn, dstConn);
+		
+		srcParent.setRelatedConfiguration(getFastExistingParentDstConf(srcConn, dstConn));
 		
 		return DatabaseObjectDAO.getByUniqueKeys(srcParent, dstConn);
 	}
@@ -293,15 +363,26 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	        List<EtlDatabaseObject> additionalSrcObjects, TransformableField field, Connection srcConn, Connection dstConn)
 	        throws DBException {
 		
-		tryToInitFastParentDstConf(dstConn);
-		
 		EtlDatabaseObject srcParent = resolveSrcParent(processor, srcObject, transformedRecord, additionalSrcObjects,
 		    srcConn, dstConn);
 		
-		EtlLoadHelper loadHelper = EtlLoadHelper.fastLoadRecord(processor, srcParent, getFastParentDstConf(), srcConn,
-		    dstConn);
+		DstConf dstConf = null;
 		
-		List<LoadRecord> migratedRecs = loadHelper.getAllRecordsAsLoadRecord(getFastParentDstConf(), LoadStatus.SUCCESS);
+		if (srcParent != null) {
+			tryToInitExistingParentEtlItemConf(srcConn, dstConn);
+			
+			dstConf = this.existingParentRecordEtlItemConf.getDstConf().get(0);
+		} else {
+			tryToInitNewParentEtlItemConf(srcConn, dstConn);
+			
+			dstConf = this.newParentRecordEtlItemConf.getDstConf().get(0);
+			
+			srcParent = this.newParentRecordEtlItemConf.getSrcConf().createRecordInstance();
+		}
+		
+		EtlLoadHelper loadHelper = EtlLoadHelper.fastLoadRecord(processor, srcParent, dstConf, srcConn, dstConn);
+		
+		List<LoadRecord> migratedRecs = loadHelper.getAllRecordsAsLoadRecord(dstConf, LoadStatus.SUCCESS);
 		
 		if (utilities.arrayHasElement(migratedRecs)) {
 			return migratedRecs.get(0).getDstRecord();
