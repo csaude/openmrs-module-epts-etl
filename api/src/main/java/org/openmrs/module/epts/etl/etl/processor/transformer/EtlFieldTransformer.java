@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -21,6 +22,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public interface EtlFieldTransformer {
 	
 	public static final CommonUtilities utilities = CommonUtilities.getInstance();
+	
+	static final Pattern PARAM_PATTERN = Pattern.compile("@(\\w+)");
 	
 	static final String DEFAULT_TRANSFORMER = DefaultFieldTransformer.class.getCanonicalName();
 	
@@ -36,17 +39,24 @@ public interface EtlFieldTransformer {
 	
 	static final String COALESCE_TRANSFORMER = CoalesceFieldTransformer.class.getCanonicalName();
 	
-	FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
-	        Connection dstConn) throws DBException, EtlTransformationException;
+	FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject transformedRecord,
+	        List<EtlDatabaseObject> additionalSrcObjects, TransformableField field, Connection srcConn, Connection dstConn)
+	        throws DBException, EtlTransformationException;
 	
-	default void transform(EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> srcObjects, FieldsMapping field,
-	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
+	default void performeFieldTransformation(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject transformedRecord,
+	        List<EtlDatabaseObject> additionalSrcObjects, FieldsMapping field, Connection srcConn, Connection dstConn)
+	        throws DBException, EtlTransformationException {
 		
 		if (field.getSrcValue() == null && field.hasDataSourceName()) {
 			field.setSrcValue("@" + field.getSrcField());
 		}
 		
-		FieldTransformingInfo fieldTransformingInfo = this.transform(srcObjects, field, srcConn, dstConn);
+		FieldTransformingInfo fieldTransformingInfo = this.transform(processor, srcObject, transformedRecord, additionalSrcObjects, field,
+		    srcConn, dstConn);
+		
+		if (fieldTransformingInfo == null) {
+			fieldTransformingInfo = new FieldTransformingInfo(field, null, null);
+		}
 		
 		Object dstValue = fieldTransformingInfo != null ? fieldTransformingInfo.getTransformedValue() : null;
 		
@@ -56,7 +66,7 @@ public interface EtlFieldTransformer {
 		}
 		
 		if (dstValue == null) {
-			dstValue = tryToLoadDefaultValue(field, srcObjects);
+			dstValue = tryToLoadDefaultValue(field, additionalSrcObjects);
 			
 			if (dstValue != null) {
 				fieldTransformingInfo.setLoadedWithDefaultValue(true);
@@ -91,14 +101,18 @@ public interface EtlFieldTransformer {
 			throw new EtlTransformationException("The srcValue is empty", srcObjects.get(0), ActionOnEtlException.ABORT);
 		}
 		
+		if (!srcValue.contains("@")) {
+			return srcValue;
+		}
+		
 		String expression = srcValue;
 		
-		Pattern pattern = Pattern.compile("@(\\w+)");
-		Matcher matcher = pattern.matcher(expression);
+		Matcher matcher = PARAM_PATTERN.matcher(expression);
 		
 		StringBuffer buffer = new StringBuffer();
 		
 		while (matcher.find()) {
+			
 			String paramName = matcher.group(1);
 			Object paramValue = null;
 			
@@ -108,18 +122,16 @@ public interface EtlFieldTransformer {
 				
 				try {
 					paramValue = srcObject.getFieldValue(paramName);
-					
 					found = true;
-					
 					break;
 				}
 				catch (ForbiddenOperationException e) {
-					//Continue
+					// continue
 				}
-				
 			}
 			
 			if (!found) {
+				
 				EtlConfiguration conf = srcObjects.get(0).getRelatedConfiguration().getRelatedEtlConf();
 				
 				paramValue = conf.getParamValue(paramName);
@@ -134,12 +146,11 @@ public interface EtlFieldTransformer {
 				        srcObjects.get(0), ActionOnEtlException.ABORT);
 			}
 			
-			//The param represent the whole srcValue
 			if (srcValue.equals("@" + paramName)) {
 				return paramValue;
 			}
 			
-			matcher.appendReplacement(buffer, paramValue.toString());
+			matcher.appendReplacement(buffer, Matcher.quoteReplacement(paramValue.toString()));
 		}
 		
 		matcher.appendTail(buffer);

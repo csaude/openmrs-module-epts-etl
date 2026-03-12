@@ -120,7 +120,12 @@ public class InconsistenceInfo extends BaseVO {
 	
 	@Override
 	public void setFieldValue(String fieldName, Object value) {
-		// TODO Auto-generated method stub
+	}
+	
+	@Override
+	public String toString() {
+		String str = tableName + (recordId) + ". Parent " + parentTableName + "(" + parentId + ")";
 		
+		return str;
 	}
 }

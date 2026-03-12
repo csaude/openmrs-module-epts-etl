@@ -18,7 +18,6 @@ import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
-import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -26,14 +25,11 @@ import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SrcConf extends AbstractTableConfiguration implements EtlDataSource, MainJoiningEntity, JoinableEntity {
-	
-	private final String stringLock = new String("LOCK_STRING");
+public class SrcConf extends AbstractTableConfiguration implements MainJoiningEntity, JoinableEntity {
 	
 	private List<AuxExtractTable> auxExtractTable;
 	
@@ -48,8 +44,6 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	private List<FieldsMapping> joinFields;
 	
 	private ConditionClauseScope joinExtraConditionScope;
-	
-	private PreparedQuery defaultPreparedQuery;
 	
 	/**
 	 * The fields involved in ETL process for this srcConf. Note that when the dstConf is not
@@ -126,14 +120,6 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	public void setExtraTableDataSource(List<TableDataSourceConfig> extraTableDataSource) {
 		this.extraTableDataSource = extraTableDataSource;
-	}
-	
-	public PreparedQuery getDefaultPreparedQuery() {
-		return defaultPreparedQuery;
-	}
-	
-	public void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery) {
-		this.defaultPreparedQuery = defaultPreparedQuery;
 	}
 	
 	@Override
@@ -490,84 +476,89 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		return hasRequiredExtraDataSource();
 	}
 	
-	public void copyFromOther(SrcConf toCloneFrom, EtlDatabaseObject schemaInfoSrc, EtlItemConfiguration relatedItemConf,
-	        Connection conn) throws DBException {
-		super.clone(toCloneFrom, schemaInfoSrc, conn);
+	public void copyFromOther(AbstractTableConfiguration toClone, EtlDatabaseObject schemaInfoSrc,
+	        EtlItemConfiguration relatedItemConf, Connection conn) throws DBException {
+		super.clone(toClone, schemaInfoSrc, conn);
 		
 		this.setRelatedEtlConfig(relatedItemConf.getRelatedEtlConf());
 		this.setParentConf(relatedItemConf);
 		
-		if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {
-			this.setAuxExtractTable(AuxExtractTable.cloneAll(toCloneFrom.getAuxExtractTable(), this, schemaInfoSrc, conn));
-			
-			for (AuxExtractTable aux : this.getAuxExtractTable()) {
+		if (toClone instanceof SrcConf) {
+			SrcConf toCloneFrom = (SrcConf) toClone;
+			if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {
+				this.setAuxExtractTable(
+				    AuxExtractTable.cloneAll(toCloneFrom.getAuxExtractTable(), this, schemaInfoSrc, conn));
 				
-				if (!aux.isUsingManualDefinedAlias()) {
-					aux.setJoinExtraCondition(
-					    aux.getJoinExtraCondition().replaceAll(aux.getTableName() + "\\.", aux.getTableAlias() + "\\."));
-				}
-				
-				if (schemaInfoSrc != null) {
-					aux.setJoinExtraCondition(
-					    DBUtilities.tryToReplaceParamsInQuery(aux.getJoinExtraCondition(), schemaInfoSrc));
-				}
-				
-				if (!aux.hasJoinFields()) {
-					throw new ForbiddenOperationException("No join fields were difined between "
-					        + aux.getJoiningEntity().getTableName() + " And " + this.getTableName());
-				} else {
+				for (AuxExtractTable aux : this.getAuxExtractTable()) {
+					
+					if (!aux.isUsingManualDefinedAlias()) {
+						aux.setJoinExtraCondition(
+						    aux.getJoinExtraCondition().replaceAll(aux.getTableName() + "\\.", aux.getTableAlias() + "\\."));
+					}
 					
 					if (schemaInfoSrc != null) {
-						for (FieldsMapping joiningField : aux.getJoinFields()) {
-							joiningField.setSrcField(
-							    DBUtilities.tryToReplaceParamsInQuery(joiningField.getSrcField(), schemaInfoSrc));
-							joiningField.setDstField(
-							    DBUtilities.tryToReplaceParamsInQuery(joiningField.getDstField(), schemaInfoSrc));
+						aux.setJoinExtraCondition(
+						    DBUtilities.tryToReplaceParamsInQuery(aux.getJoinExtraCondition(), schemaInfoSrc));
+					}
+					
+					if (!aux.hasJoinFields()) {
+						throw new ForbiddenOperationException("No join fields were difined between "
+						        + aux.getJoiningEntity().getTableName() + " And " + this.getTableName());
+					} else {
+						
+						if (schemaInfoSrc != null) {
+							for (FieldsMapping joiningField : aux.getJoinFields()) {
+								joiningField.setSrcField(
+								    DBUtilities.tryToReplaceParamsInQuery(joiningField.getSrcField(), schemaInfoSrc));
+								joiningField.setDstField(
+								    DBUtilities.tryToReplaceParamsInQuery(joiningField.getDstField(), schemaInfoSrc));
+							}
 						}
 					}
 				}
 			}
-		}
-		
-		if (toCloneFrom.hasExtraTableDataSourceConfig()) {
-			this.setExtraTableDataSource(
-			    TableDataSourceConfig.cloneAll(toCloneFrom.getExtraTableDataSource(), this, schemaInfoSrc, conn));
-		}
-		
-		if (toCloneFrom.hasExtraQueryDataSourceConfig()) {
-			this.setExtraQueryDataSource(QueryDataSourceConfig.cloneAll(toCloneFrom.getExtraQueryDataSource(), this, conn));
-		}
-		
-		if (toCloneFrom.hasExtraObjectDataSourceConfig()) {
-			this.setExtraObjectDataSource(ObjectDataSource.cloneAll(toCloneFrom.getExtraObjectDataSource(), this, conn));
 			
-			if (hasExtraObjectDataSourceConfig()) {
-				for (ObjectDataSource query : this.getExtraObjectDataSource()) {
-					query.setRelatedSrcConf(this);
-					
-					if (query.hasObjectFields() && schemaInfoSrc != null) {
-						for (DataSourceField f : query.getObjectFields()) {
-							try {
-								f.setName(DBUtilities.tryToReplaceParamsInQuery(f.getName().toString(), schemaInfoSrc));
-							}
-							catch (ForbiddenOperationException e) {}
-							
-							if (f.hasValue()) {
+			if (toCloneFrom.hasExtraTableDataSourceConfig()) {
+				this.setExtraTableDataSource(
+				    TableDataSourceConfig.cloneAll(toCloneFrom.getExtraTableDataSource(), this, schemaInfoSrc, conn));
+			}
+			
+			if (toCloneFrom.hasExtraQueryDataSourceConfig()) {
+				this.setExtraQueryDataSource(
+				    QueryDataSourceConfig.cloneAll(toCloneFrom.getExtraQueryDataSource(), this, conn));
+			}
+			
+			if (toCloneFrom.hasExtraObjectDataSourceConfig()) {
+				this.setExtraObjectDataSource(ObjectDataSource.cloneAll(toCloneFrom.getExtraObjectDataSource(), this, conn));
+				
+				if (hasExtraObjectDataSourceConfig()) {
+					for (ObjectDataSource query : this.getExtraObjectDataSource()) {
+						query.setRelatedSrcConf(this);
+						
+						if (query.hasObjectFields() && schemaInfoSrc != null) {
+							for (DataSourceField f : query.getObjectFields()) {
 								try {
-									f.setValue(
-									    DBUtilities.tryToReplaceParamsInQuery(f.getValue().toString(), schemaInfoSrc));
+									f.setName(DBUtilities.tryToReplaceParamsInQuery(f.getName().toString(), schemaInfoSrc));
 								}
 								catch (ForbiddenOperationException e) {}
+								
+								if (f.hasValue()) {
+									try {
+										f.setValue(
+										    DBUtilities.tryToReplaceParamsInQuery(f.getValue().toString(), schemaInfoSrc));
+									}
+									catch (ForbiddenOperationException e) {}
+								}
 							}
 						}
+						
 					}
-					
 				}
+				
 			}
 			
+			this.setDstType(toCloneFrom.getDstType());
 		}
-		
-		this.setDstType(toCloneFrom.getDstType());
 	}
 	
 	@Override
@@ -617,18 +608,6 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	@Override
-	public String getQuery() {
-		String condition = super.generateConditionsFields(null, this.joinFields, this.joinExtraCondition);
-		
-		return this.generateSelectFromQuery() + " WHERE " + condition;
-	}
-	
-	public List<EtlDatabaseObject> retrieveSrcRecords(EtlDatabaseObject srcRecord, Connection srcConn) {
-		
-		return null;
-	}
-	
-	@Override
 	public EtlItemConfiguration getParentConf() {
 		return (EtlItemConfiguration) super.getParentConf();
 	}
@@ -654,7 +633,7 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 			throw new ForbiddenOperationException("Only a srcConf with a child EtlItemConf can have a joining entity");
 		}
 		
-		return this.getParentConf().getSrcConf();
+		return this.getParentConf().getParentItemConf().getSrcConf();
 	}
 	
 	@Override
@@ -714,31 +693,10 @@ public class SrcConf extends AbstractTableConfiguration implements EtlDataSource
 		return getParentConf().getSrcConf();
 	}
 	
-	private boolean isPrepared() {
-		return this.defaultPreparedQuery != null;
-	}
-	
-	public void prepare(List<EtlDatabaseObject> mainObject, Connection conn) throws DBException {
-		if (isPrepared()) {
-			return;
-		}
+	@Override
+	public String getQuery() {
+		String condition = super.generateConditionsFields(null, this.joinFields, this.joinExtraCondition);
 		
-		synchronized (stringLock) {
-			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf(),
-			    DbmsType.determineFromConnection(conn));
-			
-			this.defaultPreparedQuery = query;
-		}
-	}
-	
-	public List<EtlDatabaseObject> searchRecords(Engine<? extends EtlDatabaseObject> engine,
-	        EtlDatabaseObject parentSrcObject, Connection srcConn) throws DBException {
-		List<EtlDatabaseObject> avaliableSrcObjects = utilities.parseToList(parentSrcObject);
-		
-		if (!isPrepared()) {
-			prepare(avaliableSrcObjects, srcConn);
-		}
-		
-		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(engine, srcConn);
+		return this.generateSelectFromQuery() + " WHERE " + condition;
 	}
 }

@@ -63,4 +63,14 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public String getName() {
+		return this.getTableAlias() != null ? this.getTableAlias() : getTableName();
+	}
+	
+	@Override
+	public String getQuery() {
+		return null;
+	}
 }

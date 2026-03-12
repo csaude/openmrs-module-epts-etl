@@ -54,7 +54,7 @@ public class PrimaryKey extends UniqueKeyInfo {
 		return oid;
 	}
 	
-	public Oid generateDefaultOid(AbstractTableConfiguration config) {
+	public Oid generateDefaultOid(TableConfiguration config) {
 		
 		Oid oid = new Oid();
 		

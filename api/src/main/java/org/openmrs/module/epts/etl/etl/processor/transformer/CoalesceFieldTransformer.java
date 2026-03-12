@@ -3,42 +3,79 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
- * Transforms a source value into a destination value based on a predefined mapping. The mapping can
- * be defined either: - From database table field-to-field relationships, or - From an external CSV
- * configuration.
+ * Field transformer that implements a COALESCE-like behavior for ETL field transformations.
+ * <p>
+ * This transformer evaluates a sequence of candidate values and returns the first non-null value
+ * obtained from them. Each parameter is interpreted as a possible source for the destination field
+ * value and is evaluated in the order it is defined. If the result of evaluating the first
+ * parameter is {@code null}, the transformer evaluates the next one, continuing until a non-null
+ * value is found. If all evaluated parameters result in {@code null}, the transformation result
+ * will also be {@code null}.
+ * </p>
+ * <p>
+ * Parameters accepted by this transformer may represent:
+ * <ul>
+ * <li>Fixed literal values</li>
+ * <li>Dynamic parameters resolved during ETL execution</li>
+ * <li>Fields from available ETL data sources</li>
+ * </ul>
+ * </p>
+ * <p>
+ * When referencing a field from a data source, it can be specified using either:
+ * <ul>
+ * <li>A simple field name: {@code "field"}</li>
+ * <li>A qualified name including the data source alias: {@code "dataSourceName.field"}</li>
+ * </ul>
+ * The qualified form should be used when multiple data sources may contain fields with the same
+ * name to avoid ambiguity.
+ * </p>
+ * <p>
+ * At least two parameters must be provided when configuring this transformer.
+ * </p>
+ * Example usage: <pre>
+ * CoalesceFieldTransformer(patient_id, encounter.patient_id, 'UNKNOWN')
+ * </pre> In this example the transformer will:
+ * <ol>
+ * <li>Try {@code patient_id}</li>
+ * <li>If null, try {@code encounter.patient_id}</li>
+ * <li>If still null, use the literal value {@code 'UNKNOWN'}</li>
+ * </ol>
  */
 public class CoalesceFieldTransformer implements EtlFieldTransformer {
 	
-	private static CoalesceFieldTransformer defaultTransformer;
+	private static final Map<String, CoalesceFieldTransformer> INSTANCES = new ConcurrentHashMap<>();
 	
-	private static final String LOCK_STRING = "LOCK_STRING";
+	private final List<FieldsMapping> coalesceFields;
 	
-	private List<FieldsMapping> coalesceFields;
-	
-	private DstConf dstConf;
+	private final DstConf dstConf;
 	
 	public CoalesceFieldTransformer(List<Object> coalesceValues, DstConf dstConf, TransformableField field) {
 		
 		this.coalesceFields = new ArrayList<>();
 		this.dstConf = dstConf;
 		
-		for (Object obj : this.getCoalesceValues()) {
-			String[] fieldParts = obj.toString().split(".");
+		for (Object obj : coalesceValues) {
+			
+			String[] fieldParts = obj.toString().split("\\.");
 			
 			String dataSourceName = null;
-			String srcFieldName = null;
-			EtlDataSource ds = null;
+			String srcFieldName;
 			
 			if (fieldParts.length > 1) {
 				dataSourceName = fieldParts[0];
@@ -48,15 +85,17 @@ public class CoalesceFieldTransformer implements EtlFieldTransformer {
 			}
 			
 			FieldsMapping fm = FieldsMapping.fastCreate(srcFieldName, field.getDstField());
+			fm.tryToLoadTransformer(dstConf);
 			
-			if (srcFieldName != null) {
-				ds = dstConf.findDataSource(dataSourceName);
+			if (dataSourceName != null) {
+				
+				EtlDataSource ds = dstConf.findDataSource(dataSourceName);
 				
 				if (ds != null) {
 					fm.setDataSourceName(ds.getAlias());
 				} else {
-					throw new ForbiddenOperationException(
-					        "Invalid datasource '" + dataSourceName + "' on CoalesceFieldTransforer: " + obj);
+					throw new EtlExceptionImpl(
+					        "Invalid datasource '" + dataSourceName + "' on CoalesceFieldTransformer: " + obj);
 				}
 				
 			} else {
@@ -69,75 +108,51 @@ public class CoalesceFieldTransformer implements EtlFieldTransformer {
 			
 			this.coalesceFields.add(fm);
 		}
+	}
+	
+	private static String buildCacheKey(List<Object> parameters, DstConf dstConf, TransformableField field) {
 		
+		String params = parameters.stream().map(Object::toString).collect(Collectors.joining("|"));
+		
+		return dstConf.hashCode() + ":" + field.getDstField() + ":" + params;
 	}
 	
 	public DstConf getDstConf() {
 		return dstConf;
 	}
 	
-	public List<FieldsMapping> getCoalesceValues() {
+	public List<FieldsMapping> getCoalesceFields() {
 		return coalesceFields;
 	}
 	
 	public static CoalesceFieldTransformer getInstance(List<Object> parameters, DstConf dstConf, TransformableField field) {
-		if (defaultTransformer != null)
-			return defaultTransformer;
 		
-		synchronized (LOCK_STRING) {
-			if (defaultTransformer != null)
-				return defaultTransformer;
-			
-			if (parameters == null || parameters.size() < 2) {
-				throw new ForbiddenOperationException(
-				        "A coalesce field transformer need at least 2 parameters. \n Eg: org.openmrs.module.epts.etl.etl.processor.transformer.CoalesceFieldTransformer(@field_value_01, @field_value_02) ");
-			}
-			
-			defaultTransformer = new CoalesceFieldTransformer(parameters, dstConf, field);
-			
-			return defaultTransformer;
+		if (parameters == null || parameters.size() < 2) {
+			throw new ForbiddenOperationException("A CoalesceFieldTransformer needs at least 2 parameters.\n"
+			        + "Eg: CoalesceFieldTransformer(field1, field2)");
 		}
+		
+		String key = buildCacheKey(parameters, dstConf, field);
+		
+		return INSTANCES.computeIfAbsent(key, k -> new CoalesceFieldTransformer(parameters, dstConf, field));
 	}
 	
 	@Override
-	public FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
-	        Connection dstConn) throws DBException, EtlTransformationException {
+	public FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
+	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
+	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
-		Object dstValue = null;
-		EtlDataSource ds = null;
-		EtlFieldTransformer fielTransformer = DefaultFieldTransformer.getInstance();
-		
-		for (FieldsMapping map : this.getCoalesceValues()) {
+		for (FieldsMapping map : this.getCoalesceFields()) {
 			
-			dstValue = fielTransformer.transform(srcObjects, field, srcConn, dstConn);
+			FieldTransformingInfo transformingInfo = map.getTransformerInstance().transform(processor, srcObject,
+			    transformedRecord, additionalSrcObjects, map, srcConn, dstConn);
 			
-			if (dstValue != null) {
-				
-				ds = this.getDstConf().findDataSource(map.getDataSourceName());
-				
-				break;
+			if (transformingInfo != null && transformingInfo.getTransformedValue() != null) {
+				return transformingInfo;
 			}
-		}
-		
-		if (dstValue == null) {
-			for (FieldsMapping map : this.getCoalesceValues()) {
-				dstValue = fielTransformer.transform(srcObjects, field, srcConn, dstConn);
-				
-				if (dstValue != null) {
-					
-					ds = this.getDstConf().findDataSource(map.getDataSourceName());
-					
-					break;
-				}
-			}
-		}
-		
-		if (dstValue != null) {
-			return new FieldTransformingInfo(field, dstValue, ds);
 		}
 		
 		return null;
-		
 	}
 	
 }

@@ -17,7 +17,7 @@ import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -81,14 +81,6 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	public void setLoadHealper(DatabaseObjectLoaderHelper loadHealper) {
 		this.loadHealper = loadHealper;
-	}
-	
-	private boolean isPrepared() {
-		return this.defaultPreparedQuery != null;
-	}
-	
-	private PreparedQuery getDefaultPreparedQuery() {
-		return defaultPreparedQuery;
 	}
 	
 	@Override
@@ -177,6 +169,14 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		}
 	}
 	
+	public PreparedQuery getDefaultPreparedQuery() {
+		return defaultPreparedQuery;
+	}
+	
+	public void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery) {
+		this.defaultPreparedQuery = defaultPreparedQuery;
+	}
+	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		PreparedQuery query;
@@ -203,6 +203,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		
 	}
 	
+	@Override
 	public void prepare(List<EtlDatabaseObject> mainObject, Connection conn) throws DBException {
 		if (isPrepared()) {
 			return;
@@ -410,14 +411,14 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(Engine<? extends EtlDatabaseObject> engine,
+	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(engine,
-		    srcConn);
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects)
+		        .query(processor.getEngine(), srcConn);
 		
 		if (utilities.arrayHasNoElement(list)) {
 			return null;

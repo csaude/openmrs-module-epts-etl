@@ -42,11 +42,9 @@ import org.openmrs.module.epts.etl.utils.Utils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public interface TableConfiguration extends DatabaseObjectConfiguration {
+public interface TableConfiguration extends DatabaseObjectConfiguration, EtlDataSource {
 	
 	public static final String[] REMOVABLE_METADATA = {};
-	
-	static final String LOCK_STRING = "LOCK_STRING";
 	
 	void setTableName(String tableName);
 	
@@ -2158,8 +2156,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 				}
 			} else {
 				throw new ForbiddenOperationException(
-				        "The mapping cannot be auto generated! Multiple references were found between " + this.getTableName()
-				                + " And " + relatedTabConf.getTableName());
+				        "The mapping joinFields cannot be auto generated! Multiple references were found between " + this.getTableName()
+				                + " And " + relatedTabConf.getTableName() + ". Please define joinFields manually ");
 				
 			}
 		} else {
@@ -2196,32 +2194,35 @@ public interface TableConfiguration extends DatabaseObjectConfiguration {
 	        String joinExtraCondition) {
 		String conditionFields = "";
 		
-		for (int i = 0; i < joinFields.size(); i++) {
-			if (i > 0)
-				conditionFields += " AND ";
+		if (utilities.arrayHasElement(joinFields)) {
 			
-			FieldsMapping field = joinFields.get(i);
-			
-			//By default the joining value is marked as parameter 
-			Object value = "@" + field.getDstField();
-			
-			if (parentObject != null) {
-				try {
-					value = parentObject.getFieldValue(field.getDstField());
+			for (int i = 0; i < joinFields.size(); i++) {
+				if (i > 0)
+					conditionFields += " AND ";
+				
+				FieldsMapping field = joinFields.get(i);
+				
+				//By default the joining value is marked as parameter 
+				Object value = "@" + field.getDstField();
+				
+				if (parentObject != null) {
+					try {
+						value = parentObject.getFieldValue(field.getDstField());
+					}
+					catch (ForbiddenOperationException e) {
+						value = parentObject.getFieldValue(field.getDstFieldAsClassField());
+					}
 				}
-				catch (ForbiddenOperationException e) {
-					value = parentObject.getFieldValue(field.getDstFieldAsClassField());
-				}
+				
+				conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getSrcField(), value);
 			}
-			
-			conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getSrcField(), value);
 		}
 		
 		if (utilities.stringHasValue(joinExtraCondition)) {
 			conditionFields += " AND (" + joinExtraCondition + ")";
 		}
 		
-		return conditionFields;
+		return utilities.stringHasValue(conditionFields) ? conditionFields : "1=1";
 	}
 	
 	default String generateJoinCondition(TableConfiguration joiningTable, List<FieldsMapping> joinFields,

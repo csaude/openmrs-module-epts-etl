@@ -1,28 +1,63 @@
 package org.openmrs.module.epts.etl.etl.processor.transformer;
 
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingMappingException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
- * Transforms a source value into a destination value based on a predefined mapping. The mapping can
- * be defined either: - From database table field-to-field relationships, or - From an external CSV
- * configuration.
+ * Field transformer that performs value translation using a mapping table stored in the database.
+ * <p>
+ * This transformer retrieves the destination field value by looking up a mapping table using the
+ * source field value as the lookup key.
+ * </p>
+ * <p>
+ * The transformer requires three parameters:
+ * <ul>
+ * <li><b>mappingTable</b> – the name of the table containing the mapping definitions</li>
+ * <li><b>mappingSrcField</b> – the column used to match the source value</li>
+ * <li><b>mappingDstField</b> – the column whose value will be returned as the transformed
+ * value</li>
+ * </ul>
+ * </p>
+ * <p>
+ * During execution the source value is obtained from the field being transformed. Any dynamic
+ * parameters in the source value are resolved before performing the lookup operation.
+ * </p>
+ * <p>
+ * The mapping table is loaded once using {@link GenericTableConfiguration#fullLoad(Connection)} and
+ * reused for subsequent transformations.
+ * </p>
+ * <p>
+ * If a mapping entry is found, the value of {@code mappingDstField} is returned. If no mapping is
+ * found:
+ * <ul>
+ * <li>If the destination field defines a default value, the transformer returns {@code null} so the
+ * default value can be applied later in the ETL pipeline.</li>
+ * <li>If no default value exists, a {@link MissingMappingException} is thrown.</li>
+ * </ul>
+ * </p>
+ * Example: <pre>
+ * MappingFieldTransformer("gender_mapping", "source_gender", "openmrs_gender")
+ * </pre> If the source value is {@code "M"} and the mapping table contains: <pre>
+ * source_gender | openmrs_gender
+ * --------------|---------------
+ * M             | Male
+ * F             | Female
+ * </pre> the transformer will return {@code "Male"}.
  */
 public class MappingFieldTransformer implements EtlFieldTransformer {
-	
-	private static MappingFieldTransformer defaultTransformer;
-	
-	private static final String LOCK_STRING = "LOCK_STRING";
 	
 	private String mappingTable;
 	
@@ -30,7 +65,13 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 	
 	private String mappingDstField;
 	
-	private TableConfiguration tableConfig;
+	private volatile TableConfiguration tableConfig;
+	
+	private static final Map<String, MappingFieldTransformer> INSTANCES = new ConcurrentHashMap<>();
+	
+	private volatile Map<String, Object> mappingCache;
+	
+	private final Object lock = new Object();
 	
 	public MappingFieldTransformer(String mappingTable, String mappingSrcField, String mappingDstField) {
 		this.mappingTable = mappingTable;
@@ -38,62 +79,94 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 		this.mappingDstField = mappingDstField;
 	}
 	
+	private void buildMappingCache(Connection srcConn) throws DBException {
+		
+		List<EtlDatabaseObject> rows = this.tableConfig.searchRecords(null, null, srcConn);
+		
+		Map<String, Object> cache = new HashMap<>();
+		
+		for (EtlDatabaseObject obj : rows) {
+			
+			Object src = obj.getFieldValue(this.mappingSrcField);
+			Object dst = obj.getFieldValue(this.mappingDstField);
+			
+			if (src != null) {
+				cache.put(src.toString(), dst);
+			}
+		}
+		
+		this.mappingCache = cache;
+	}
+	
 	public String getMappingTable() {
 		return mappingTable;
 	}
 	
 	public static MappingFieldTransformer getInstance(List<Object> parameters) {
-		if (defaultTransformer != null)
-			return defaultTransformer;
 		
-		synchronized (LOCK_STRING) {
-			if (defaultTransformer != null)
-				return defaultTransformer;
-			
-			if (parameters == null || parameters.size() < 3) {
-				throw new ForbiddenOperationException(
-				        "A mapping field transformer need at least 3 parameters: mappingTable, mappingSrcField and mappingDstField. \n ex: org.openmrs.module.epts.etl.etl.processor.transformer.MappingFieldTransformer(mapping_table, srcField, dstField) ");
-			}
-			
-			defaultTransformer = new MappingFieldTransformer(parameters.get(0).toString(), parameters.get(1).toString(),
-			        parameters.get(2).toString());
-			
-			return defaultTransformer;
+		if (parameters == null || parameters.size() != 3) {
+			throw new EtlExceptionImpl(
+			        "MappingFieldTransformer requires exactly 3 parameters: mappingTable, mappingSrcField and mappingDstField.");
 		}
+		
+		String table = parameters.get(0).toString();
+		String srcField = parameters.get(1).toString();
+		String dstField = parameters.get(2).toString();
+		
+		String key = buildCacheKey(table, srcField, dstField);
+		
+		return INSTANCES.computeIfAbsent(key, k -> new MappingFieldTransformer(table, srcField, dstField));
+	}
+	
+	private static String buildCacheKey(String table, String srcField, String dstField) {
+		
+		return table + "|" + srcField + "|" + dstField;
 	}
 	
 	@Override
-	public FieldTransformingInfo transform(List<EtlDatabaseObject> srcObjects, TransformableField field, Connection srcConn,
-	        Connection dstConn) throws DBException, EtlTransformationException {
+	public FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
+	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
+	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
-		if (this.tableConfig == null) {
-			this.tableConfig = new GenericTableConfiguration(mappingTable,
-			        (TableConfiguration) srcObjects.get(0).getRelatedConfiguration());
+		if (additionalSrcObjects == null || additionalSrcObjects.isEmpty()) {
+			throw new EtlExceptionImpl("MappingFieldTransformer requires at least one source object.");
+		}
+		
+		if (mappingCache == null) {
 			
-			this.tableConfig.fullLoad(srcConn);
+			synchronized (lock) {
+				
+				if (mappingCache == null) {
+					
+					this.tableConfig = new GenericTableConfiguration(mappingTable,
+					        (TableConfiguration) additionalSrcObjects.get(0).getRelatedConfiguration());
+					
+					this.tableConfig.fullLoad(srcConn);
+					
+					buildMappingCache(srcConn);
+				}
+			}
 		}
 		
 		String srcValueWithParamsReplaced = EtlFieldTransformer
-		        .tryToReplaceParametersOnSrcValue(srcObjects, field.getValueToTransform()).toString();
+		        .tryToReplaceParametersOnSrcValue(additionalSrcObjects, field.getValueToTransform()).toString();
 		
-		List<EtlDatabaseObject> list = DatabaseObjectDAO.getByField(this.tableConfig, this.mappingSrcField,
-		    srcValueWithParamsReplaced, srcConn);
-		
-		Object dstValue = null;
-		
-		if (list != null && list.size() > 0) {
-			dstValue = list.get(0).getFieldValue(this.mappingDstField);
-		}
+		Object dstValue = mappingCache.get(srcValueWithParamsReplaced);
 		
 		if (dstValue != null) {
-			return new FieldTransformingInfo(field, dstValue, null);
-		} else if (field.getDefaultValue() == null) {
-			//We assume that the defaultValue will be loaded from EtlFieldTransformer.transform
-			throw new MissingMappingException(srcObjects.get(0), field.getSrcField(), srcValueWithParamsReplaced, this,
-			        srcObjects.get(0).getRelatedConfiguration().getGeneralBehaviourOnEtlException());
-		} else
-			return null;
+			FieldTransformingInfo transformingInfo = new FieldTransformingInfo(field, dstValue, null);
+			
+			transformingInfo.setLoadedWithDefaultValue(true);
+			
+			return transformingInfo;
+		}
 		
+		if (field.getDefaultValue() == null) {
+			throw new MissingMappingException(additionalSrcObjects.get(0), field.getSrcField(), srcValueWithParamsReplaced, this,
+			        additionalSrcObjects.get(0).getRelatedConfiguration().getGeneralBehaviourOnEtlException());
+		}
+		
+		return null;
 	}
 	
 }

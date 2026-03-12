@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.conf;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -61,6 +62,8 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	private String manualMapPrimaryKeyOnField;
 	
 	private List<Field> fields;
+	
+	private PreparedQuery defaultPreparedQuery;
 	
 	/**
 	 * When merge existing records, the incoming dstRecord will win if the listed fields have the
@@ -673,6 +676,14 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		setExtraConditionForExtract(utilities.tryToReplacePlaceholders(getExtraConditionForExtract(), schemaInfoSrc));
 		
 		tryToReplacePlaceholdersOnOwnElements(schemaInfoSrc);
+	}
+	
+	public PreparedQuery getDefaultPreparedQuery() {
+		return defaultPreparedQuery;
+	}
+	
+	public void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery) {
+		this.defaultPreparedQuery = defaultPreparedQuery;
 	}
 	
 	public abstract void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc);

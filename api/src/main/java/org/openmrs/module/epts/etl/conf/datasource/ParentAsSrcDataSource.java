@@ -6,7 +6,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -34,7 +34,7 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(Engine<? extends EtlDatabaseObject> engine,
+	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
 		
 		return avaliableSrcObjects.get(0).getSharedPkObj();

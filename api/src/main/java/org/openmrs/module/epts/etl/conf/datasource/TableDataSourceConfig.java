@@ -13,21 +13,18 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 /**
  * Represents a source table configuration. A {@link TableDataSourceConfig} is used as an auxiliary
  * extraction table as well as an extra data source
  */
 public class TableDataSourceConfig extends AbstractTableConfiguration implements EtlAdditionalDataSource, JoinableEntity, MainJoiningEntity {
-	
-	private final String stringLock = new String("LOCK_STRING");
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -43,8 +40,6 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	 * When the join type is set to INNER, the ETL process will skip the main record if no matching record is found in the extra table.
 	 */
 	private JoinType joinType;
-	
-	private PreparedQuery defaultPreparedQuery;
 	
 	private ConditionClauseScope joinExtraConditionScope;
 	
@@ -66,10 +61,6 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	@Override
 	public boolean doNotUseAsDatasource() {
 		return false;
-	}
-	
-	private boolean isPrepared() {
-		return this.defaultPreparedQuery != null;
 	}
 	
 	@Override
@@ -115,19 +106,6 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		super.fullLoad(conn);
 	}
 	
-	public void prepare(List<EtlDatabaseObject> mainObject, Connection conn) throws DBException {
-		if (isPrepared()) {
-			return;
-		}
-		
-		synchronized (stringLock) {
-			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf(),
-			    DbmsType.determineFromConnection(conn));
-			
-			this.defaultPreparedQuery = query;
-		}
-	}
-	
 	public String getJoinExtraCondition() {
 		return joinExtraCondition;
 	}
@@ -156,10 +134,6 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		setParentConf(relatedSrcConf);
 	}
 	
-	public PreparedQuery getDefaultPreparedQuery() {
-		return defaultPreparedQuery;
-	}
-	
 	@Override
 	public String getQuery() {
 		String condition = super.generateConditionsFields(null, this.joinFields, this.joinExtraCondition);
@@ -184,15 +158,15 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(Engine<? extends EtlDatabaseObject> engine,
+	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
 		
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(engine,
-		    srcConn);
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects)
+		        .query(processor.getEngine(), srcConn);
 		
 		if (utilities.arrayHasNoElement(list)) {
 			return null;

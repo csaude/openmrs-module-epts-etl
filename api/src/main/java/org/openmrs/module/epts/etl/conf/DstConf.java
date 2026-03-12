@@ -88,6 +88,8 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	private String srcObjectCondition;
 	
+	private boolean doNotUseSrcConfAsDataSource;
+	
 	public DstConf() {
 		this.currThreadStartId = DEFAULT_NEXT_TREAD_ID;
 	}
@@ -102,6 +104,14 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 		
 		return null;
+	}
+	
+	public boolean isDoNotUseSrcConfAsDataSource() {
+		return doNotUseSrcConfAsDataSource;
+	}
+	
+	public void setDoNotUseSrcConfAsDataSource(boolean doNotUseSrcConfAsDataSource) {
+		this.doNotUseSrcConfAsDataSource = doNotUseSrcConfAsDataSource;
 	}
 	
 	public boolean hasParentDstConf() {
@@ -655,33 +665,49 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		this.getAllAvaliableDataSource().add(ds);
 	}
 	
-	private void loadDataSourceInfo(Connection conn) throws DBException {
-		addToAvaliableDataSource(getSrcConf());
-		
-		if (hasParentDstConf()) {
-			addToAvaliableDataSource(this.getParentDstConf());
+	public void addAllToAvaliableDataSource(List<EtlDataSource> ds) {
+		if (utilities.arrayHasElement(ds)) {
+			for (EtlDataSource d : ds) {
+				addToAvaliableDataSource(d);
+			}
 		}
+	}
+	
+	public boolean useSrcConfAsDataSource() {
+		return !this.isDoNotUseSrcConfAsDataSource();
+	}
+	
+	private void loadDataSourceInfo(Connection conn) throws DBException {
 		
-		if (this.getSrcConf().hasAuxExtractTable()) {
-			for (JoinableEntity auxExtractTable : this.getSrcConf().getJoiningTable()) {
-				if (!auxExtractTable.doNotUseAsDatasource()) {
-					addToAvaliableDataSource(auxExtractTable);
-				}
-				
-				if (auxExtractTable.isMainJoiningEntity() && auxExtractTable.parseToJoining().hasAuxExtractTable()) {
-					for (JoinableEntity innerAuxExtractTable : auxExtractTable.parseToJoining().getJoiningTable()) {
-						if (!innerAuxExtractTable.doNotUseAsDatasource()) {
-							addToAvaliableDataSource(innerAuxExtractTable);
+		if (useSrcConfAsDataSource()) {
+			addToAvaliableDataSource(getSrcConf());
+			
+			if (this.getSrcConf().hasAuxExtractTable()) {
+				for (JoinableEntity auxExtractTable : this.getSrcConf().getJoiningTable()) {
+					if (!auxExtractTable.doNotUseAsDatasource()) {
+						addToAvaliableDataSource(auxExtractTable);
+					}
+					
+					if (auxExtractTable.isMainJoiningEntity() && auxExtractTable.parseToJoining().hasAuxExtractTable()) {
+						for (JoinableEntity innerAuxExtractTable : auxExtractTable.parseToJoining().getJoiningTable()) {
+							if (!innerAuxExtractTable.doNotUseAsDatasource()) {
+								addToAvaliableDataSource(innerAuxExtractTable);
+							}
 						}
 					}
 				}
 			}
+			
+			if (utilities.arrayHasElement(getSrcConf().getAvaliableExtraDataSource())) {
+				for (EtlDataSource ds : utilities.parseList(getSrcConf().getAvaliableExtraDataSource(),
+				    EtlDataSource.class)) {
+					addToAvaliableDataSource(ds);
+				}
+			}
 		}
 		
-		if (utilities.arrayHasElement(getSrcConf().getAvaliableExtraDataSource())) {
-			for (EtlDataSource ds : utilities.parseList(getSrcConf().getAvaliableExtraDataSource(), EtlDataSource.class)) {
-				addToAvaliableDataSource(ds);
-			}
+		if (hasParentDstConf()) {
+			addToAvaliableDataSource(this.getParentDstConf());
 		}
 		
 		this.fullLoadAllRelatedTables(getRelatedEtlConf(), null, conn);
@@ -713,7 +739,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 	}
 	
-	private List<EtlDataSource> getAllAvaliableDataSource() {
+	public List<EtlDataSource> getAllAvaliableDataSource() {
 		return allAvaliableDataSource;
 	}
 	
@@ -735,7 +761,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 				this.prefferredDataSource.add(prefferredDs);
 			}
 			
-			if (!this.prefferredDataSource.contains(getSrcConf().getName())) {
+			if (!this.prefferredDataSource.contains(getSrcConf().getName()) && useSrcConfAsDataSource()) {
 				this.prefferredDataSource.add(getSrcConf().getName());
 			}
 		}

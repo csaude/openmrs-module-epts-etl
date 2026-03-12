@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -47,7 +47,7 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 * @return the related {@link EtlDatabaseObject} instance
 	 * @throws DBException if a database error occurs during execution
 	 */
-	EtlDatabaseObject loadRelatedSrcObject(Engine<? extends EtlDatabaseObject> engine,
+	EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException;
 	
 	/**

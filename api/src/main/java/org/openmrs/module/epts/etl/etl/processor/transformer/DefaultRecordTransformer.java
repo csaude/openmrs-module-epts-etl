@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
-import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -42,8 +42,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	}
 	
 	@Override
-	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject srcObject,
-	        DstConf dstConf, EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
+	public EtlDatabaseObject transform(EtlProcessor processor, EtlDatabaseObject srcObject, DstConf dstConf,
+	        EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
 		processor.logTrace("Transforming dstRecord " + srcObject);
@@ -85,7 +85,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjectsForLoading() ? srcObjects
 			        : utilities.parseToList(srcObject);
 			
-			EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(processor.getEngine(), avaliableObjects,
+			EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(processor, srcObject, avaliableObjects,
 			    srcConn);
 			
 			if (relatedSrcObject == null) {
@@ -110,7 +110,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		transformedRec.setSrcRelatedObject(srcObject);
 		
 		for (FieldsMapping fieldsMapping : dstConf.getAllMapping()) {
-			fieldsMapping.getTransformerInstance().transform(transformedRec, srcObjects, fieldsMapping, srcConn, dstConn);
+			fieldsMapping.getTransformerInstance().performeFieldTransformation(processor, srcObject, transformedRec,
+			    srcObjects, fieldsMapping, srcConn, dstConn);
 		}
 		
 		if (dstConf.useSharedPKKey()) {

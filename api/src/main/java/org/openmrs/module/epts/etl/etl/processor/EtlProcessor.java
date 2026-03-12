@@ -83,6 +83,8 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				catch (EtlTransformationException e) {
 					if (getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().log()) {
 						EtlLoadHelper.logEtlError(this, srcRecord, e, srcConn, dstConn);
+					}else {
+						throw e;
 					}
 				}
 			}

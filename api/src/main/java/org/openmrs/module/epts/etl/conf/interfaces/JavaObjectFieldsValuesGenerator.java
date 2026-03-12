@@ -5,12 +5,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.conf.datasource.ObjectDataSource;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public interface JavaObjectFieldsValuesGenerator {
 	
-	public Map<String, Object> generateObjectFields(ObjectDataSource dataSource, List<EtlDatabaseObject> avaliableSrcObjects,
-	        Connection srcConn, Connection dstConn) throws DBException;
+	Map<String, Object> generateObjectFields(EtlProcessor processor, EtlDatabaseObject srcObject,
+	        ObjectDataSource dataSource, List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn, Connection dstConn)
+	        throws DBException, ForbiddenOperationException;
 	
 }

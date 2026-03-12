@@ -106,4 +106,15 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 			}
 		}
 	}
+	
+	@Override
+	public String getName() {
+		return this.getTableAlias() != null ? this.getTableAlias() : this.getTableName();
+	}
+	
+	public String getQuery() {
+		String condition = super.generateConditionsFields(null, null, null);
+		
+		return this.generateSelectFromQuery() + " WHERE " + condition;
+	}
 }

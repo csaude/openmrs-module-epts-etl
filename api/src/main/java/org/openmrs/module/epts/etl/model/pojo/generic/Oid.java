@@ -15,6 +15,17 @@ public class Oid extends PrimaryKey {
 		this.fullLoaded = false;
 	}
 	
+	public static Oid fastCreate(TableConfiguration tabConf, Object keyValue) throws ForbiddenOperationException {
+		if (tabConf.getPrimaryKey().isCompositeKey())
+			throw new ForbiddenOperationException("Only tabConf with simple key can use this method!");
+		
+		Oid oid = tabConf.getPrimaryKey().generateDefaultOid(tabConf);
+		
+		oid.asSimpleKey().setValue(keyValue);
+		
+		return oid;
+	}
+	
 	public boolean isFullLoaded() {
 		return fullLoaded;
 	}

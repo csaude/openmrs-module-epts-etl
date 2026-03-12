@@ -16,7 +16,9 @@ import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaInfo;
 import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaObjectDAO;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -406,15 +408,22 @@ public class EtlLoadHelper {
 			if (getActionType().isCreate() || getActionType().isUpdate()) {
 				
 				loadRecord.loadDstParentInfo(srcConn, dstConn);
+				String errorMsg = "Found inconsistences on dstRecord " + loadRecord.getDstRecord()
+				        + " but all were resolved!";
 				
 				if (!loadRecord.getResultItem().hasUnresolvedInconsistences()) {
 					loadRecord.setStatus(LoadStatus.READY);
 					
 					if (loadRecord.getResultItem().hasInconsistences()) {
-						this.logTrace(
-						    "Found inconsistences on dstRecord " + loadRecord.getDstRecord() + " but all were resolved!");
+						this.logTrace(errorMsg);
 					}
 				} else {
+					
+					if (getProcessor().getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().abort()) {
+						throw new EtlExceptionImpl("Found inconsistences on dstRecord " + loadRecord.getDstRecord() + " "
+						        + loadRecord.getResultItem().getInconsistenceInfo());
+					}
+					
 					loadRecord.setStatus(LoadStatus.FAIL);
 				}
 			} else {
@@ -529,6 +538,27 @@ public class EtlLoadHelper {
 		
 		new EtlLoadHelper(loadRecord.getProcessor(), loadRecord, utilities.parseToList(loadRecord.getDstConf()),
 		        LoadingType.INNER).load(loadRecord.getDstConf(), srcConn, dstConn);
+	}
+	
+	public static EtlLoadHelper fastLoadRecord(EtlProcessor processor, EtlDatabaseObject srcRecord, DstConf dstConf,
+	        Connection srcConn, Connection dstConn) throws ParentNotYetMigratedException, DBException {
+		
+		EtlDatabaseObject dstObject = dstConf.getTransformerInstance().transform(processor, srcRecord, dstConf, null,
+		    TransformationType.PRINCIPAL, srcConn, dstConn);
+		
+		LoadRecord loadRecord = LoadRecord.initEtlRecord(processor, srcRecord, dstObject, dstConf);
+		
+		String msg = "Initializing the load of record [" + loadRecord.getDstConf().getFullTableDescription()
+		        + loadRecord.getDstRecord() + "]";
+		
+		loadRecord.getProcessor().logTrace(msg);
+		
+		EtlLoadHelper lp = new EtlLoadHelper(loadRecord.getProcessor(), loadRecord,
+		        utilities.parseToList(loadRecord.getDstConf()), LoadingType.INNER);
+		
+		lp.load(loadRecord.getDstConf(), srcConn, dstConn);
+		
+		return lp;
 	}
 	
 	public List<EtlDatabaseObject> getAllSuccessfullyProcessedRecordsAsEtlObject() {

@@ -72,13 +72,21 @@ public class GenericTableConfiguration extends AbstractTableConfiguration {
 	
 	@Override
 	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
 	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
-		// TODO Auto-generated method stub
+	}
+	
+	@Override
+	public String getQuery() {
+		String condition = super.generateConditionsFields(null, null, null);
 		
+		return this.generateSelectFromQuery() + " WHERE " + condition;
+	}
+	
+	@Override
+	public String getName() {
+		return this.getTableAlias() != null ? this.getTableAlias() : this.getTableName();
 	}
 }

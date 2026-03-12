@@ -14,9 +14,10 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.dbsync.model.SyncMetadata;
 import org.openmrs.module.epts.etl.dbsync.model.SyncModel;
 import org.openmrs.module.epts.etl.dbsync.model.utils.JsonUtils;
-import org.openmrs.module.epts.etl.engine.TaskProcessor;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlRecordTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
+import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
@@ -30,21 +31,21 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 	CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	@Override
-	public EtlDatabaseObject transform(TaskProcessor<EtlDatabaseObject> processor, EtlDatabaseObject rec,
-	        DstConf mappingInfo, EtlDatabaseObject migratedDstParent, TransformationType transformationType,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	public EtlDatabaseObject transform(EtlProcessor processor, EtlDatabaseObject srcObject, DstConf dstConf,
+	        EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
+	        Connection dstConn) throws DBException, EtlTransformationException {
 		
-		TableConfiguration srcConf = (TableConfiguration) rec.getRelatedConfiguration();
+		TableConfiguration srcConf = (TableConfiguration) srcObject.getRelatedConfiguration();
 		
-		rec.loadObjectIdData(srcConf);
-		rec.getObjectId().setTabConf(srcConf);
+		srcObject.loadObjectIdData(srcConf);
+		srcObject.getObjectId().setTabConf(srcConf);
 		
-		String body = new String((byte[]) rec.getFieldValue("body"), StandardCharsets.UTF_8);
+		String body = new String((byte[]) srcObject.getFieldValue("body"), StandardCharsets.UTF_8);
 		SyncModel syncModel = JsonUtils.unmarshalSyncModel(body);
 		
 		SyncMetadata md = syncModel.getMetadata();
 		
-		EtlDatabaseObject syncMessage = new GenericDatabaseObject(mappingInfo);
+		EtlDatabaseObject syncMessage = new GenericDatabaseObject(dstConf);
 		
 		syncMessage.setFieldValue("entityPayload", body);
 		syncMessage.setFieldValue("identifier", syncModel.getModel().getUuid());
@@ -57,14 +58,14 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 		syncMessage.setFieldValue("isSnapshot", md.getSnapshot());
 		syncMessage.setFieldValue("messageUuid", md.getMessageUuid());
 		syncMessage.setFieldValue("dateSentBySender", md.getDateSent());
-		syncMessage.setFieldValue("dateCreated", rec.getFieldValue("dateCreated"));
+		syncMessage.setFieldValue("dateCreated", srcObject.getFieldValue("dateCreated"));
 		
-		Integer id = (Integer) rec.getFieldValue("id");
-		Integer syncMsgMaxId = Integer.parseInt(mappingInfo.getRelatedEtlConf().getParamValue("idIncrementValue"));
+		Integer id = (Integer) srcObject.getFieldValue("id");
+		Integer syncMsgMaxId = Integer.parseInt(dstConf.getRelatedEtlConf().getParamValue("idIncrementValue"));
 		
 		syncMessage.setFieldValue("id", (id + syncMsgMaxId));
 		
-		syncMessage.setSrcRelatedObject(rec);
+		syncMessage.setSrcRelatedObject(srcObject);
 		
 		return syncMessage;
 	}
@@ -104,4 +105,5 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 		
 		return null;
 	}
+	
 }

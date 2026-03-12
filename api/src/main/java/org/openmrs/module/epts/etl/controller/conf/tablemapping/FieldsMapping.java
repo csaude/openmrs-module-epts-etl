@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -115,6 +116,43 @@ public class FieldsMapping implements TransformableField {
 	
 	public static FieldsMapping fastCreate(String fieldName) {
 		return fastCreate(fieldName, fieldName);
+	}
+	
+	public static FieldsMapping fastCreate(String fullFieldName, String dstField, DstConf dstConf) {
+		String[] fieldParts = fullFieldName.toString().split("\\.");
+		
+		String dataSourceName = null;
+		String srcFieldName;
+		
+		if (fieldParts.length > 1) {
+			dataSourceName = fieldParts[0];
+			srcFieldName = fieldParts[1];
+		} else {
+			srcFieldName = fieldParts[0];
+		}
+		
+		dstField = dstField != null ? dstField : srcFieldName;
+		
+		FieldsMapping fieldMap = FieldsMapping.fastCreate(srcFieldName, dstField);
+		
+		fieldMap.tryToLoadTransformer(dstConf);
+		
+		if (dataSourceName != null) {
+			EtlDataSource ds = dstConf.findDataSource(dataSourceName);
+			
+			if (ds != null) {
+				fieldMap.setDataSourceName(ds.getAlias());
+			} else {
+				throw new EtlExceptionImpl(
+				        "Invalid datasource '" + dataSourceName + "' on field definition '" + fullFieldName + "'");
+			}
+			
+		} else {
+			dstConf.tryToLoadDataSourceToFieldMapping(fieldMap);
+		}
+		
+		return fieldMap;
+		
 	}
 	
 	public EtlFieldTransformer getTransformerInstance() {

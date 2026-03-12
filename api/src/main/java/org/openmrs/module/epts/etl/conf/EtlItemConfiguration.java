@@ -205,6 +205,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		etl.setSrcConf(src);
 		
+		etl.setRelatedEtlConfig(tableConfig.getRelatedEtlConf());
+		
 		return etl;
 	}
 	

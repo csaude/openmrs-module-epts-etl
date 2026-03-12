@@ -15,7 +15,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.JavaObjectFieldsValuesGenerat
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ObjectLanguageType;
-import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -260,11 +260,11 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	}
 	
 	@Override
-	public EtlDatabaseObject loadRelatedSrcObject(Engine<? extends EtlDatabaseObject> engine,
+	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException {
 		
-		Map<String, Object> values = this.getFieldsValuesGeneratorInstance().generateObjectFields(this, avaliableSrcObjects,
-		    conn, conn);
+		Map<String, Object> values = this.getFieldsValuesGeneratorInstance().generateObjectFields(processor, srcObject, this,
+		    avaliableSrcObjects, conn, conn);
 		
 		EtlDatabaseObject obj = this.newInstance();
 		
@@ -380,5 +380,15 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	@Override
 	public ActionOnEtlException getGeneralBehaviourOnEtlException() {
 		return this.getRelatedEtlConf().getGeneralBehaviourOnEtlException();
+	}
+	
+	@Override
+	public PreparedQuery getDefaultPreparedQuery() {
+		throw new ForbiddenOperationException("Forbiden Method");
+	}
+	
+	@Override
+	public void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery) {
+		throw new ForbiddenOperationException("Forbiden Method");
 	}
 }
