@@ -397,7 +397,13 @@ Each **extraObjectDataSource** is defined by the following properties:
     - **org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer** Evaluates arithmetic expressions defined in the field value.
     - **org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer** Applies string operations and transformations using common string manipulation methods.
     - **org.openmrs.module.epts.etl.etl.processor.transformer.MappingFieldTransformer(mapping_table_name,mapping_src_field,mapping_dst_field)** Performs value transformation based on a lookup table stored in the database. The transformer requires three parameters: the mapping table name, the source field name, and the destination field name.
-    - **org.openmrs.module.epts.etl.etl.processor.transformer.FastSqlFieldTransformer(sqlQuery)** Retrieves the field value by executing a SQL query. The SQL query must return at least one column; only the first column of the result will be used as the field value.
+    - **org.openmrs.module.epts.etl.etl.processor.transformer.FastSqlFieldTransformer(sqlQuery)** Retrieves the field value by executing a SQL query against the source database. 
+The SQL query must return at least one column; only the first column of the first row 
+of the result set will be used as the destination field value.
+
+If the query returns no rows or the resulting value is null, the transformer will:
+- apply the destination field default value if defined, or
+- raise an ETL transformation exception otherwise.
     - **org.openmrs.module.epts.etl.etl.processor.transformer.CoalesceFieldTransformer(fieldOrValue1, ..., fieldOrValuen)** Returns the first non-null value obtained from a sequence of candidate inputs. Each parameter is evaluated in order and transformed into a value; if the result of the first parameter is null, the transformer evaluates the second, and so on until a non-null value is found. If all evaluated parameters result in null, the final result is null.
 Parameters may represent fixed values, dynamic parameters, or fields from available data sources. When referencing a field, it can be specified using the simple form "field" or the qualified form "dataSourceName.field" when disambiguation between data sources is required.
     - **org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTransformer** Performs direct assignment of the value without additional transformation. This transformer is used by default when no transformer is specified.
