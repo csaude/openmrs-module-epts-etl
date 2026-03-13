@@ -146,8 +146,6 @@ public class FieldsMapping implements TransformableField {
 		
 		FieldsMapping fieldMap = FieldsMapping.fastCreate(srcFieldName, dstField);
 		
-		fieldMap.tryToLoadTransformer(dstConf);
-		
 		if (dataSourceName != null) {
 			EtlDataSource ds = dstConf.findDataSource(dataSourceName);
 			
@@ -168,6 +166,8 @@ public class FieldsMapping implements TransformableField {
 			}
 			
 		}
+		
+		fieldMap.tryToLoadTransformer(dstConf);
 		
 		return fieldMap;
 		
@@ -267,7 +267,21 @@ public class FieldsMapping implements TransformableField {
 	
 	@Override
 	public String toString() {
-		return "[srcField: " + srcField + ", dstField: " + dstField + ", dataSourceName: " + this.dataSourceName + "]";
+		String str = srcField != null ? ("srcField: " + srcField) : "";
+		
+		String separator = !str.isEmpty() && srcValue != null ? ", " : "";
+		
+		str += separator + (srcValue != null ? ("srcValue: " + srcValue) : "");
+		
+		separator = !str.isEmpty() && dstField != null ? ", " : "";
+		
+		str += separator + (dstField != null ? ("dstField: " + dstField) : "");
+		
+		separator = !str.isEmpty() && dataSourceName != null ? ", " : "";
+		
+		str += separator + (dataSourceName != null ? ("dataSourceName: " + dataSourceName) : "");
+		
+		return "[" + str + "]";
 	}
 	
 	public void setMapToNullValue(boolean b) {

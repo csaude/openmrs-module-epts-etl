@@ -427,7 +427,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			return;
 		}
 		
-		if (!fm.useDefaultTransformer()) {
+		if (fm.hasTransformer() && !fm.useDefaultTransformer()) {
 			
 			fm.loadType(this, null);
 			
@@ -656,6 +656,36 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 	}
 	
+	public List<EtlDataSource> getAllPrefferredDataSource() {
+		return allPrefferredDataSource;
+	}
+	
+	public List<EtlDataSource> getAllNotPrefferredDataSource() {
+		return allNotPrefferredDataSource;
+	}
+	
+	public void addToPrefferedDataSource(EtlDataSource ds) {
+		if (this.getAllPrefferredDataSource() == null) {
+			this.allPrefferredDataSource = new ArrayList<>();
+		}
+		
+		if (ds == null)
+			throw new ForbiddenOperationException("Empty ds was provided");
+		
+		this.getAllPrefferredDataSource().add(ds);
+	}
+	
+	public void addToNotPrefferedDataSource(EtlDataSource ds) {
+		if (this.getAllNotPrefferredDataSource() == null) {
+			this.allNotPrefferredDataSource = new ArrayList<>();
+		}
+		
+		if (ds == null)
+			throw new ForbiddenOperationException("Empty ds was provided");
+		
+		this.getAllNotPrefferredDataSource().add(ds);
+	}
+	
 	public void addToAvaliableDataSource(EtlDataSource ds) {
 		if (this.getAllAvaliableDataSource() == null) {
 			this.allAvaliableDataSource = new ArrayList<>();
@@ -671,6 +701,14 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		if (utilities.arrayHasElement(ds)) {
 			for (EtlDataSource d : ds) {
 				addToAvaliableDataSource(d);
+			}
+		}
+	}
+	
+	public void addAllToPreferredDataSource(List<EtlDataSource> ds) {
+		if (utilities.arrayHasElement(ds)) {
+			for (EtlDataSource d : ds) {
+				addToPrefferedDataSource(d);
 			}
 		}
 	}
@@ -795,15 +833,12 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			
 		}
 		
-		this.allNotPrefferredDataSource = new ArrayList<>();
-		this.allPrefferredDataSource = new ArrayList<>();
-		
 		for (EtlDataSource ds : getAllAvaliableDataSource()) {
 			if (this.getPrefferredDataSource().contains(ds.getName())
 			        || this.getPrefferredDataSource().contains(ds.getAlias())) {
-				allPrefferredDataSource.add(ds);
+				addToPrefferedDataSource(ds);
 			} else {
-				allNotPrefferredDataSource.add(ds);
+				addToNotPrefferedDataSource(ds);
 			}
 		}
 	}

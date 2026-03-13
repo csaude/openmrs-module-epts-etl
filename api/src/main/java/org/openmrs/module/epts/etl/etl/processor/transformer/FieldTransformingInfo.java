@@ -62,4 +62,8 @@ public class FieldTransformingInfo {
 		return this.getTransformationDatasource() == null || this.getTransformationDatasource() instanceof DstConf;
 	}
 	
+	@Override
+	public String toString() {
+		return this.srcField.getSrcField() + " = " + this.getTransformedValue() + ". Ds: " + this.transformationDatasource;
+	}
 }

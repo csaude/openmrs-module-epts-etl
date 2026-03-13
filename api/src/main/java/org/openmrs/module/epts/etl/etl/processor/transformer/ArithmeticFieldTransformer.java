@@ -47,7 +47,7 @@ import net.objecthunter.exp4j.ExpressionBuilder;
  */
 public class ArithmeticFieldTransformer implements EtlFieldTransformer {
 	
-	private static ArithmeticFieldTransformer defaultTransformer;
+	public static ArithmeticFieldTransformer defaultTransformer;
 	
 	private static final Object LOCK = new Object();
 	

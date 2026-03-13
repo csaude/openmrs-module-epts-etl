@@ -35,7 +35,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class SimpleValueTransformer implements EtlFieldTransformer {
 	
-	private static final SimpleValueTransformer INSTANCE = new SimpleValueTransformer();
+	public static final SimpleValueTransformer INSTANCE = new SimpleValueTransformer();
 	
 	private SimpleValueTransformer() {
 	}

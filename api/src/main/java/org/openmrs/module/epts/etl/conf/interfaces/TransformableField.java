@@ -168,6 +168,10 @@ public interface TransformableField {
 	
 	@SuppressWarnings({ "unchecked" })
 	default void tryToLoadTransformer(DstConf dstConf) {
+		if (getTransformerInstance() != null) {
+			return;
+		}
+		
 		if (this.hasTransformer()) {
 			
 			String transformerStr = this.getTransformer();

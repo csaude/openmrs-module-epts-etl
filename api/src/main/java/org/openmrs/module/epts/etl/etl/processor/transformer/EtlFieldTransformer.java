@@ -45,45 +45,53 @@ public interface EtlFieldTransformer {
 	        List<EtlDatabaseObject> additionalSrcObjects, TransformableField field, Connection srcConn, Connection dstConn)
 	        throws DBException, EtlTransformationException;
 	
-	default void performeFieldTransformation(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject transformedRecord,
-	        List<EtlDatabaseObject> additionalSrcObjects, FieldsMapping field, Connection srcConn, Connection dstConn)
-	        throws DBException, EtlTransformationException {
+	default void performeFieldTransformation(EtlProcessor processor, EtlDatabaseObject srcObject,
+	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, FieldsMapping field,
+	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
-		if (field.getSrcValue() == null && field.hasDataSourceName()) {
-			field.setSrcValue("@" + field.getSrcField());
-		}
+		FieldTransformingInfo fieldTransformingInfo;
 		
-		FieldTransformingInfo fieldTransformingInfo = this.transform(processor, srcObject, transformedRecord, additionalSrcObjects, field,
-		    srcConn, dstConn);
-		
-		if (fieldTransformingInfo == null) {
+		if (field.isMapToNullValue()) {
 			fieldTransformingInfo = new FieldTransformingInfo(field, null, null);
-		}
-		
-		Object dstValue = fieldTransformingInfo != null ? fieldTransformingInfo.getTransformedValue() : null;
-		
-		//Override the value if it should be override
-		if (dstValue != null && field.shouldOverrideValue(dstValue)) {
-			dstValue = null;
-		}
-		
-		if (dstValue == null) {
-			dstValue = tryToLoadDefaultValue(field, additionalSrcObjects);
+		} else {
 			
-			if (dstValue != null) {
-				fieldTransformingInfo.setLoadedWithDefaultValue(true);
+			if (field.getSrcValue() == null && field.hasDataSourceName()) {
+				field.setSrcValue("@" + field.getSrcField());
+			}
+			
+			fieldTransformingInfo = this.transform(processor, srcObject, transformedRecord, additionalSrcObjects, field,
+			    srcConn, dstConn);
+			
+			if (fieldTransformingInfo == null) {
+				fieldTransformingInfo = new FieldTransformingInfo(field, null, null);
+			}
+			
+			Object dstValue = fieldTransformingInfo != null ? fieldTransformingInfo.getTransformedValue() : null;
+			
+			//Override the value if it should be override
+			if (dstValue != null && field.shouldOverrideValue(dstValue)) {
+				dstValue = null;
+			}
+			
+			if (dstValue == null) {
+				dstValue = tryToLoadDefaultValue(field, additionalSrcObjects);
+				
+				if (dstValue != null) {
+					fieldTransformingInfo.setLoadedWithDefaultValue(true);
+				}
+			}
+			
+			if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(field.getDstField()))) {
+				dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
+			} else if (dstValue != null && utilities.isBooleanType(transformedRecord.getFieldType(field.getDstField()))) {
+				dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
 			}
 		}
 		
-		if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(field.getDstField()))) {
-			dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
-		} else if (dstValue != null && utilities.isBooleanType(transformedRecord.getFieldType(field.getDstField()))) {
-			dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
-		}
-		
-		transformedRecord.setFieldValue(field.getDstField(), dstValue);
+		transformedRecord.setFieldValue(field.getDstField(), fieldTransformingInfo.getTransformedValue());
 		
 		transformedRecord.getField(field.getDstField()).setTransformingInfo(fieldTransformingInfo);
+		
 	}
 	
 	public static Object tryToLoadDefaultValue(TransformableField transformableField, List<EtlDatabaseObject> srcObjects) {
