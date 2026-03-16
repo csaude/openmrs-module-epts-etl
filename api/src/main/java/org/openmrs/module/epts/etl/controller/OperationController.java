@@ -17,6 +17,8 @@ import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
+import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
@@ -185,6 +187,25 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		this.allGeneratedEngineMonitor = allGeneratedEngineMonitor;
 	}
 	
+	void basicInitAllConfElements() throws DBException {
+		OpenConnection srcConn = openSrcConnection();
+		OpenConnection dstConn = tryToOpenDstConn();
+		
+		try {
+			for (EtlItemConfiguration config : getProcessController().getConfiguration().getEtlItemConfiguration()) {
+				config.doMinimalTableInitialization(srcConn, dstConn);
+			}
+		}
+		finally {
+			srcConn.finalizeConnection();
+			
+			if (dstConn != null) {
+				dstConn.finalizeConnection();
+			}
+		}
+		
+	}
+	
 	private synchronized void runInSequencialMode() throws DBException {
 		changeStatusToRunning();
 		
@@ -305,6 +326,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	private synchronized void runInParallelMode() throws DBException {
+		
 		this.enginesActivititieMonitor = new ArrayList<>();
 		
 		logInfo("Starting operations in parallel");
@@ -493,6 +515,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				changeStatusToFinished();
 			} else {
+				basicInitAllConfElements();
+				
 				if (isParallelModeProcessing()) {
 					runInParallelMode();
 				} else {

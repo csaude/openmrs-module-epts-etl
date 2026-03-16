@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
@@ -68,11 +69,21 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 				String fieldNameSnake = utilities.parsetoSnakeCase(field.getName());
 				String fieldNameCamel = utilities.parsetoCamelCase(field.getName());
 				
+				Field srcField = null;
+				
 				try {
+					srcField = srcObj.getField(fieldNameSnake);
+					
 					dstValue = srcObj.getFieldValue(fieldNameSnake);
 				}
 				catch (ForbiddenOperationException e) {
+					srcField = srcObj.getField(fieldNameCamel);
+					
 					dstValue = srcObj.getFieldValue(fieldNameCamel);
+				}
+				
+				if (srcField.getTransformingInfo() != null) {
+					return srcField.getTransformingInfo();
 				}
 				
 				ds = (EtlDataSource) srcObj.getRelatedConfiguration();

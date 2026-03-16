@@ -96,5 +96,4 @@ public interface EtlDataSource extends DatabaseObjectConfiguration {
 			throw new RuntimeException(e);
 		}
 	}
-	
 }

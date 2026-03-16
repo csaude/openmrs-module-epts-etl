@@ -541,10 +541,11 @@ public class EtlLoadHelper {
 	}
 	
 	public static EtlLoadHelper fastLoadRecord(EtlProcessor processor, EtlDatabaseObject srcRecord, DstConf dstConf,
-	        Connection srcConn, Connection dstConn) throws ParentNotYetMigratedException, DBException {
+	        TransformationType transformationType, Connection srcConn, Connection dstConn)
+	        throws ParentNotYetMigratedException, DBException {
 		
 		EtlDatabaseObject dstObject = dstConf.getTransformerInstance().transform(processor, srcRecord, dstConf, null,
-		    TransformationType.PRINCIPAL, srcConn, dstConn);
+		    transformationType, srcConn, dstConn);
 		
 		LoadRecord loadRecord = LoadRecord.initEtlRecord(processor, srcRecord, dstObject, dstConf);
 		

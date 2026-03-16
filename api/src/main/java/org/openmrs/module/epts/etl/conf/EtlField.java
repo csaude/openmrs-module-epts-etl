@@ -154,4 +154,9 @@ public class EtlField extends Field {
 		}
 		
 	}
+	
+	public boolean checkIfUsesSameDataSouce(EtlDataSource preferredDataSource) {
+		return this.getSrcDataSource() == preferredDataSource;
+	}
+	
 }

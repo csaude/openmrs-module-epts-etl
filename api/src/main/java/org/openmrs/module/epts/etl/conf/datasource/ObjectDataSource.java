@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ObjectLanguageType;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -263,14 +264,18 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException {
 		
-		Map<String, Object> values = this.getFieldsValuesGeneratorInstance().generateObjectFields(processor, srcObject, this,
-		    avaliableSrcObjects, conn, conn);
+		Map<String, FieldTransformingInfo> values = this.getFieldsValuesGeneratorInstance().generateObjectFields(processor,
+		    srcObject, this, avaliableSrcObjects, conn, conn);
 		
 		EtlDatabaseObject obj = this.newInstance();
 		
 		for (DataSourceField f : this.getObjectFields()) {
-			Object value = values.get(f.getName());
-			obj.setFieldValue(f.getName(), value);
+			FieldTransformingInfo valueInfo = values.get(f.getName());
+			
+			obj.setFieldValue(f.getName(), valueInfo.getTransformedValue());
+			
+			obj.getField(f.getName()).setTransformingInfo(valueInfo);
+			valueInfo.setTransformationDatasource(this);
 		}
 		
 		return obj;

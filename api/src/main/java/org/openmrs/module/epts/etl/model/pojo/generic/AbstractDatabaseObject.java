@@ -271,6 +271,11 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	@Override
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
+		
+		try {
+			setFieldValue("uuid", uuid);
+		}
+		catch (ForbiddenOperationException e) {}
 	}
 	
 	@Override

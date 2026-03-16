@@ -376,7 +376,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			
 			FieldsMapping fm = null;
 			
-			EtlField etlField = this.getSrcConf().getEtlField(field.getName(), true);
+			EtlField etlField = this.getSrcConf().getEtlField(field.getName(), this.getAllPrefferredDataSource(), true);
 			
 			if (etlField != null) {
 				fm = FieldsMapping.fastCreate(etlField.getSrcField().getName(), field.getName());
@@ -672,6 +672,12 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		if (ds == null)
 			throw new ForbiddenOperationException("Empty ds was provided");
 		
+		for (EtlDataSource ds1 : this.getAllPrefferredDataSource()) {
+			if (ds == ds1) {
+				return;
+			}
+		}
+		
 		this.getAllPrefferredDataSource().add(ds);
 	}
 	
@@ -683,6 +689,12 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		if (ds == null)
 			throw new ForbiddenOperationException("Empty ds was provided");
 		
+		for (EtlDataSource ds1 : this.getAllNotPrefferredDataSource()) {
+			if (ds == ds1) {
+				return;
+			}
+		}
+		
 		this.getAllNotPrefferredDataSource().add(ds);
 	}
 	
@@ -693,6 +705,12 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		if (ds == null)
 			throw new ForbiddenOperationException("Empty ds was provided");
+		
+		for (EtlDataSource ds1 : this.getAllAvaliableDataSource()) {
+			if (ds == ds1) {
+				return;
+			}
+		}
 		
 		this.getAllAvaliableDataSource().add(ds);
 	}
@@ -748,6 +766,14 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		if (hasParentDstConf()) {
 			addToAvaliableDataSource(this.getParentDstConf());
+			
+			if (utilities.arrayHasElement(this.getParentDstConf().getAllAvaliableDataSource())) {
+				for (EtlDataSource ds : this.getParentDstConf().getAllAvaliableDataSource()) {
+					if (ds != this.getParentDstConf().getSrcConf()) {
+						addToAvaliableDataSource(ds);
+					}
+				}
+			}
 		}
 		
 		this.fullLoadAllRelatedTables(getRelatedEtlConf(), null, conn);
@@ -830,7 +856,12 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 				
 				aliasedDs.add(aliasedName);
 			}
-			
+		}
+		
+		if (utilities.arrayHasElement(this.getPrefferredDataSource())) {
+			for (String dsName : this.getPrefferredDataSource()) {
+				addToPrefferedDataSource(findDataSource(dsName));
+			}
 		}
 		
 		for (EtlDataSource ds : getAllAvaliableDataSource()) {

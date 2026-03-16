@@ -632,7 +632,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		if (!(obj instanceof AbstractTableConfiguration))
 			return false;
 		
-		return this.getTableName().equalsIgnoreCase(((AbstractTableConfiguration) obj).getTableName());
+		return getFullTableName().equalsIgnoreCase(((AbstractTableConfiguration) obj).getFullTableName());
 	}
 	
 	@Override

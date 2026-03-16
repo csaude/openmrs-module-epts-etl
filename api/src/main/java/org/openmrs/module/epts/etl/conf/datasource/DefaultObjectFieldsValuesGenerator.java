@@ -19,17 +19,17 @@ public class DefaultObjectFieldsValuesGenerator implements JavaObjectFieldsValue
 	private static final String LOCK_STRING = "LOCK_STRING";
 	
 	@Override
-	public Map<String, Object> generateObjectFields(EtlProcessor processor, EtlDatabaseObject srcObject,
+	public Map<String, FieldTransformingInfo> generateObjectFields(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        ObjectDataSource dataSource, List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn, Connection dstConn)
 	        throws DBException, ForbiddenOperationException {
 		
-		Map<String, Object> map = new HashMap<>();
+		Map<String, FieldTransformingInfo> map = new HashMap<>();
 		
 		for (DataSourceField field : dataSource.getObjectFields()) {
 			FieldTransformingInfo fieldInfo = field.getTransformerInstance().transform(processor, srcObject, null,
 			    avaliableSrcObjects, field, srcConn, dstConn);
 			
-			map.put(field.getName(), fieldInfo != null ? fieldInfo.getTransformedValue() : null);
+			map.put(field.getName(), fieldInfo != null ? fieldInfo : null);
 		}
 		
 		return map;

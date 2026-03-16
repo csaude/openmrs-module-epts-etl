@@ -245,6 +245,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	@Override
 	public void run() {
 		try {
+			
 			logInfo("INITIALIZING ENGINE FOR ETL CONFIG [" + getEtlItemConfiguration().getConfigCode().toUpperCase() + "]");
 			
 			long minRecId = tableOperationProgressInfo.getProgressMeter().getMinRecordId();

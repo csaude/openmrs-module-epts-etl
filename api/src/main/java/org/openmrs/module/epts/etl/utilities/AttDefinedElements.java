@@ -199,9 +199,9 @@ public class AttDefinedElements {
 		String aspasAbrir = "\"\\\"\"+";
 		String aspasFechar = "+\"\\\"\"";
 		
-		this.sqlInsertFirstPartDefinition = dbAttName + (isLast ? "" : ", ");
+		this.sqlInsertFirstPartDefinition = "`" + dbAttName + "`" + (isLast ? "" : ", ");
 		this.sqlInsertLastEndPartDefinition = "?" + (isLast ? "" : ", ");
-		this.sqlUpdateDefinition = dbAttName + " = ?" + (isLast ? "" : ", ");
+		this.sqlUpdateDefinition = "`" + dbAttName + "`" + " = ?" + (isLast ? "" : ", ");
 		
 		this.sqlInsertParamDefinifion = "this." + attName + (isLast ? "" : ", ");
 		this.sqlUpdateParamDefinifion = "this." + attName + (isLast ? "" : ", ");

@@ -86,6 +86,8 @@ public interface EtlFieldTransformer {
 			} else if (dstValue != null && utilities.isBooleanType(transformedRecord.getFieldType(field.getDstField()))) {
 				dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
 			}
+			
+			fieldTransformingInfo.setTransformedValue(dstValue);
 		}
 		
 		transformedRecord.setFieldValue(field.getDstField(), fieldTransformingInfo.getTransformedValue());
@@ -157,7 +159,7 @@ public interface EtlFieldTransformer {
 			}
 			
 			if (srcValue.equals("@" + paramName)) {
-				return paramValue;
+				return "" + paramValue;
 			}
 			
 			matcher.appendReplacement(buffer, Matcher.quoteReplacement(paramValue.toString()));

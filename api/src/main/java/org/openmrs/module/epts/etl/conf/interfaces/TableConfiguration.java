@@ -1050,7 +1050,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			
 			if (existingRef == null) {
 				ref = (AbstractRelatedTable) parentTabConf;
-				
 				ref.setMetadata(!ref.isConfigured());
 				this.getParentRefInfo().add((ParentTable) ref);
 			}
@@ -1310,7 +1309,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	@JsonIgnore
 	default boolean isConfigured() {
 		for (TableConfiguration tabConf : this.getRelatedEtlConf().getConfiguredTables()) {
-			if (tabConf.equals(this))
+			if (tabConf.getTableName().equals(this.getTableName()))
 				return true;
 		}
 		
@@ -2156,8 +2155,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				}
 			} else {
 				throw new ForbiddenOperationException(
-				        "The mapping joinFields cannot be auto generated! Multiple references were found between " + this.getTableName()
-				                + " And " + relatedTabConf.getTableName() + ". Please define joinFields manually ");
+				        "The mapping joinFields cannot be auto generated! Multiple references were found between "
+				                + this.getTableName() + " And " + relatedTabConf.getTableName()
+				                + ". Please define joinFields manually ");
 				
 			}
 		} else {

@@ -372,7 +372,6 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 							map.generateAllFieldsMapping(dstConn);
 						}
 						
-						
 					}
 					
 				}
@@ -397,6 +396,20 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				this.getSrcConf().generateStagingTables(srcConn);
 				
 				srcConn.markAsSuccessifullyTerminated();
+			}
+			
+			if (this.hasParentItemConf() && this.getRelatedParentDstConf() == null) {
+				
+				if (!utilities.stringHasValue(this.getRelatedParentDstConfName())) {
+					if (utilities.arrayHasExactlyOneElement(this.getParentItemConf().getDstConf())) {
+						this.setRelatedParentDstConfName(this.getParentItemConf().getDstConf().get(0).getName());
+					} else {
+						throw new ForbiddenOperationException("The relatedParentDstConfName was not defined for the conf "
+						        + this.getParentItemConf().getConfigCode());
+					}
+				}
+				
+				this.setRelatedParentDstConf(this.getParentItemConf().findDstConf(this.getRelatedParentDstConfName()));
 			}
 			
 			this.setFullLoaded(true);
@@ -654,6 +667,17 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		if (hasDstConf()) {
 			for (DstConf dstConf : this.getDstConf()) {
 				dstConf.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+	}
+	
+	public void doMinimalTableInitialization(Connection srcConn, Connection dstConn)
+	        throws DatabaseResourceDoesNotExists, DBException, ForbiddenOperationException {
+		this.srcConf.loadSchemaInfo(null, srcConn);
+		
+		if (hasDstConf()) {
+			for (DstConf conf : this.getDstConf()) {
+				conf.loadSchemaInfo(null, dstConn);
 			}
 		}
 	}

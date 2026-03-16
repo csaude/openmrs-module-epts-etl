@@ -173,9 +173,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		}
 		
 		if (utilities.arrayHasMoreThanOneElements(list)) {
-			throw new ForbiddenOperationException(
-			        "The datasource (" + this.getName() + ") returned more than one src objects");
-			
+			logWarn("The datasource (" + this.getName() + ") returned more than one src objects for src: " + srcObject);
 		}
 		
 		return list.get(0);

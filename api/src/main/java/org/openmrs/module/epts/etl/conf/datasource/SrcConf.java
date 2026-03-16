@@ -309,7 +309,8 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return this.fullLoaded;
 	}
 	
-	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig, EtlItemConfiguration itemConf,  Connection conn) throws DBException {
+	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig, EtlItemConfiguration itemConf, Connection conn)
+	        throws DBException {
 		SrcConf src = new SrcConf();
 		
 		src.copyFromOther(tableConfig, null, itemConf, conn);
@@ -429,20 +430,43 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return utilities.arrayHasElement(this.getEtlFields());
 	}
 	
-	public EtlField getEtlField(String fieldName, boolean deepCheck) {
+	public EtlField getEtlField(String fieldName, List<EtlDataSource> preferredDataSource, boolean deepCheck) {
+		if (utilities.arrayHasElement(preferredDataSource)) {
+			for (EtlDataSource ds : preferredDataSource) {
+				EtlField f = getEtlField(fieldName, deepCheck, ds);
+				
+				if (f != null) {
+					return f;
+				}
+			}
+		} else {
+			return getEtlField(fieldName, deepCheck, null);
+		}
+		
+		return null;
+	}
+	
+	private EtlField getEtlField(String fieldName, boolean deepCheck, EtlDataSource preferredDataSource) {
+		
+		EtlField found = null;
+		
 		if (this.hasEtlFields()) {
 			for (EtlField f : this.getEtlFields()) {
 				
 				if (f.getName().equals(fieldName)) {
-					return f;
+					found = f;
 				}
 				
 				if (f.hasSrcField()) {
 					if (f.getSrcField().getName().equals(fieldName)) {
-						return f;
+						found = f;
 					}
 				}
 			}
+		}
+		
+		if (found != null && (preferredDataSource == null || found.checkIfUsesSameDataSouce(preferredDataSource))) {
+			return found;
 		}
 		
 		if (deepCheck) {
@@ -457,10 +481,16 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 			
 			if (this.hasExtraDataSource()) {
 				for (EtlDataSource ds : allDs) {
-					EtlField f = this.getEtlField(EtlField.fastCreate(fieldName, ds, false).getName(), false);
+					EtlField f = this.getEtlField(EtlField.fastCreate(fieldName, ds, false).getName(), false,
+					    preferredDataSource);
 					
 					if (f != null)
-						return f;
+						found = f;
+					
+					if (found != null
+					        && (preferredDataSource == null || found.checkIfUsesSameDataSouce(preferredDataSource))) {
+						return found;
+					}
 				}
 			}
 		}

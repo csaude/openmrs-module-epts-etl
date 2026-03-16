@@ -59,7 +59,8 @@ public class FieldTransformingInfo {
 	}
 	
 	public boolean isLoadedWithDstValue() {
-		return this.getTransformationDatasource() == null || this.getTransformationDatasource() instanceof DstConf;
+		return this.loadedWithDefaultValue || this.getTransformationDatasource() == null
+		        || this.getTransformationDatasource() instanceof DstConf;
 	}
 	
 	@Override

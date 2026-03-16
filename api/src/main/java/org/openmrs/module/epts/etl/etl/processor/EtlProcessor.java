@@ -83,7 +83,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				catch (EtlTransformationException e) {
 					if (getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().log()) {
 						EtlLoadHelper.logEtlError(this, srcRecord, e, srcConn, dstConn);
-					}else {
+					} else {
 						throw e;
 					}
 				}
@@ -111,14 +111,13 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	        Connection dstConn) throws DBException {
 		
 		if (itemConf.hasChildItemConf()) {
-			for (EtlItemConfiguration childItemConf : this.getEtlItemConfiguration().getChildItemConf()) {
+			for (EtlItemConfiguration childItemConf : itemConf.getChildItemConf()) {
 				childItemConf.fullLoad(this.getRelatedEtlOperationConfig());
 				
 				for (LoadRecord rec : loadHelper.getAllRecordsAsLoadRecord(childItemConf.getRelatedParentDstConf(),
 				    LoadStatus.SUCCESS)) {
 					performeEtlOnChildItem(childItemConf, rec, srcConn, dstConn);
 				}
-				
 			}
 		}
 	}
@@ -160,6 +159,8 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			catch (EtlTransformationException e) {
 				if (getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().log()) {
 					EtlLoadHelper.logEtlError(this, srcRecord, e, srcConn, dstConn);
+				} else {
+					throw e;
 				}
 			}
 		}

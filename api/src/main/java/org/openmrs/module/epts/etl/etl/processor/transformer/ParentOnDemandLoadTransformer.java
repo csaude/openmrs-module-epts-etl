@@ -26,21 +26,19 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+
 /**
  * Transformer responsible for ensuring that a parent record exists in the destination table and
  * returning its primary key as the transformed value.
- *
  * <p>
  * This transformer is typically used to enforce the creation of related parent records in the
  * destination database during the transformation of a child record. If the corresponding parent
  * record does not yet exist in the destination, the transformer will trigger its migration or
  * creation before returning the parent primary key.
  * </p>
- *
  * <p>
  * Transformer syntax:
  * </p>
- *
  * <pre>
  * ParentOnDemandLoadTransformer(
  *      parentTable,
@@ -50,71 +48,56 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  *      ...
  * )
  * </pre>
- *
  * <p>
  * Parameters:
  * </p>
- *
  * <ul>
- *   <li>
- *     <b>parentTable</b> – Name of the parent table in the destination database whose record
- *     must exist before the child record is saved.
- *   </li>
- *
- *   <li>
- *     <b>parentFieldOnDataSourceObject</b> – Field used to resolve the parent identifier
- *     from the available source data objects.
- *   </li>
- *
- *   <li>
- *     <b>dstField:srcFieldOrValue</b> – Optional additional field mappings used when creating
- *     the parent record in the destination database. Each parameter defines how a field in the
- *     parent record should be populated.
- *
- *     <p>Supported forms:</p>
- *
- *     <ul>
- *       <li><b>dstField:srcField</b> – copy the value from a field available in the source data.</li>
- *       <li><b>dstField:constantValue</b> – assign a constant value.</li>
- *       <li><b>dstField:@parameter</b> – assign a dynamic ETL parameter value.</li>
- *       <li><b>dstField:null</b> – explicitly set the destination field to <code>null</code>.</li>
- *       <li><b>dstField:</b> – omit the value to implicitly assign <code>null</code>.</li>
- *     </ul>
- *
- *     <p>Examples:</p>
- *
- *     <pre>
+ * <li><b>parentTable</b> – Name of the parent table in the destination database whose record must
+ * exist before the child record is saved.</li>
+ * <li><b>parentFieldOnDataSourceObject</b> – Field used to resolve the parent identifier from the
+ * available source data objects.</li>
+ * <li><b>dstField:srcFieldOrValue</b> – Optional additional field mappings used when creating the
+ * parent record in the destination database. Each parameter defines how a field in the parent
+ * record should be populated.
+ * <p>
+ * Supported forms:
+ * </p>
+ * <ul>
+ * <li><b>dstField:srcField</b> – copy the value from a field available in the source data.</li>
+ * <li><b>dstField:constantValue</b> – assign a constant value.</li>
+ * <li><b>dstField:@parameter</b> – assign a dynamic ETL parameter value.</li>
+ * <li><b>dstField:null</b> – explicitly set the destination field to <code>null</code>.</li>
+ * <li><b>dstField:</b> – omit the value to implicitly assign <code>null</code>.</li>
+ * </ul>
+ * <p>
+ * Examples:
+ * </p>
+ * <pre>
  *     visit_type_id:42
  *     date_started:encounter_datetime
  *     location_id:@migration_location_id
  *     date_stopped:null
  *     indication_concept_id:
  *     </pre>
- *
- *     <p>
- *     Dynamic parameters start with <code>@</code> and are resolved using the ETL configuration
- *     parameters during transformation.
- *     </p>
- *
- *   </li>
+ * <p>
+ * Dynamic parameters start with <code>@</code> and are resolved using the ETL configuration
+ * parameters during transformation.
+ * </p>
+ * </li>
  * </ul>
- *
  * <p>
  * Behavior:
  * </p>
- *
  * <ol>
- *   <li>Resolve the parent identifier from the source data.</li>
- *   <li>Locate the corresponding parent record in the destination database.</li>
- *   <li>If the parent does not exist in the destination, create or migrate it using the
- *       provided field mappings.</li>
- *   <li>Return the parent record primary key as the transformed value.</li>
+ * <li>Resolve the parent identifier from the source data.</li>
+ * <li>Locate the corresponding parent record in the destination database.</li>
+ * <li>If the parent does not exist in the destination, create or migrate it using the provided
+ * field mappings.</li>
+ * <li>Return the parent record primary key as the transformed value.</li>
  * </ol>
- *
  * <p>
  * Example:
  * </p>
- *
  * <pre>
  * ParentOnDemandLoadTransformer(
  *     visit,
@@ -126,20 +109,19 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  *     indication_concept_id:
  * )
  * </pre>
- *
  * <p>
  * In this example:
  * </p>
  * <ul>
- *   <li>The parent record is created in the <b>visit</b> table.</li>
- *   <li>The parent identifier is resolved using the field <b>visit_id</b>.</li>
- *   <li>The field <b>date_started</b> is populated from <b>encounter_datetime</b>.</li>
- *   <li>The field <b>visit_type_id</b> receives the constant value <b>42</b>.</li>
- *   <li>The field <b>location_id</b> receives the dynamic ETL parameter <b>@migration_location_id</b>.</li>
- *   <li>The field <b>date_stopped</b> is explicitly set to <code>null</code>.</li>
- *   <li>The field <b>indication_concept_id</b> is implicitly set to <code>null</code>.</li>
+ * <li>The parent record is created in the <b>visit</b> table.</li>
+ * <li>The parent identifier is resolved using the field <b>visit_id</b>.</li>
+ * <li>The field <b>date_started</b> is populated from <b>encounter_datetime</b>.</li>
+ * <li>The field <b>visit_type_id</b> receives the constant value <b>42</b>.</li>
+ * <li>The field <b>location_id</b> receives the dynamic ETL parameter
+ * <b>@migration_location_id</b>.</li>
+ * <li>The field <b>date_stopped</b> is explicitly set to <code>null</code>.</li>
+ * <li>The field <b>indication_concept_id</b> is implicitly set to <code>null</code>.</li>
  * </ul>
- *
  * <p>
  * This transformer is designed for high-performance migrations where parent objects must be loaded
  * on-demand during the transformation of child records.
@@ -257,7 +239,6 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	public FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
-		
 		EtlDatabaseObject dstParent = resolveParent(processor, srcObject, transformedRecord, additionalSrcObjects, srcConn,
 		    dstConn);
 		
@@ -272,6 +253,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		
 		return new FieldTransformingInfo(field, dstParent.getObjectId().asSimpleValue(),
 		        (EtlDataSource) dstParent.getRelatedConfiguration());
+		
 	}
 	
 	EtlDatabaseObject resolveSrcParent(EtlProcessor processor, EtlDatabaseObject srcObject,
@@ -325,6 +307,8 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		
 		DstConf dstConf = null;
 		
+		TransformationType transformationType = TransformationType.PRINCIPAL;
+		
 		if (srcParent != null) {
 			tryToInitDstConfForExistingSrcParent(dstConn);
 			
@@ -335,11 +319,14 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 			dstConf = getDstConfForNonExistingSrcParent(srcConn, dstConn);
 			
 			srcParent = getSrcConfForNonExistingSrcParent(srcConn, dstConn).createRecordInstance();
+			
+			transformationType = TransformationType.ON_DEMAND;
 		}
 		
 		srcParent.setTransformationSrcObject(additionalSrcObjects);
 		
-		EtlLoadHelper loadHelper = EtlLoadHelper.fastLoadRecord(processor, srcParent, dstConf, srcConn, dstConn);
+		EtlLoadHelper loadHelper = EtlLoadHelper.fastLoadRecord(processor, srcParent, dstConf, transformationType, srcConn,
+		    dstConn);
 		
 		List<LoadRecord> migratedRecs = loadHelper.getAllRecordsAsLoadRecord(dstConf, LoadStatus.SUCCESS);
 		
@@ -420,6 +407,8 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 					parentConf.setRelatedEtlConfig(relatedDstConf.getRelatedEtlConf());
 					
 					EtlItemConfiguration conf = EtlItemConfiguration.fastCreate(parentConf, srcConn);
+					conf.setParentItemConf(relatedDstConf.getParentConf());
+					conf.setRelatedParentDstConfName(relatedDstConf.getTableAlias());
 					
 					conf.setDoNotFullLoadDstConf(true);
 					
@@ -443,6 +432,8 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 					parentConf.setRelatedEtlConfig(relatedDstConf.getRelatedEtlConf());
 					
 					EtlItemConfiguration conf = EtlItemConfiguration.fastCreate(parentConf, srcConn);
+					conf.setParentItemConf(relatedDstConf.getParentConf());
+					conf.setRelatedParentDstConfName(relatedDstConf.getTableAlias());
 					
 					conf.setDoNotFullLoadDstConf(true);
 					conf.fullLoad(relatedDstConf.getRelatedEtlConf().getOperations().get(0));
