@@ -172,7 +172,7 @@ public class SyncJSONInfo {
 	}
 	
 	public void clearOriginApplicationCodeForAllChildren() {
-		if (utilities.arrayHasNoElement(this.syncInfo))
+		if (utilities.listHasNoElement(this.syncInfo))
 			return;
 		
 		for (EtlStageRecordVO info : this.syncInfo) {

@@ -119,23 +119,23 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	}
 	
 	public boolean hasRecordsWithUnexpectedErrors() {
-		return utilities.arrayHasElement(getRecordsWithUnexpectedErrors());
+		return utilities.listHasElement(getRecordsWithUnexpectedErrors());
 	}
 	
 	public boolean hasRecordsWithRecursiveRelashionships() {
-		return utilities.arrayHasElement(getRecordsWithRecursiveRelashionship());
+		return utilities.listHasElement(getRecordsWithRecursiveRelashionship());
 	}
 	
 	public boolean hasRecordsWithResolvedInconsistences() {
-		return utilities.arrayHasElement(getRecordsWithResolvedInconsistences());
+		return utilities.listHasElement(getRecordsWithResolvedInconsistences());
 	}
 	
 	public boolean hasRecordsWithUnresolvedInconsistences() {
-		return utilities.arrayHasElement(getRecordsWithUnresolvedInconsistences());
+		return utilities.listHasElement(getRecordsWithUnresolvedInconsistences());
 	}
 	
 	public boolean hasRecordsWithNoError() {
-		return utilities.arrayHasElement(getRecordsWithNoError());
+		return utilities.listHasElement(getRecordsWithNoError());
 	}
 	
 	public boolean hasFatalError() throws DBException {
@@ -233,7 +233,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	}
 	
 	private void addAll(List<EtlOperationItemResult<T>> toAdd, EtlOperationResultItemType type) {
-		if (utilities.arrayHasElement(toAdd)) {
+		if (utilities.listHasElement(toAdd)) {
 			
 			for (EtlOperationItemResult<T> rec : toAdd) {
 				add(rec, type);

@@ -287,7 +287,7 @@ public class OperationProgressInfo {
 	}
 	
 	public void reset(Connection conn) throws DBException {
-		if (utilities.arrayHasElement(this.itemsProgressInfo)) {
+		if (utilities.listHasElement(this.itemsProgressInfo)) {
 			for (TableOperationProgressInfo progress : this.itemsProgressInfo) {
 				progress.clear(conn);
 			}

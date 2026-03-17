@@ -382,7 +382,7 @@ public class Field implements Serializable {
 	
 	public static String parseAllToCommaSeparatedName(List<Field> fields) {
 		
-		if (!utilities.arrayHasElement(fields))
+		if (!utilities.listHasElement(fields))
 			return null;
 		
 		String commaSeparatedNames = "";
@@ -400,7 +400,7 @@ public class Field implements Serializable {
 	
 	public static List<String> parseAllToListOfName(List<Field> fields) {
 		
-		if (!utilities.arrayHasElement(fields))
+		if (!utilities.listHasElement(fields))
 			return null;
 		
 		List<String> list = new ArrayList<>(fields.size());

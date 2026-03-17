@@ -146,6 +146,22 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	}
 	
 	@Override
+	public void loadParents(Connection conn) throws DBException {
+		super.loadParents(conn);
+		
+		if (useSharedPKKey()) {
+			
+			ParentTable shrd = this.getSharedKeyRefInfo(conn);
+			
+			//Parse the shared parent to data source
+			ParentAsSrcDataSource sharedAsSrcConf = ParentAsSrcDataSource.generateFromSrcConfSharedPkParent(this, shrd,
+			    conn);
+			
+			utilities.updateOnArray(this.getParentRefInfo(), shrd, sharedAsSrcConf);
+		}
+	}
+	
+	@Override
 	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		
 		this.tryToLoadParentRefInfo(conn);
@@ -331,22 +347,6 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return getSrcConnInfo();
 	}
 	
-	@Override
-	public void tryToDiscoverySharedKeyInfo(Connection conn) throws DBException {
-		super.tryToDiscoverySharedKeyInfo(conn);
-		
-		if (useSharedPKKey()) {
-			
-			ParentTable shrd = this.getSharedKeyRefInfo(conn);
-			
-			//Parse the shared parent to data source
-			ParentAsSrcDataSource sharedAsSrcConf = ParentAsSrcDataSource.generateFromSrcConfSharedPkParent(this, shrd,
-			    conn);
-			
-			utilities.updateOnArray(this.getParentRefInfo(), shrd, sharedAsSrcConf);
-		}
-	}
-	
 	@JsonIgnore
 	public List<EtlAdditionalDataSource> getAvaliableExtraDataSource() {
 		List<EtlAdditionalDataSource> ds = new ArrayList<>();
@@ -400,16 +400,16 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	}
 	
 	public boolean hasExtraTableDataSourceConfig() {
-		return utilities.arrayHasElement(this.getExtraTableDataSource());
+		return utilities.listHasElement(this.getExtraTableDataSource());
 	}
 	
 	public boolean hasExtraQueryDataSourceConfig() {
-		return utilities.arrayHasElement(this.getExtraQueryDataSource());
+		return utilities.listHasElement(this.getExtraQueryDataSource());
 		
 	}
 	
 	public boolean hasExtraObjectDataSourceConfig() {
-		return utilities.arrayHasElement(this.getExtraObjectDataSource());
+		return utilities.listHasElement(this.getExtraObjectDataSource());
 	}
 	
 	public boolean hasRequiredExtraDataSource() {
@@ -427,11 +427,11 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	}
 	
 	public boolean hasEtlFields() {
-		return utilities.arrayHasElement(this.getEtlFields());
+		return utilities.listHasElement(this.getEtlFields());
 	}
 	
 	public EtlField getEtlField(String fieldName, List<EtlDataSource> preferredDataSource, boolean deepCheck) {
-		if (utilities.arrayHasElement(preferredDataSource)) {
+		if (utilities.listHasElement(preferredDataSource)) {
 			for (EtlDataSource ds : preferredDataSource) {
 				EtlField f = getEtlField(fieldName, deepCheck, ds);
 				
@@ -499,7 +499,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	}
 	
 	public boolean hasExtraDataSource() {
-		return utilities.arrayHasElement(getAvaliableExtraDataSource());
+		return utilities.listHasElement(getAvaliableExtraDataSource());
 	}
 	
 	public boolean isComplex() {
@@ -515,7 +515,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		
 		if (toClone instanceof SrcConf) {
 			SrcConf toCloneFrom = (SrcConf) toClone;
-			if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {
+			if (utilities.listHasElement(toCloneFrom.getAuxExtractTable())) {
 				this.setAuxExtractTable(
 				    AuxExtractTable.cloneAll(toCloneFrom.getAuxExtractTable(), this, schemaInfoSrc, conn));
 				

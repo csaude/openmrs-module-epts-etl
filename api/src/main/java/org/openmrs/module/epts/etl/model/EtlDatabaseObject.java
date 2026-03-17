@@ -247,7 +247,7 @@ public interface EtlDatabaseObject extends EtlObject {
 			thisTabConf.fullLoad(conn);
 		}
 		
-		if (utils.arrayHasElement(thisTabConf.getParentRefInfo())) {
+		if (utils.listHasElement(thisTabConf.getParentRefInfo())) {
 			for (ParentTable ref : thisTabConf.getParentRefInfo()) {
 				//Recursive relashionship
 				if (ref.getTableName().equals(otherTabConf.getTableName())) {
@@ -317,7 +317,7 @@ public interface EtlDatabaseObject extends EtlObject {
 	}
 	
 	default boolean hasAuxLoadObject() {
-		return utils.arrayHasElement(this.getAuxLoadObject());
+		return utils.listHasElement(this.getAuxLoadObject());
 	}
 	
 	/**
@@ -428,7 +428,7 @@ public interface EtlDatabaseObject extends EtlObject {
 		return utils.parseListToArray(values);
 	}
 	
-	default boolean shasSharedPkObj() {
+	default boolean hasSharedPkObj() {
 		return getSharedPkObj() != null;
 	}
 	
@@ -465,7 +465,7 @@ public interface EtlDatabaseObject extends EtlObject {
 	}
 	
 	default boolean hasUniqueKeys() {
-		return utils.arrayHasElement(getUniqueKeysInfo());
+		return utils.listHasElement(getUniqueKeysInfo());
 	}
 	
 	default void setRelatedConfiguration(DatabaseObjectConfiguration config) {
@@ -669,7 +669,7 @@ public interface EtlDatabaseObject extends EtlObject {
 				throw new ConflictWithRecordNotYetAvaliableException(this, exception);
 			} else if (tableConfiguration.onConflict().updateExisting()) {
 				existingRecordIsOutdated = true;
-			} else if (utils.arrayHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
+			} else if (utils.listHasElement(tableConfiguration.getWinningRecordFieldsInfo())) {
 				for (List<org.openmrs.module.epts.etl.model.Field> fields : tableConfiguration
 				        .getWinningRecordFieldsInfo()) {
 					
@@ -775,7 +775,7 @@ public interface EtlDatabaseObject extends EtlObject {
 	}
 	
 	default boolean hasFields() {
-		return utils.arrayHasElement(this.getFields());
+		return utils.listHasElement(this.getFields());
 	}
 	
 	/**

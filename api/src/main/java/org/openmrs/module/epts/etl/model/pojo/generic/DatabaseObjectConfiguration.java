@@ -160,11 +160,11 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	}
 	
 	default boolean hasParentRefInfo() {
-		return utilities.arrayHasElement(this.getParentRefInfo());
+		return utilities.listHasElement(this.getParentRefInfo());
 	}
 	
 	default boolean hasChildRefInfo() {
-		return isMustLoadChildrenInfo() && utilities.arrayHasElement(this.getChildRefInfo());
+		return isMustLoadChildrenInfo() && utilities.listHasElement(this.getChildRefInfo());
 	}
 	
 	boolean isMustLoadChildrenInfo();
@@ -216,7 +216,7 @@ public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	}
 	
 	default boolean hasFields() {
-		return utilities.arrayHasElement(this.getFields());
+		return utilities.listHasElement(this.getFields());
 	}
 	
 	default boolean hasCompositeKey() {

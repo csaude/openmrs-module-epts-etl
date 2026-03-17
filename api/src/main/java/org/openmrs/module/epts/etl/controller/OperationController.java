@@ -868,7 +868,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		requestStop();
 		
-		if (utilities().arrayHasElement(this.enginesActivititieMonitor)) {
+		if (utilities().listHasElement(this.enginesActivititieMonitor)) {
 			for (Engine<T> m : this.enginesActivititieMonitor) {
 				m.requestStopDueError();
 			}
@@ -905,7 +905,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	public TableOperationProgressInfo retrieveProgressInfo(EtlItemConfiguration config) {
-		if (progressInfo != null && utilities().arrayHasElement(progressInfo.getItemsProgressInfo())) {
+		if (progressInfo != null && utilities().listHasElement(progressInfo.getItemsProgressInfo())) {
 			for (TableOperationProgressInfo item : progressInfo.getItemsProgressInfo()) {
 				if (item.getEtlConfiguration().equals(config))
 					return item;

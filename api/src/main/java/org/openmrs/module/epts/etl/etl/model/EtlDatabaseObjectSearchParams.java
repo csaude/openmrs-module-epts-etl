@@ -48,7 +48,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		auxQueryInfo.setClauseFrom(srcConfig.generateSelectFromClauseContent());
 		
-		if (utilities.arrayHasElement(srcConfig.getAuxExtractTable())) {
+		if (utilities.listHasElement(srcConfig.getAuxExtractTable())) {
 			for (AuxExtractTable aux : srcConfig.getAuxExtractTable()) {
 				loadAllAuxExtractTable(auxQueryInfo, aux, srcConn);
 			}

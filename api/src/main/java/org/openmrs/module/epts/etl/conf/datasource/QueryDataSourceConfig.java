@@ -420,7 +420,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects)
 		        .query(processor.getEngine(), srcConn);
 		
-		if (utilities.arrayHasNoElement(list)) {
+		if (utilities.listHasNoElement(list)) {
 			return null;
 		} else if (utilities.arrayHasMoreThanOneElements(list)) {
 			throw new ForbiddenOperationException(
@@ -455,7 +455,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	public List<Field> cloneFields(EtlDatabaseObject originalObject) {
 		List<Field> clonedFields = new ArrayList<>();
 		
-		if (utilities.arrayHasElement(this.fields)) {
+		if (utilities.listHasElement(this.fields)) {
 			for (Field field : this.fields) {
 				clonedFields.add(field.createACopy());
 			}
@@ -512,7 +512,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		
 		List<QueryDataSourceConfig> allCloned = null;
 		
-		if (utilities.arrayHasElement(allToCloneFrom)) {
+		if (utilities.listHasElement(allToCloneFrom)) {
 			allCloned = new ArrayList<>(allToCloneFrom.size());
 			
 			for (QueryDataSourceConfig aux : allToCloneFrom) {
@@ -541,7 +541,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	public static void tryToReplacePlaceholders(List<QueryDataSourceConfig> extraQueryDataSource,
 	        EtlDatabaseObject schemaInfoSrc) {
 		
-		if (utilities.arrayHasElement(extraQueryDataSource)) {
+		if (utilities.listHasElement(extraQueryDataSource)) {
 			for (QueryDataSourceConfig a : extraQueryDataSource) {
 				a.tryToReplacePlaceholders(schemaInfoSrc);
 			}

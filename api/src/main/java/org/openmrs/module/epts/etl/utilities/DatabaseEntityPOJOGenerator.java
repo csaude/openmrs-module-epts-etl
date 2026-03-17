@@ -267,7 +267,7 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public boolean hasParents() {\n";
 		
-		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
+		if (utilities.listHasElement(pojoble.getParentRefInfo())) {
 			for (ParentTable refInfo : pojoble.getParentRefInfo()) {
 				
 				for (RefMapping map : refInfo.getRefMapping()) {
@@ -290,7 +290,7 @@ public class DatabaseEntityPOJOGenerator {
 		methodFromSuperClass += "	@Override\n";
 		methodFromSuperClass += "	public Integer getParentValue(String parentAttName) {";
 		
-		if (utilities.arrayHasElement(pojoble.getParentRefInfo())) {
+		if (utilities.listHasElement(pojoble.getParentRefInfo())) {
 			for (ParentTable refInfo : pojoble.getParentRefInfo()) {
 				methodFromSuperClass += "		\n		if (parentAttName.equals(\""
 				        + refInfo.getChildColumnAsClassAttOnSimpleMapping() + "\")) return this."

@@ -89,7 +89,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		
 		List<EtlStageAreaObject> recs = new ArrayList<>();
 		
-		if (utilities.arrayHasElement(relatedEtlObject)) {
+		if (utilities.listHasElement(relatedEtlObject)) {
 			
 			for (EtlDatabaseObject etlObject : relatedEtlObject) {
 				TableConfiguration tabConf = (TableConfiguration) etlObject.getRelatedConfiguration();

@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
@@ -370,37 +369,6 @@ public class EtlLoadHelper {
 	        throws DBException, ParentNotYetMigratedException, MissingParentException {
 		
 		this.logDebug("Preparing the load of " + this.qtyRecordsToLoad());
-		
-		if (dstConf.useSharedPKKey()) {
-			this.logDebug("Trying to do the shared pk loading...");
-			
-			List<EtlLoadHelperRecord> parentToLoad = new ArrayList<>();
-			
-			DstConf sharedDstConf = null;
-			
-			for (LoadRecord loadRecord : this.getAllRecordsAsLoadRecord(dstConf)) {
-				if (!loadRecord.getDstRecord().getSharedPkObj().checkIfExistsOnDstDb(dstConn)) {
-					sharedDstConf = (DstConf) loadRecord.getDstRecord().getSharedPkObj().getRelatedConfiguration();
-					SrcConf sharedSrcConf = sharedDstConf.getSrcConf();
-					
-					EtlDatabaseObject sharedDstObj = loadRecord.getDstRecord().getSharedPkObj();
-					EtlDatabaseObject sharedSrcObj = sharedDstObj.getSrcRelatedObject();
-					
-					parentToLoad.add(new EtlLoadHelperRecord(
-					        new LoadRecord(sharedSrcObj, sharedDstObj, sharedSrcConf, sharedDstConf, getProcessor())));
-				}
-			}
-			
-			if (utilities.arrayHasElement(parentToLoad)) {
-				this.logDebug("Found " + parentToLoad.size() + " shared pk that are not present on DB... Loding them first");
-				
-				EtlLoadHelper helper = new EtlLoadHelper(getProcessor(), parentToLoad, utilities.parseToList(sharedDstConf),
-				        LoadingType.INNER);
-				
-				helper.load(srcConn, dstConn);
-			}
-			
-		}
 		
 		for (LoadRecord loadRecord : this.getAllRecordsAsLoadRecord(dstConf)) {
 			this.logTrace("Preparing the load of dstRecord " + loadRecord.getDstRecord());

@@ -51,7 +51,7 @@ public class ReportGenerator {
 		String report = config.getTableName() + "," + (recordsOnMainTable + recordsOnStageTable) + "," + recordsOnMainTable
 		        + "," + recordsOnStageTable;
 		
-		if (utilities.arrayHasElement(config.getParents())) {
+		if (utilities.listHasElement(config.getParents())) {
 			ParentTable parent = null;
 			
 			int firstMissingParentPos = 0;

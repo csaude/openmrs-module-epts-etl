@@ -143,7 +143,7 @@ public class ThreadRecordIntervalsManager<T extends EtlDatabaseObject> extends I
 	
 	@JsonIgnore
 	public boolean hasExcludedIntervals() {
-		return utilities.arrayHasElement(getExcludedIntervals());
+		return utilities.listHasElement(getExcludedIntervals());
 	}
 	
 	private void defineCurrentLimits(long currentFirstRecordId) {

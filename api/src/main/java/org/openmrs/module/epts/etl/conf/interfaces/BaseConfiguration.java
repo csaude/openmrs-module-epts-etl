@@ -17,7 +17,7 @@ public interface BaseConfiguration {
 	public void setExtension(List<Extension> extension);
 	
 	default Extension findExtension(String coding) throws ForbiddenOperationException{
-		if (!utilities.arrayHasElement(this.getExtension()))
+		if (!utilities.listHasElement(this.getExtension()))
 			throw new ForbiddenOperationException("Not defined extension '" + coding + "");
 		
 		for (Extension item : this.getExtension()) {

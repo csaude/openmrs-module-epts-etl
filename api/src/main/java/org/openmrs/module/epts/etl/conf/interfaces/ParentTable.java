@@ -67,7 +67,7 @@ public interface ParentTable extends RelatedTable {
 	}
 	
 	default boolean hasConditionalFields() {
-		return utilities.arrayHasElement(this.getConditionalFields());
+		return utilities.listHasElement(this.getConditionalFields());
 	}
 	
 	default List<DstConf> findRelatedDstConf(EtlOperationConfig operationConf) throws DBException {

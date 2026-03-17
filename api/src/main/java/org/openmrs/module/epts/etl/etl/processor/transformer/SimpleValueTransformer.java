@@ -59,7 +59,7 @@ public class SimpleValueTransformer implements EtlFieldTransformer {
 		
 		FieldTransformingInfo transformingInfo = new FieldTransformingInfo(field, result, null);
 		
-		transformingInfo.setLoadedWithDefaultValue(true);
+		transformingInfo.setLoadedWithDefaultValue(result != null && result.toString().equals(field.getValueToTransform()));
 		
 		return transformingInfo;
 	}

@@ -842,7 +842,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		List<ThreadRecordIntervalsManager<T>> limitsManagers = ThreadRecordIntervalsManager
 		        .getAllSavedLimitsOfOperation(this);
 		
-		if (utilities.arrayHasElement(limitsManagers)) {
+		if (utilities.listHasElement(limitsManagers)) {
 			this.setExcludedRecordsLimits(new ArrayList<>());
 			
 			for (ThreadRecordIntervalsManager<T> threadLimits : limitsManagers) {

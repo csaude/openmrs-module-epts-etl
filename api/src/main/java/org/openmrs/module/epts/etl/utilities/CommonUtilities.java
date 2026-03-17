@@ -170,7 +170,7 @@ public class CommonUtilities implements Serializable {
 	 * @return true se a lista contem todos os elementos ou false no caso contrario
 	 */
 	public <T> boolean containsAll(List<T> list, @SuppressWarnings("unchecked") T... o) {
-		if (utilities.arrayHasElement(list)) {
+		if (utilities.listHasElement(list)) {
 			
 			for (T t : o) {
 				if (!list.contains(t))
@@ -533,15 +533,15 @@ public class CommonUtilities implements Serializable {
 		return FuncoesGenericas.stringHasValue(string);
 	}
 	
-	public boolean arrayHasElement(List<?> list) {
+	public boolean listHasElement(List<?> list) {
 		return FuncoesGenericas.arrayHasElement(list);
 	}
 	
-	public boolean arrayHasNoElement(List<?> list) {
-		return !arrayHasElement(list);
+	public boolean listHasNoElement(List<?> list) {
+		return !listHasElement(list);
 	}
 	
-	public boolean arrayHasElement(ArrayList<?> list) {
+	public boolean listHasElement(ArrayList<?> list) {
 		return FuncoesGenericas.arrayHasElement(list);
 	}
 	
@@ -550,14 +550,14 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public int getPosOfElementOnList(List<?> list, Object toFind) {
-		if (!arrayHasElement(list))
+		if (!listHasElement(list))
 			return -1;
 		
 		return list.indexOf(toFind);
 	}
 	
 	public <T> T findOnList(List<T> list, Object toFind) {
-		if (!arrayHasElement(list))
+		if (!listHasElement(list))
 			return null;
 		
 		int pos = getPosOfElementOnList(list, toFind);
@@ -639,7 +639,7 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public <T extends Comparable<? super T>> T getMaxOnList(List<T> list) {
-		if (!arrayHasElement(list))
+		if (!listHasElement(list))
 			return null;
 		
 		Collections.sort(list);
@@ -719,7 +719,7 @@ public class CommonUtilities implements Serializable {
 	}
 	
 	public <T extends Object> T[] parseListToArray(List<T> list) {
-		if (!arrayHasElement(list))
+		if (!listHasElement(list))
 			return null;
 		
 		@SuppressWarnings("unchecked")
@@ -1208,7 +1208,7 @@ public class CommonUtilities implements Serializable {
 	public Object getFieldValueOnFieldList(List<org.openmrs.module.epts.etl.model.Field> fields, String fieldName)
 	        throws ForbiddenOperationException {
 		
-		if (!utilities.arrayHasElement(fields))
+		if (!utilities.listHasElement(fields))
 			return null;
 		
 		for (int i = 0; i < fields.size(); i++) {

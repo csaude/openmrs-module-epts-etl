@@ -86,7 +86,7 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	public static <T extends EtlDatabaseObject> List<EtlOperationItemResult<T>> parseFromEtlDatabaseObject(
 	        List<T> etlObjects) {
 		
-		if (!utilities.arrayHasElement(etlObjects))
+		if (!utilities.listHasElement(etlObjects))
 			return null;
 		
 		List<EtlOperationItemResult<T>> converted = new ArrayList<>(etlObjects.size());
@@ -101,7 +101,7 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	public static <T extends EtlDatabaseObject> List<T> parseToEtlDatabaseObject(
 	        List<EtlOperationItemResult<T>> etlObjects) {
 		
-		if (!utilities.arrayHasElement(etlObjects))
+		if (!utilities.listHasElement(etlObjects))
 			return null;
 		
 		List<T> converted = new ArrayList<>(etlObjects.size());
@@ -114,7 +114,7 @@ public class EtlOperationItemResult<T extends EtlDatabaseObject> {
 	}
 	
 	public boolean hasInconsistences() {
-		return utilities.arrayHasElement(getInconsistenceInfo());
+		return utilities.listHasElement(getInconsistenceInfo());
 	}
 	
 	public boolean hasUnresolvedInconsistences() {

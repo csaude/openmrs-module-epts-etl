@@ -122,7 +122,7 @@ public interface RelatedTable extends TableConfiguration {
 			}
 		}
 		
-		if (utilities.arrayHasNoElement(referenced)) {
+		if (utilities.listHasNoElement(referenced)) {
 			throw new ForbiddenOperationException("No mapping defined for att '" + attName + "'");
 		}
 		
@@ -224,7 +224,7 @@ public interface RelatedTable extends TableConfiguration {
 	}
 	
 	default boolean hasMapping() {
-		return utilities.arrayHasElement(this.getRefMapping());
+		return utilities.listHasElement(this.getRefMapping());
 	}
 	
 	default List<RefMapping> cloneAllMapping() {

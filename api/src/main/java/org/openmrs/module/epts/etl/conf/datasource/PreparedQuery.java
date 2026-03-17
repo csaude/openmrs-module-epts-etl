@@ -211,7 +211,7 @@ public class PreparedQuery {
 	}
 	
 	private boolean hasSubQueries() {
-		return utilities.arrayHasElement(this.getSubqueries());
+		return utilities.listHasElement(this.getSubqueries());
 	}
 	
 	private List<String> getSubqueries() {
@@ -404,7 +404,7 @@ public class PreparedQuery {
 	}
 	
 	boolean hasQueryParams() {
-		return utilities.arrayHasElement(this.getQueryParams());
+		return utilities.listHasElement(this.getQueryParams());
 	}
 	
 	Object getParamValueFromEtlConfig(String param) throws ForbiddenOperationException {
@@ -469,7 +469,7 @@ public class PreparedQuery {
 		for (String subQuery : avaliableSubQueries) {
 			List<QueryParameter> parametersInSubQuery = extractQueryParametersInSubQuery(subQuery);
 			
-			if (utilities.arrayHasElement(parametersInSubQuery)) {
+			if (utilities.listHasElement(parametersInSubQuery)) {
 				parameters.addAll(parametersInSubQuery);
 			}
 		}
@@ -523,7 +523,7 @@ public class PreparedQuery {
 				
 				List<QueryParameter> subqueyParams = extractParamOnQuery(containgSubquery);
 				
-				if (utilities.arrayHasElement(subqueyParams)) {
+				if (utilities.listHasElement(subqueyParams)) {
 					parameters.addAll(subqueyParams);
 				}
 				

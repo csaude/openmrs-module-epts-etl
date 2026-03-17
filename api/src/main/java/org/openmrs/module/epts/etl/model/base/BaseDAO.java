@@ -57,7 +57,7 @@ public abstract class BaseDAO {
 		List<T> result;
 		result = search(loaderHelper, voClass, sql, params, conn);
 		
-		if (utilities.arrayHasElement(result))
+		if (utilities.listHasElement(result))
 			return result.get(0);
 		
 		return null;
@@ -123,7 +123,7 @@ public abstract class BaseDAO {
 		List<T> result;
 		result = search(loaderHelper, voClass, sql, null, conn);
 		
-		if (utilities.arrayHasElement(result))
+		if (utilities.listHasElement(result))
 			return result.get(0);
 		
 		return null;

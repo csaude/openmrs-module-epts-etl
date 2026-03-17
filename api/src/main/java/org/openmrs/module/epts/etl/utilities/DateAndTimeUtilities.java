@@ -1666,7 +1666,7 @@ public class DateAndTimeUtilities {
 	}
 	
 	private static boolean existOnList(Date date, List<Date> dayList){
-		if (!FuncoesGenericas.arrayHasElement(dayList)) return false;
+		if (!FuncoesGenericas.listHasElement(dayList)) return false;
 		
 		for (Date d : dayList){
 			if (compareTo(formatToDDMMYYYY(date), formatToDDMMYYYY(d)) == 0) return true;

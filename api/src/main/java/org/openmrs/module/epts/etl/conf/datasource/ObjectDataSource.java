@@ -111,7 +111,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	}
 	
 	public boolean hasObjectFields() {
-		return utilities.arrayHasElement(this.getObjectFields());
+		return utilities.listHasElement(this.getObjectFields());
 	}
 	
 	@Override
@@ -339,7 +339,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		
 		List<ObjectDataSource> allCloned = null;
 		
-		if (utilities.arrayHasElement(allToCloneFrom)) {
+		if (utilities.listHasElement(allToCloneFrom)) {
 			allCloned = new ArrayList<>(allToCloneFrom.size());
 			
 			for (ObjectDataSource aux : allToCloneFrom) {
@@ -369,7 +369,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	
 	public static void tryToReplacePlaceholders(List<ObjectDataSource> extraObjectDataSource,
 	        EtlDatabaseObject schemaInfoSrc) {
-		if (utilities.arrayHasElement(extraObjectDataSource)) {
+		if (utilities.listHasElement(extraObjectDataSource)) {
 			for (ObjectDataSource a : extraObjectDataSource) {
 				a.tryToReplacePlaceholders(schemaInfoSrc);
 			}

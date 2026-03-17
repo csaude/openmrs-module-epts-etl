@@ -404,7 +404,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	@Override
 	@JsonIgnore
 	public boolean hasParents() {
-		if (utilities.arrayHasElement(this.relatedConfiguration.getParentRefInfo())) {
+		if (utilities.listHasElement(this.relatedConfiguration.getParentRefInfo())) {
 			for (ParentTable refInfo : this.relatedConfiguration.getParentRefInfo()) {
 				for (RefMapping map : refInfo.getRefMapping()) {
 					if (getFieldValue(map.getChildFieldName()) != null) {
@@ -515,7 +515,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		
 		this.loadUniqueKeyValues((TableConfiguration) getRelatedConfiguration());
 		
-		if (this.shasSharedPkObj()) {
+		if (this.hasSharedPkObj()) {
 			this.getSharedPkObj().copyFrom(copyFrom.getSharedPkObj());
 		}
 		

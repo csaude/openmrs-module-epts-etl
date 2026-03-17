@@ -119,7 +119,7 @@ public class EtlLoadHelperRecord {
 	
 	public ConflictResolutionType getGlobalConflictResolutionType() {
 		
-		if (utilities.arrayHasElement(this.getDstRecords())) {
+		if (utilities.listHasElement(this.getDstRecords())) {
 			for (EtlDatabaseObject obj : this.getDstRecords()) {
 				if (!obj.getConflictResolutionType().none()) {
 					return obj.getConflictResolutionType();

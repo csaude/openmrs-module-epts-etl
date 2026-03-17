@@ -168,6 +168,7 @@ public interface TransformableField {
 	
 	@SuppressWarnings({ "unchecked" })
 	default void tryToLoadTransformer(DstConf dstConf) {
+		
 		if (getTransformerInstance() != null) {
 			return;
 		}
@@ -227,7 +228,6 @@ public interface TransformableField {
 					        "Error loading transformer class [" + this.getTransformer() + "]!!! " + e.getLocalizedMessage());
 				}
 			}
-			
 		} else if (this.getValueToTransform() != null) {
 			this.setTransformer(SimpleValueTransformer.class.getCanonicalName());
 			this.setTransformerInstance(SimpleValueTransformer.getInstance());

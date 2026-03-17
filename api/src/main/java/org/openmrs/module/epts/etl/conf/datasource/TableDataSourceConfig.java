@@ -168,7 +168,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects)
 		        .query(processor.getEngine(), srcConn);
 		
-		if (utilities.arrayHasNoElement(list)) {
+		if (utilities.listHasNoElement(list)) {
 			return null;
 		}
 		
@@ -251,7 +251,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		
 		List<TableDataSourceConfig> allCloned = null;
 		
-		if (utilities.arrayHasElement(allToCloneFrom)) {
+		if (utilities.listHasElement(allToCloneFrom)) {
 			allCloned = new ArrayList<>(allToCloneFrom.size());
 			
 			for (TableDataSourceConfig aux : allToCloneFrom) {
@@ -295,7 +295,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	public static void tryToReplacePlaceholders(List<TableDataSourceConfig> extraTableDataSource,
 	        EtlDatabaseObject schemaInfoSrc) {
-		if (utilities.arrayHasElement(extraTableDataSource)) {
+		if (utilities.listHasElement(extraTableDataSource)) {
 			for (TableDataSourceConfig a : extraTableDataSource) {
 				a.tryToReplacePlaceholders(schemaInfoSrc);
 			}

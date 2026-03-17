@@ -289,7 +289,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	private FieldsMappingIssues loadConfiguredMappingAdditionalInfo(Connection conn) throws DBException {
 		FieldsMappingIssues mappingProblem = null;
 		
-		if (utilities.arrayHasElement(this.getMapping())) {
+		if (utilities.listHasElement(this.getMapping())) {
 			mappingProblem = new FieldsMappingIssues();
 			
 			for (FieldsMapping fm : this.getMapping()) {
@@ -344,7 +344,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public void generateAllFieldsMapping(Connection conn) throws DBException, FieldsMappingException {
-		if (!useDefaultTransformer() || utilities.arrayHasElement(this.allMapping)) {
+		if (!useDefaultTransformer() || utilities.listHasElement(this.allMapping)) {
 			return;
 		}
 		
@@ -387,6 +387,8 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			
 			if (!this.getAllMapping().contains(fm)) {
 				try {
+					
+					fm.tryToGenerateTranformerInfo(this);
 					
 					fm.tryToLoadTransformer(this);
 					
@@ -486,6 +488,27 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			throw new FieldAvaliableInMultipleDataSources(fm.getSrcField());
 		}
 		
+	}
+	
+	public FieldsMapping getMapping(String srcField) {
+		List<FieldsMapping> machedFields = new ArrayList<FieldsMapping>();
+		
+		for (FieldsMapping field : this.allMapping) {
+			if (field.getSrcField().equals(srcField)) {
+				machedFields.add(field);
+				
+				if (machedFields.size() > 1) {
+					throw new ForbiddenOperationException("Cannot determine the mapping field for '" + srcField
+					        + "' since it has multiple matching fields");
+				}
+			}
+		}
+		
+		if (machedFields.isEmpty()) {
+			throw new ForbiddenOperationException("Cannot determine the mapping field for '" + srcField + "'");
+		}
+		
+		return machedFields.get(0);
 	}
 	
 	public String getMappedField(String srcField) {
@@ -624,14 +647,14 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	public ParentTable findCorrespondentSrcParentConf(ParentTable dstParent) throws ForbiddenOperationException {
 		List<ParentTable> parents = findAllRefToParent(dstParent.getTableName());
 		
-		if (!utilities.arrayHasElement(parents)) {
+		if (!utilities.listHasElement(parents)) {
 			throw new ForbiddenOperationException(
 			        "The table " + dstParent.getTableName() + " is not parent of " + this.getTableName());
 		}
 		
 		parents = getSrcConf().findAllRefToParent(dstParent.getTableName());
 		
-		if (!utilities.arrayHasElement(parents)) {
+		if (!utilities.listHasElement(parents)) {
 			throw new ForbiddenOperationException(
 			        "The table " + dstParent.getTableName() + " is not parent of " + this.getTableName() + " in the src");
 		}
@@ -716,7 +739,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public void addAllToAvaliableDataSource(List<EtlDataSource> ds) {
-		if (utilities.arrayHasElement(ds)) {
+		if (utilities.listHasElement(ds)) {
 			for (EtlDataSource d : ds) {
 				addToAvaliableDataSource(d);
 			}
@@ -724,7 +747,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public void addAllToPreferredDataSource(List<EtlDataSource> ds) {
-		if (utilities.arrayHasElement(ds)) {
+		if (utilities.listHasElement(ds)) {
 			for (EtlDataSource d : ds) {
 				addToPrefferedDataSource(d);
 			}
@@ -756,7 +779,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 				}
 			}
 			
-			if (utilities.arrayHasElement(getSrcConf().getAvaliableExtraDataSource())) {
+			if (utilities.listHasElement(getSrcConf().getAvaliableExtraDataSource())) {
 				for (EtlDataSource ds : utilities.parseList(getSrcConf().getAvaliableExtraDataSource(),
 				    EtlDataSource.class)) {
 					addToAvaliableDataSource(ds);
@@ -767,8 +790,26 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		if (hasParentDstConf()) {
 			addToAvaliableDataSource(this.getParentDstConf());
 			
-			if (utilities.arrayHasElement(this.getParentDstConf().getAllAvaliableDataSource())) {
-				for (EtlDataSource ds : this.getParentDstConf().getAllAvaliableDataSource()) {
+			if (utilities.listHasElement(this.getParentDstConf().getAllAvaliableDataSource())) {
+				
+				List<EtlDataSource> avaliableDataSource = null;
+				
+				if (this.getParentDstConf().useSharedPKKey()
+				        && this.getTableName().equals(this.getParentDstConf().getSharePkWith())) {
+					
+					avaliableDataSource = new ArrayList<>();
+					
+					for (EtlDataSource p : this.getParentDstConf().getAllAvaliableDataSource()) {
+						if (p != this.getParentDstConf().getSrcConf().getSharedKeyRefInfo(conn)) {
+							avaliableDataSource.add(p);
+						}
+					}
+					
+				} else {
+					avaliableDataSource = this.getParentDstConf().getAllAvaliableDataSource();
+				}
+				
+				for (EtlDataSource ds : avaliableDataSource) {
 					if (ds != this.getParentDstConf().getSrcConf()) {
 						addToAvaliableDataSource(ds);
 					}
@@ -783,7 +824,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	@SuppressWarnings({ "unchecked", "deprecation" })
 	private void tryToLoadTransformer(Connection conn) {
-		if (this.hasTransformer()) {
+		if (this.hasTransformer() && !this.getTransformer().equals(DefaultRecordTransformer.class.getCanonicalName())) {
 			
 			try {
 				ClassLoader loader = EtlRecordTransformer.class.getClassLoader();
@@ -810,7 +851,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	private void determinePrefferredDataSources() {
-		if (utilities.arrayHasNoElement(this.getPrefferredDataSource())) {
+		if (utilities.listHasNoElement(this.getPrefferredDataSource())) {
 			String prefferredDs = null;
 			
 			this.prefferredDataSource = new ArrayList<>();
@@ -833,7 +874,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 		
 		//Change the ds name to aliases
-		if (utilities.arrayHasElement(this.getPrefferredDataSource())) {
+		if (utilities.listHasElement(this.getPrefferredDataSource())) {
 			List<String> aliasedDs = new ArrayList<>(this.getPrefferredDataSource().size());
 			
 			for (String originalDsName : this.getPrefferredDataSource()) {
@@ -858,7 +899,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			}
 		}
 		
-		if (utilities.arrayHasElement(this.getPrefferredDataSource())) {
+		if (utilities.listHasElement(this.getPrefferredDataSource())) {
 			for (String dsName : this.getPrefferredDataSource()) {
 				addToPrefferedDataSource(findDataSource(dsName));
 			}
@@ -1032,7 +1073,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public boolean hasJoinFields() {
-		return utilities.arrayHasElement(this.getGeneratedJoinFields());
+		return utilities.listHasElement(this.getGeneratedJoinFields());
 	}
 	
 	public static List<DstConf> generateDefaultDstConf(final EtlItemConfiguration itemConf) throws DBException {
@@ -1076,7 +1117,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public boolean hasMapping() {
-		return utilities.arrayHasElement(this.getMapping());
+		return utilities.listHasElement(this.getMapping());
 	}
 	
 	public static List<DstConf> cloneAll(List<DstConf> allToCloneFrom, EtlItemConfiguration relatedItemConf,
@@ -1084,7 +1125,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		List<DstConf> allCloned = null;
 		
-		if (utilities.arrayHasElement(allToCloneFrom)) {
+		if (utilities.listHasElement(allToCloneFrom)) {
 			allCloned = new ArrayList<>(allToCloneFrom.size());
 			
 			for (DstConf aux : allToCloneFrom) {

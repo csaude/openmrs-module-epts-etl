@@ -75,7 +75,7 @@ public class Extension {
 	}
 	
 	public Extension findExtension(String coding) {
-		if (utilities.arrayHasElement(this.extension))
+		if (utilities.listHasElement(this.extension))
 			return null;
 		
 		for (Extension item : this.extension) {

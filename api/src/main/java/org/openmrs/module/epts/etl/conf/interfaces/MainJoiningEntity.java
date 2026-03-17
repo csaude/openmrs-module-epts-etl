@@ -36,7 +36,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 	JoinableEntity parseToJoinable() throws ForbiddenOperationException;
 	
 	default boolean hasAuxExtractTable() {
-		return utils.arrayHasElement(this.getJoiningTable());
+		return utils.listHasElement(this.getJoiningTable());
 	}
 	
 	default void tryToLoadAuxExtraJoinTable(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {

@@ -555,7 +555,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	public List<String> parseEtlConfigurationsToString_() {
 		List<String> tableConfigurationsAsString = new ArrayList<>();
 		
-		if (utilities.arrayHasElement(getEtlItemConfiguration())) {
+		if (utilities.listHasElement(getEtlItemConfiguration())) {
 			for (EtlItemConfiguration tc : getEtlItemConfiguration()) {
 				tableConfigurationsAsString.add(tc.getConfigCode());
 			}
@@ -788,7 +788,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				if (item.isDynamic()) {
 					List<EtlItemConfiguration> dynamicItems = item.generateDynamicItems(this, conn);
 					
-					if (utilities.arrayHasElement(dynamicItems)) {
+					if (utilities.listHasElement(dynamicItems)) {
 						logDebug(
 						    "Found Dynamic Item on position [" + pos + "] whith " + dynamicItems.size() + " returned item!");
 						
@@ -890,7 +890,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		List<String> alreadyIncludedTables = new ArrayList<>();
 		
-		if (utilities.arrayHasElement(item.getDstConf())) {
+		if (utilities.listHasElement(item.getDstConf())) {
 			for (DstConf dst : item.getDstConf()) {
 				
 				dst.tryToLoadSchemaInfo(item.getRelatedEtlSchemaObject());
@@ -1278,7 +1278,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	private boolean hasOperation() {
-		return utilities.arrayHasElement(this.getOperations());
+		return utilities.listHasElement(this.getOperations());
 	}
 	
 	private boolean isOperationConfigured(EtlOperationType operationType) {

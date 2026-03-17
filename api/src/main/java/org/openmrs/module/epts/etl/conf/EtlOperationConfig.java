@@ -355,7 +355,7 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	public String getSourceFoldersAsString() {
 		String sourceFoldersAsString = "";
 		
-		if (utilities.arrayHasElement(this.getSourceFolders())) {
+		if (utilities.listHasElement(this.getSourceFolders())) {
 			for (int i = 0; i < this.getSourceFolders().size() - 1; i++) {
 				sourceFoldersAsString += this.getSourceFolders().get(i) + ",";
 			}

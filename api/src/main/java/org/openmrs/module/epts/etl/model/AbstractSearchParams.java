@@ -71,7 +71,7 @@ public abstract class AbstractSearchParams<T extends VO> {
 	}
 	
 	public boolean hasAtLeatOnSearchedRecord() {
-		return this.hasResult() && utilities.arrayHasElement(this.searchResult.getCurrentSearchedRecords());
+		return this.hasResult() && utilities.listHasElement(this.searchResult.getCurrentSearchedRecords());
 	}
 	
 	public SearchResult<T> getSearchResult() {

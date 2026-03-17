@@ -385,7 +385,7 @@ public class DBUtilities {
 	public static String tryToPutTableNameInFieldsInASqlClause(String clauseContent, String tableName,
 	        List<Field> tableFields) {
 		
-		if (!utilities.arrayHasElement(tableFields)) {
+		if (!utilities.listHasElement(tableFields)) {
 			throw new ForbiddenOperationException("The tableFields is empty!");
 		}
 		

@@ -45,7 +45,7 @@ public interface EtlFieldTransformer {
 	        List<EtlDatabaseObject> additionalSrcObjects, TransformableField field, Connection srcConn, Connection dstConn)
 	        throws DBException, EtlTransformationException;
 	
-	default void performeFieldTransformation(EtlProcessor processor, EtlDatabaseObject srcObject,
+	default void performFieldTransformation(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, FieldsMapping field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
@@ -159,7 +159,7 @@ public interface EtlFieldTransformer {
 			}
 			
 			if (srcValue.equals("@" + paramName)) {
-				return "" + paramValue;
+				return paramValue;
 			}
 			
 			matcher.appendReplacement(buffer, Matcher.quoteReplacement(paramValue.toString()));

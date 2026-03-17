@@ -176,7 +176,7 @@ public class LoadRecord {
 	}
 	
 	public boolean hasParentsWithDefaultValues() {
-		return utilities.arrayHasElement(getParentsWithDefaultValues());
+		return utilities.listHasElement(getParentsWithDefaultValues());
 	}
 	
 	public void reloadParentsWithDefaultValues(Connection srcConn, Connection dstConn)
@@ -187,7 +187,7 @@ public class LoadRecord {
 			List<EtlDatabaseObject> recursive = retriveRecursiveRelationship(parentInfo.getParentTableConfInDst(), srcConn,
 			    dstConn);
 			
-			if (utilities.arrayHasElement(recursive)) {
+			if (utilities.listHasElement(recursive)) {
 				getProcessor().logDebug(
 				    "Recursive relationship found reloading parents for record " + this.getDstRecord() + " with parent ");
 				
@@ -196,7 +196,7 @@ public class LoadRecord {
 				List<SrcConf> avaliableSrcForCurrParent = parentInfo.getParentTableConfInDst()
 				        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(getEtlOperationConfig());
 				
-				if (utilities.arrayHasNoElement(avaliableSrcForCurrParent)) {
+				if (utilities.listHasNoElement(avaliableSrcForCurrParent)) {
 					throw new ForbiddenOperationException(
 					        "There are relashioship which cannot auto resolved as there is no configured etl for "
 					                + parentInfo.getParentTableConfInDst().getTableName() + " as source and destination!");
@@ -275,7 +275,7 @@ public class LoadRecord {
 	protected void loadDstParentInfo(Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, MissingParentException, DBException {
 		
-		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
+		if (!utilities.listHasElement(getDstConf().getParentRefInfo())) {
 			return;
 		}
 		
@@ -483,7 +483,7 @@ public class LoadRecord {
 	
 	public List<EtlDatabaseObject> retriveRecursiveRelationship(ParentTable refInfo, Connection srcConn, Connection dstConn)
 	        throws DBException {
-		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
+		if (!utilities.listHasElement(getDstConf().getParentRefInfo())) {
 			return null;
 		}
 		
@@ -566,7 +566,7 @@ public class LoadRecord {
 	}
 	
 	public List<EtlDatabaseObject> retriveRecursiveRelationship(Connection srcConn, Connection dstConn) throws DBException {
-		if (!utilities.arrayHasElement(getDstConf().getParentRefInfo())) {
+		if (!utilities.listHasElement(getDstConf().getParentRefInfo())) {
 			return null;
 		}
 		
@@ -575,7 +575,7 @@ public class LoadRecord {
 		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
 			List<EtlDatabaseObject> recursiveInfo = retriveRecursiveRelationship(refInfo, srcConn, dstConn);
 			
-			if (utilities.arrayHasElement(recursiveInfo)) {
+			if (utilities.listHasElement(recursiveInfo)) {
 				recursiveRelationship.addAll(recursiveInfo);
 			}
 		}
@@ -613,7 +613,8 @@ public class LoadRecord {
 	
 	@Override
 	public String toString() {
-		return "Etl from [" + getSrcRecord() + "] to " + getDstRecord();
+		return (this.getStatus() != null ? this.getStatus() + " " : "") + "Etl from [" + getSrcRecord() + "] to "
+		        + getDstRecord();
 	}
 	
 	@Override

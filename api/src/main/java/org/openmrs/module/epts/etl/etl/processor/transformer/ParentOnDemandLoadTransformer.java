@@ -159,7 +159,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		
 		this.parentSourceFieldMapping = FieldsMapping.fastCreate(parentField, field.getDstField(), relatedDstConf);
 		
-		if (utilities.arrayHasElement(this.parentFieldDefinitions)) {
+		if (utilities.listHasElement(this.parentFieldDefinitions)) {
 			this.nonExistingParentFieldMappings = new ArrayList<>();
 			
 			for (String fieldData : this.parentFieldDefinitions) {
@@ -203,7 +203,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	String getTransformerDsc() {
 		String sql = "ParentOnDemandLoadTransformer: (" + parentTable + ", " + parentField;
 		
-		if (utilities.arrayHasElement(this.parentFieldDefinitions)) {
+		if (utilities.listHasElement(this.parentFieldDefinitions)) {
 			sql += ", " + this.parentFieldDefinitions.toString();
 		}
 		
@@ -330,7 +330,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		
 		List<LoadRecord> migratedRecs = loadHelper.getAllRecordsAsLoadRecord(dstConf, LoadStatus.SUCCESS);
 		
-		if (utilities.arrayHasElement(migratedRecs)) {
+		if (utilities.listHasElement(migratedRecs)) {
 			return migratedRecs.get(0).getDstRecord();
 		}
 		
@@ -388,8 +388,35 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		if (!dstConf.isFullLoaded()) {
 			synchronized (lock) {
 				if (!dstConf.isFullLoaded()) {
-					dstConf.addAllToAvaliableDataSource(this.relatedDstConf.getAllAvaliableDataSource());
-					dstConf.addAllToPreferredDataSource(this.relatedDstConf.getAllPrefferredDataSource());
+					
+					List<EtlDataSource> avaliableDataSource = null;
+					List<EtlDataSource> preferredDataSource = null;
+					
+					if (this.relatedDstConf.useSharedPKKey()
+					        && dstConf.getTableName().equals(this.relatedDstConf.getSharePkWith())) {
+						
+						preferredDataSource = new ArrayList<>();
+						avaliableDataSource = new ArrayList<>();
+						
+						for (EtlDataSource p : this.relatedDstConf.getAllAvaliableDataSource()) {
+							if (p != this.relatedDstConf.getSrcConf().getSharedKeyRefInfo(dstConn)) {
+								avaliableDataSource.add(p);
+							}
+						}
+						
+						for (EtlDataSource p : this.relatedDstConf.getAllPrefferredDataSource()) {
+							if (p != this.relatedDstConf.getSrcConf().getSharedKeyRefInfo(dstConn)) {
+								preferredDataSource.add(p);
+							}
+						}
+						
+					} else {
+						avaliableDataSource = this.relatedDstConf.getAllAvaliableDataSource();
+						preferredDataSource = this.relatedDstConf.getAllPrefferredDataSource();
+						
+					}
+					dstConf.addAllToAvaliableDataSource(avaliableDataSource);
+					dstConf.addAllToPreferredDataSource(preferredDataSource);
 					
 					dstConf.fullLoad(dstConn);
 				}

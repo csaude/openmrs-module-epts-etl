@@ -338,7 +338,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		if (isNotInitialized())
 			return false;
 		
-		if (utilities.arrayHasElement(this.operationsControllers)) {
+		if (utilities.listHasElement(this.operationsControllers)) {
 			for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 				if (controller.getOperationConfig().isDisabled()) {
 					continue;
@@ -381,7 +381,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		if (this.operationStatus == STATUS_FINISHED)
 			return true;
 		
-		if (utilities.arrayHasElement(this.operationsControllers)) {
+		if (utilities.listHasElement(this.operationsControllers)) {
 			for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 				if (controller.getOperationConfig().isDisabled()) {
 					continue;
@@ -464,7 +464,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		if (isNotInitialized()) {
 			changeStatusToStopped();
-		} else if (utilities.arrayHasElement(this.operationsControllers)) {
+		} else if (utilities.listHasElement(this.operationsControllers)) {
 			for (OperationController<? extends EtlDatabaseObject> controller : this.operationsControllers) {
 				controller.requestStop();
 			}

@@ -15,7 +15,7 @@ public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 	}
 	
 	public static void saveAll(List<EtlStageAreaInfo> stageObjectInfo, Connection srcConn) throws DBException {
-		if (!utilities.arrayHasElement(stageObjectInfo))
+		if (!utilities.listHasElement(stageObjectInfo))
 			return;
 		
 		saveAllSrc(stageObjectInfo, srcConn);
@@ -28,7 +28,7 @@ public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 	}
 	
 	public static void saveAllSrc(List<EtlStageAreaInfo> stageObjectInfo, Connection srcConn) throws DBException {
-		if (!utilities.arrayHasElement(stageObjectInfo))
+		if (!utilities.listHasElement(stageObjectInfo))
 			return;
 		
 		insert(EtlStageAreaInfo.collectAllSrcStageAreaObjectAsEtlDatabaseObject(stageObjectInfo), srcConn);

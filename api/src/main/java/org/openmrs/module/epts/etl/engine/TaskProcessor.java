@@ -174,7 +174,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlItemConfiguration().getConfigCode() + "' ON TABLE '"
 		        + getSrcConf().getTableName() + "' FINISHED. FOUND: '" + utilities.arraySize(records) + "' RECORDS.");
 		
-		if (utilities.arrayHasElement(records)) {
+		if (utilities.listHasElement(records)) {
 			
 			this.tryToInitIdGenerator(records, dstConn);
 			

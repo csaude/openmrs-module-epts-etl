@@ -82,7 +82,7 @@ public class MergingRecord {
 	        throws ParentNotYetMigratedException, DBException {
 		TableConfiguration config = mergingRecord.config;
 		
-		if (!utilities.arrayHasElement(config.getParents()))
+		if (!utilities.listHasElement(config.getParents()))
 			return;
 		
 		EtlDatabaseObject record = mergingRecord.record;

@@ -250,7 +250,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	public void setUniqueKeysInfo(List<EtlDatabaseObjectUniqueKeyInfo> uniqueKeysInfo) {
 		this.uniqueKeysInfo = uniqueKeysInfo;
 		
-		if (utilities.arrayHasElement(this.uniqueKeysInfo)) {
+		if (utilities.listHasElement(this.uniqueKeysInfo)) {
 			for (UniqueKeyInfo uk : this.uniqueKeysInfo) {
 				uk.loadValuesToFields(this);
 			}
@@ -960,7 +960,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		
 		String ukeys = "";
 		
-		if (utilities.arrayHasElement(getUniqueKeysInfo())) {
+		if (utilities.listHasElement(getUniqueKeysInfo())) {
 			int i = 0;
 			
 			for (UniqueKeyInfo uk : getUniqueKeysInfo()) {

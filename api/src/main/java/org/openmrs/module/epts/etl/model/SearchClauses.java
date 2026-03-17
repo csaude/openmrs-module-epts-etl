@@ -418,7 +418,7 @@ public class SearchClauses<T extends VO> {
 		
 		ClauseFromElements.generateAllFromClauseFromString(anotherClauses.clauseFrom, l);
 		
-		if (utilities.arrayHasElement(l)) {
+		if (utilities.listHasElement(l)) {
 			anotherClauses.clauseFrom = "";
 			
 			for (ClauseFromElements c : l) {
@@ -467,7 +467,7 @@ public class SearchClauses<T extends VO> {
 	}
 	
 	public void generateAndAddInClause(String field, List<?> inValues) {
-		if (!utilities.arrayHasElement(inValues))
+		if (!utilities.listHasElement(inValues))
 			return;
 		
 		String auxCondition = field + " IN (?";

@@ -128,7 +128,7 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	}
 	
 	public boolean hasConditionalFields() {
-		return utilities.arrayHasElement(this.conditionalFields);
+		return utilities.listHasElement(this.conditionalFields);
 	}
 	
 	@Override

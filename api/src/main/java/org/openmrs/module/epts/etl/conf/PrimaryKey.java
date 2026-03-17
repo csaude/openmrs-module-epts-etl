@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.conf;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 
 public class PrimaryKey extends UniqueKeyInfo {
@@ -35,16 +36,17 @@ public class PrimaryKey extends UniqueKeyInfo {
 		Oid oid = new Oid();
 		
 		for (Key key : this.getFields()) {
-			Object keyValue;
+			Field field = null;
 			
 			try {
-				keyValue = obj.getFieldValue(key.getName());
+				field  = obj.getField(key.getName());
 			}
 			catch (ForbiddenOperationException e) {
-				keyValue = obj.getFieldValue(key.getNameAsClassAtt());
+				field = obj.getField(key.getNameAsClassAtt());
 			}
 			
-			Key k = new Key(key.getName(), key.getDataType(), keyValue);
+			Key k = new Key(key.getName(), key.getDataType(), field.getValue());
+			k.setTransformingInfo(field.getTransformingInfo());
 			
 			oid.addKey(k);
 			

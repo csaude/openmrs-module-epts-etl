@@ -493,7 +493,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	public static void insert(List<EtlDatabaseObject> objects, Connection conn) throws DBException {
-		if (utilities.arrayHasNoElement(objects))
+		if (utilities.listHasNoElement(objects))
 			return;
 		
 		TableConfiguration tabConf = (TableConfiguration) objects.get(0).getRelatedConfiguration();
@@ -515,7 +515,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	        throws DBException {
 		EtlOperationResultHeader<EtlDatabaseObject> result = new EtlOperationResultHeader<>(new IntervalExtremeRecord());
 		
-		if (utilities.arrayHasNoElement(objects))
+		if (utilities.listHasNoElement(objects))
 			return result;
 		
 		String sql = null;
@@ -564,7 +564,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 				
 				List<Long> ids = executeQueryWithRetryOnError(sql, params, conn);
 				
-				if (utilities.arrayHasElement(ids) && objects.get(0).getObjectId().isSimpleId()
+				if (utilities.listHasElement(ids) && objects.get(0).getObjectId().isSimpleId()
 				        && !tabConf.includePrimaryKeyOnInsert()) {
 					
 					if (ids.size() == objects.size()) {

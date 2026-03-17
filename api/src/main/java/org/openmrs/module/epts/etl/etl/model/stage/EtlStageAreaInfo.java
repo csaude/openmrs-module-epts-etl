@@ -24,7 +24,7 @@ public class EtlStageAreaInfo {
 		
 		this.setSrcStageInfoObject(EtlStageAreaObject.generateSrc(etlInfo.getSrcObject(), etlInfo.getActiveException(), srcConn));
 		
-		if (utilities.arrayHasElement(etlInfo.getDstRecords())) {
+		if (utilities.listHasElement(etlInfo.getDstRecords())) {
 			this.setDstStageInfoObject(EtlStageAreaObject.generateDst(etlInfo.getDstRecords(), dstConn));
 		}
 	}
@@ -68,7 +68,7 @@ public class EtlStageAreaInfo {
 	}
 	
 	public static List<EtlStageAreaObject> collectAllSrcStageAreaObject(List<EtlStageAreaInfo> stageInfo) {
-		if (utilities.arrayHasNoElement(stageInfo))
+		if (utilities.listHasNoElement(stageInfo))
 			return null;
 		
 		List<EtlStageAreaObject> collected = new ArrayList<>(stageInfo.size());
@@ -85,7 +85,7 @@ public class EtlStageAreaInfo {
 	}
 	
 	public static List<EtlStageAreaObject> collectAllDstStageAreaObject(List<EtlStageAreaInfo> stageInfo) {
-		if (utilities.arrayHasNoElement(stageInfo))
+		if (utilities.listHasNoElement(stageInfo))
 			return null;
 		
 		List<EtlStageAreaObject> collected = new ArrayList<>(stageInfo.size());
@@ -102,7 +102,7 @@ public class EtlStageAreaInfo {
 	}
 	
 	public static List<EtlDatabaseObject> collectAllDstKeyInfo(List<EtlStageAreaInfo> stageInfo) {
-		if (utilities.arrayHasNoElement(stageInfo))
+		if (utilities.listHasNoElement(stageInfo))
 			return null;
 		
 		List<EtlDatabaseObject> collected = new ArrayList<>(stageInfo.size());
@@ -115,7 +115,7 @@ public class EtlStageAreaInfo {
 	}
 	
 	public static List<EtlDatabaseObject> collectAllSrcKeyInfo(List<EtlStageAreaInfo> stageInfo) {
-		if (utilities.arrayHasNoElement(stageInfo))
+		if (utilities.listHasNoElement(stageInfo))
 			return null;
 		
 		List<EtlDatabaseObject> collected = new ArrayList<>(stageInfo.size());
@@ -126,11 +126,11 @@ public class EtlStageAreaInfo {
 	}
 	
 	private boolean hasDstStageInfoObject() {
-		return utilities.arrayHasElement(this.getDstStageInfoObject());
+		return utilities.listHasElement(this.getDstStageInfoObject());
 	}
 	
 	public static void loadSrcStageObjectIdToDstStageObjectId(List<EtlStageAreaInfo> stageObjectInfo) {
-		if (utilities.arrayHasNoElement(stageObjectInfo))
+		if (utilities.listHasNoElement(stageObjectInfo))
 			return;
 		
 		for (EtlStageAreaInfo st : stageObjectInfo) {
@@ -140,7 +140,7 @@ public class EtlStageAreaInfo {
 	
 	public static void loadSrcStageIdToSrcKeyInfo(List<EtlStageAreaInfo> stageInfo) {
 		
-		if (utilities.arrayHasNoElement(stageInfo))
+		if (utilities.listHasNoElement(stageInfo))
 			return;
 		
 		for (EtlStageAreaInfo sti : stageInfo) {
@@ -149,7 +149,7 @@ public class EtlStageAreaInfo {
 	}
 	
 	public static void loadDstStageObjectIdToDstKeyInfoObject(List<EtlStageAreaInfo> stageObjectInfo) {
-		if (utilities.arrayHasNoElement(stageObjectInfo))
+		if (utilities.listHasNoElement(stageObjectInfo))
 			return;
 		
 		for (EtlStageAreaInfo st : stageObjectInfo) {

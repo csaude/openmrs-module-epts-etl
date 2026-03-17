@@ -133,7 +133,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 					value = object.getFieldValue(field.getName());
 				}
 				catch (ForbiddenOperationException e) {
-					if (object.shasSharedPkObj()) {
+					if (object.hasSharedPkObj()) {
 						try {
 							value = object.getSharedPkObj().getFieldValue(field.getName());
 						}
@@ -253,7 +253,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	public boolean isContained(List<UniqueKeyInfo> uniqueKeys) {
-		if (!utilities.arrayHasElement(uniqueKeys)) {
+		if (!utilities.listHasElement(uniqueKeys)) {
 			return false;
 		}
 		
@@ -378,7 +378,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	public static UniqueKeyInfo generateFromFieldList(AbstractTableConfiguration tabConf, List<String> fields) {
-		if (!utilities.arrayHasElement(fields))
+		if (!utilities.listHasElement(fields))
 			throw new ForbiddenOperationException("The list cannot be empty");
 		
 		UniqueKeyInfo uk = new UniqueKeyInfo(tabConf);
@@ -427,7 +427,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	        boolean keepUkName) {
 		List<UniqueKeyInfo> uks = cloneAll_(uniqueKeysInfo);
 		
-		if (utilities.arrayHasElement(uks)) {
+		if (utilities.listHasElement(uks)) {
 			
 			for (UniqueKeyInfo uk : uks) {
 				
@@ -756,7 +756,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	public Key getKey(String name) {
-		if (!utilities.arrayHasElement(this.fields)) {
+		if (!utilities.listHasElement(this.fields)) {
 			return null;
 		}
 		
@@ -775,7 +775,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	
 	@JsonIgnore
 	public boolean hasFields() {
-		return utilities.arrayHasElement(this.fields);
+		return utilities.listHasElement(this.fields);
 	}
 	
 	@JsonIgnore

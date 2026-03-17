@@ -80,7 +80,7 @@ public class OpenConnection implements Connection, Closeable {
 	}
 	
 	public static void markAllAsSuccessifullyTerminected(List<OpenConnection> conns) {
-		if (!CommonUtilities.getInstance().arrayHasElement(conns))
+		if (!CommonUtilities.getInstance().listHasElement(conns))
 			return;
 		
 		for (OpenConnection conn : conns) {
@@ -91,7 +91,7 @@ public class OpenConnection implements Connection, Closeable {
 	}
 	
 	public static void finalizeAllConnections(List<OpenConnection> conns) {
-		if (!CommonUtilities.getInstance().arrayHasElement(conns))
+		if (!CommonUtilities.getInstance().listHasElement(conns))
 			return;
 		
 		for (OpenConnection conn : conns) {

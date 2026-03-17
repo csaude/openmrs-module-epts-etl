@@ -237,7 +237,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public boolean hasDstConf() {
-		return utilities.arrayHasElement(this.getDstConf());
+		return utilities.listHasElement(this.getDstConf());
 	}
 	
 	public void tryToCreateDefaultRecordsForAllTables() throws DBException {
@@ -457,7 +457,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public boolean hasChildItemConf() {
-		return utilities.arrayHasElement(this.childItemConf);
+		return utilities.listHasElement(this.childItemConf);
 	}
 	
 	public boolean hasParentItemConf() {
@@ -548,7 +548,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public boolean containsDstTable(String tableName) {
-		if (utilities.arrayHasElement(getDstConf())) {
+		if (utilities.listHasElement(getDstConf())) {
 			for (DstConf dst : getDstConf()) {
 				if (dst.getTableName().equals(tableName)) {
 					return true;

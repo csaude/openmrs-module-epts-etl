@@ -52,7 +52,7 @@ public class ChildTable extends AbstractRelatedTable {
 	public boolean isSharedPk() {
 		if (this.getSharePkWith() == null) {
 			return false;
-		} else if (utilities.arrayHasElement(this.getParentRefInfo())) {
+		} else if (utilities.listHasElement(this.getParentRefInfo())) {
 			
 			for (ParentTable parent : this.getParentRefInfo()) {
 				if (parent.equals(this.parentTableConf.getSharedKeyRefInfo(null))) {

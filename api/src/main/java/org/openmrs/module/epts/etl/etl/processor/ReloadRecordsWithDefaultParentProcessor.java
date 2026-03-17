@@ -126,7 +126,7 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 			List<SrcConf> avaliableSrcForCurrParent = parentRefInfo
 			        .findRelatedSrcConfWhichAsAtLeastOnematchingDst(getRelatedEtlOperationConfig());
 			
-			if (utilities.arrayHasNoElement(avaliableSrcForCurrParent)) {
+			if (utilities.listHasNoElement(avaliableSrcForCurrParent)) {
 				throw new ForbiddenOperationException(
 				        "There are relashioship which cannot auto resolved as there is no configured etl for "
 				                + parentRefInfo.getTableName() + " as source and destination!");

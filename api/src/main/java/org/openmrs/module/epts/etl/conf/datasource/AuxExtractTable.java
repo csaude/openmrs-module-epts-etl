@@ -184,7 +184,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	        MainJoiningEntity relatedMainExtractTable, EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
 		List<AuxExtractTable> allCloned = null;
 		
-		if (utilities.arrayHasElement(allToCloneFrom)) {
+		if (utilities.listHasElement(allToCloneFrom)) {
 			allCloned = new ArrayList<>(allToCloneFrom.size());
 			
 			for (AuxExtractTable aux : allToCloneFrom) {
@@ -211,7 +211,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 		this.setJoinExtraCondition(toCloneFrom.getJoinExtraCondition());
 		this.setJoinType(toCloneFrom.getJoinType());
 		this.setJoinExtraConditionScope(toCloneFrom.getJoinExtraConditionScope());
-		if (utilities.arrayHasElement(toCloneFrom.getAuxExtractTable())) {
+		if (utilities.listHasElement(toCloneFrom.getAuxExtractTable())) {
 			this.setAuxExtractTable(new ArrayList<>(toCloneFrom.getAuxExtractTable().size()));
 			
 			for (InnerAuxExtractTable aux : toCloneFrom.getAuxExtractTable()) {
@@ -238,7 +238,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	public static void tryToReplacePlaceholders(List<AuxExtractTable> auxExtractTable, EtlDatabaseObject schemaInfoSrc) {
-		if (utilities.arrayHasElement(auxExtractTable)) {
+		if (utilities.listHasElement(auxExtractTable)) {
 			for (AuxExtractTable a : auxExtractTable) {
 				a.tryToReplacePlaceholders(schemaInfoSrc);
 			}

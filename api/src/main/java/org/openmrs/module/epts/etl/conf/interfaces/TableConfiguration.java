@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractRelatedTable;
 import org.openmrs.module.epts.etl.conf.ChildTable;
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
@@ -309,7 +310,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	default String getParentsAsString() {
 		String sourceFoldersAsString = "";
 		
-		if (utilities.arrayHasElement(this.getParents())) {
+		if (utilities.listHasElement(this.getParents())) {
 			for (int i = 0; i < this.getParents().size() - 1; i++) {
 				sourceFoldersAsString += this.getParents().get(i).getTableName() + ",";
 			}
@@ -331,7 +332,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	 */
 	default void cloneUnikeKeys(List<UniqueKeyInfo> uniqueKeys) {
 		
-		if (utilities.arrayHasElement(uniqueKeys)) {
+		if (utilities.listHasElement(uniqueKeys)) {
 			setUniqueKeys(new ArrayList<>(uniqueKeys.size()));
 			
 			for (UniqueKeyInfo uk : UniqueKeyInfo.cloneAll_(uniqueKeys)) {
@@ -734,7 +735,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 					
 					//First load all necessary info on configured parents
 					
-					if (utilities.arrayHasElement(this.getParents())) {
+					if (utilities.listHasElement(this.getParents())) {
 						for (ParentTable p : this.getParents()) {
 							
 							p.setChildTableConf(this);
@@ -774,6 +775,23 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 									String parentTableName = foreignKeyRS.getString("PKTABLE_NAME");
 									
 									ParentTableImpl parentTabConf = ParentTableImpl.init(parentTableName, refCode);
+									
+									if (childFieldName.equals(this.getPrimaryKey().asSimpleKey().getName())) {
+										this.setSharePkWith(parentTableName);
+										
+										if (this instanceof DstConf) {
+											DstConf dstConf = (DstConf) this;
+											
+											if (dstConf.hasParentDstConf()) {
+												//Try to retrieve parent from the parent etlItemConf
+												
+												if (dstConf.getParentDstConf().getTableName().equals(this.getSharePkWith())) {
+													parentTabConf.setIgnorableFields(
+													    dstConf.getParentDstConf().getIgnorableFields());
+												}
+											}
+										}
+									}
 									
 									parentTabConf.setParentConf(this.getParentConf());
 									parentTabConf.setChildTableConf(this);
@@ -874,7 +892,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 							}
 							//Check if there is a configured parent but not defined on the db schema
 							
-							if (utilities.arrayHasElement(this.getParents())) {
+							if (utilities.listHasElement(this.getParents())) {
 								
 								for (ParentTable configuredParent : this.getParents()) {
 									if (configuredParent.hasMapping()) {
@@ -921,7 +939,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	default boolean hasParents() {
-		return utilities.arrayHasElement(this.getParents());
+		return utilities.listHasElement(this.getParents());
 	}
 	
 	default void loadChildren(Connection conn) throws SQLException {
@@ -1337,8 +1355,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				this.loadParents(conn);
 				this.loadChildren(conn);
 				
-				this.tryToDiscoverySharedKeyInfo(conn);
-				
 				this.loadUniqueKeys(conn);
 				
 				this.loadAttDefinition(conn);
@@ -1564,31 +1580,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		field.setAttDefinedElements(AttDefinedElements.define(field.getName(), field.getDataType(), true, this));
 		
 		this.generateSQLElemenets();
-	}
-	
-	default void tryToDiscoverySharedKeyInfo(Connection conn) throws DBException {
-		//Discovery shared pk
-		
-		if (this.hasParentRefInfo()) {
-			for (ParentTable ref : this.getParentRefInfo()) {
-				
-				ref.loadPrimaryKeyInfo(conn);
-				
-				PrimaryKey parentRefInfoAskey = new PrimaryKey(ref);
-				parentRefInfoAskey.setFields(ref.extractParentFieldsFromRefMapping());
-				
-				PrimaryKey childRefInfoAskey = new PrimaryKey(ref.getChildTableConf());
-				childRefInfoAskey.setFields(ref.extractChildFieldsFromRefMapping());
-				
-				if (ref.getPrimaryKey() != null && ref.getPrimaryKey().equals(parentRefInfoAskey)
-				        && ref.getChildTableConf().getPrimaryKey().equals(childRefInfoAskey)) {
-					this.setSharePkWith(ref.getTableName());
-					
-					break;
-				}
-			}
-		}
-		
 	}
 	
 	@Override
@@ -1838,7 +1829,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	default boolean hasUniqueKeys() {
-		return utilities.arrayHasElement(this.getUniqueKeys());
+		return utilities.listHasElement(this.getUniqueKeys());
 	}
 	
 	default boolean useSimpleNumericPk() {
@@ -2144,7 +2135,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		//Assuming that this datasource is parent
 		List<ParentTable> pInfo = relatedTabConf.findAllRefToParent(this.getTableName());
 		
-		if (utilities.arrayHasElement(pInfo)) {
+		if (utilities.listHasElement(pInfo)) {
 			
 			if (utilities.arrayHasExactlyOneElement(pInfo)) {
 				
@@ -2165,7 +2156,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			//Assuning that the this data src is child
 			pInfo = this.findAllRefToParent(relatedTabConf.getTableName());
 			
-			if (utilities.arrayHasElement(pInfo)) {
+			if (utilities.listHasElement(pInfo)) {
 				if (utilities.arrayHasExactlyOneElement(pInfo)) {
 					
 					ParentTable ref = pInfo.get(0);
@@ -2182,7 +2173,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			}
 		}
 		
-		if (!utilities.arrayHasElement(joinFields)) {
+		if (!utilities.listHasElement(joinFields)) {
 			throw new ForbiddenOperationException(
 			        "No join fields were difined between " + this.getTableName() + " And " + relatedTabConf.getTableName());
 		}
@@ -2194,7 +2185,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	        String joinExtraCondition) {
 		String conditionFields = "";
 		
-		if (utilities.arrayHasElement(joinFields)) {
+		if (utilities.listHasElement(joinFields)) {
 			
 			for (int i = 0; i < joinFields.size(); i++) {
 				if (i > 0)
@@ -2373,7 +2364,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	default boolean hasIgnorableField() {
-		return utilities.arrayHasElement(this.getIgnorableFields());
+		return utilities.listHasElement(this.getIgnorableFields());
 	}
 	
 	/**
@@ -2449,7 +2440,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	default boolean hasObservationDateFields() {
-		return utilities.arrayHasElement(this.getObservationDateFields());
+		return utilities.listHasElement(this.getObservationDateFields());
 	}
 	
 	default void addUniqueKey(UniqueKeyInfo uk) {
@@ -2542,7 +2533,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	static String generateInsertDump(List<EtlDatabaseObject> objects) throws DBException {
-		if (utilities.arrayHasNoElement(objects))
+		if (utilities.listHasNoElement(objects))
 			return null;
 		
 		String sql = objects.get(0).getInsertSQLWithObjectId().split("VALUES")[0];

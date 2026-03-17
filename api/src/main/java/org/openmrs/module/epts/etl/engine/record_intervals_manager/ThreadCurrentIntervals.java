@@ -130,12 +130,12 @@ public class ThreadCurrentIntervals extends IntervalExtremeRecord {
 	
 	@JsonIgnore
 	private boolean hasInternalIntervals() {
-		return utilities.arrayHasElement(getInternalIntervals());
+		return utilities.listHasElement(getInternalIntervals());
 	}
 	
 	@JsonIgnore
 	public boolean isFullProcessed() {
-		return utilities.arrayHasNoElement(getAllNotProcessed()) && isSkippedRecordProcessed();
+		return utilities.listHasNoElement(getAllNotProcessed()) && isSkippedRecordProcessed();
 	}
 	
 	@Override

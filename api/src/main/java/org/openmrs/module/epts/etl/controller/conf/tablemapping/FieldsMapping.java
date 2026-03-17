@@ -7,9 +7,11 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlField;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.ParentOnDemandLoadTransformer;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -458,6 +460,22 @@ public class FieldsMapping implements TransformableField {
 		if (joinFields != null) {
 			for (FieldsMapping f : joinFields) {
 				f.tryToReplacePlaceholders(schemaInfoSrc);
+			}
+		}
+	}
+	
+	public void tryToGenerateTranformerInfo(DstConf dstConf) {
+		if (dstConf.useSharedPKKey() && getTransformerInstance() == null && getTransformerInstance() == null) {
+			if (this.getDstField().equals(dstConf.getPrimaryKey().asSimpleKey().getName())) {
+				String transformerInfo = ParentOnDemandLoadTransformer.class.getCanonicalName() + "(";
+				
+				ParentTable refInfo = dstConf.getSharedKeyRefInfo(null);
+				
+				transformerInfo += refInfo.getTableName() + ",";
+				
+				transformerInfo += refInfo.getChildColumnOnSimpleMapping() + ")";
+				
+				this.setTransformer(transformerInfo);
 			}
 		}
 	}

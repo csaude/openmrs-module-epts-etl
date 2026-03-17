@@ -117,7 +117,7 @@ public class Oid extends PrimaryKey {
 	}
 	
 	public boolean hasAtLeastOneField() {
-		if (!utilities.arrayHasElement(this.getFields()))
+		if (!utilities.listHasElement(this.getFields()))
 			return false;
 		
 		for (Key field : this.getFields()) {
