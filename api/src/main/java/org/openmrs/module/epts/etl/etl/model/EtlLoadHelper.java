@@ -381,7 +381,6 @@ public class EtlLoadHelper {
 				
 				if (!loadRecord.getResultItem().hasUnresolvedInconsistences()) {
 					loadRecord.setStatus(LoadStatus.READY);
-					
 					if (loadRecord.getResultItem().hasInconsistences()) {
 						this.logTrace(errorMsg);
 					}

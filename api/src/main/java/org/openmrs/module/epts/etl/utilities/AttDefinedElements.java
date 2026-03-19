@@ -343,11 +343,12 @@ public class AttDefinedElements {
 	
 	public static boolean isNumeric(String attType) {
 		return utilities.isStringIn(attType.toLowerCase(), "int", "integer", "long", "byte", "short", "double", "float",
-		    "bit", "tinyint", "bigint");
+		    "bit", "tinyint", "bigint", "bigint unsigned");
 	}
 	
 	public static boolean isString(String attType) {
-		return utilities.isStringIn(attType, "java.lang.String", "String", "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT", "LONGTEXT");
+		return utilities.isStringIn(attType, "java.lang.String", "String", "VARCHAR", "CHAR", "TEXT", "MEDIUMTEXT",
+		    "LONGTEXT");
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,
