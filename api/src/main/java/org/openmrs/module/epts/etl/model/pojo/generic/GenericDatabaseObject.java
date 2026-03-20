@@ -131,6 +131,10 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 							p.tryToGenerateTableAlias(conf.getRelatedEtlConf());
 						}
 						
+						if (!p.isFullLoaded()) {
+							p.fullLoad(conn);
+						}
+						
 						defaultParent = p.getDefaultObject(conn);
 					}
 					catch (Exception e) {

@@ -537,9 +537,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 						
 						keyInfo.setRelatedConfiguration(defaultGeneratedObjectKeyTabConf);
 						
+						keyInfo.setFieldValue("table_name", defaultObject.getRelatedConfiguration().getObjectName());
 						keyInfo.setFieldValue("column_name", key.getName());
 						keyInfo.setFieldValue("key_value", key.getValue());
-						
+											
 						keyInfo.save(defaultGeneratedObjectKeyTabConf, conn);
 					}
 					
@@ -2212,7 +2213,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		if (utilities.stringHasValue(joinExtraCondition)) {
 			conditionFields += " AND (" + joinExtraCondition + ")";
 		}
-		
+	
 		return utilities.stringHasValue(conditionFields) ? conditionFields : "1=1";
 	}
 	

@@ -239,6 +239,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	public FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
+		
 		EtlDatabaseObject dstParent = resolveParent(processor, srcObject, transformedRecord, additionalSrcObjects, srcConn,
 		    dstConn);
 		
@@ -301,6 +302,10 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	EtlDatabaseObject createParent(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject transformedRecord,
 	        List<EtlDatabaseObject> additionalSrcObjects, TransformableField field, Connection srcConn, Connection dstConn)
 	        throws DBException {
+		
+		processor.logDebug(
+		    "Performing on-demand creation of " + this.getSrcConfForExistingSrcParent(srcConn, dstConn).getTableName()
+		            + " For " + srcObject.getRelatedConfiguration().getObjectName());
 		
 		EtlDatabaseObject srcParent = resolveSrcParent(processor, srcObject, transformedRecord, additionalSrcObjects,
 		    srcConn, dstConn);

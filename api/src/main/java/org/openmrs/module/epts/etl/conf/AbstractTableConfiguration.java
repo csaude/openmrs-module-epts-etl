@@ -458,10 +458,12 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		return updateSql;
 	}
 	
+	@Override
 	public String getExtraConditionForExtract() {
 		return extraConditionForExtract;
 	}
 	
+	@Override
 	public void setExtraConditionForExtract(String extraConditionForExtract) {
 		this.extraConditionForExtract = extraConditionForExtract;
 	}

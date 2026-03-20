@@ -436,7 +436,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			return;
 		}
 		
-		for (EtlDataSource pref : this.allPrefferredDataSource) {
+		for (EtlDataSource pref : this.getAllPrefferredDataSource()) {
 			if (pref.containsField(fm.getSrcField())) {
 				fm.setDataSourceName(pref.getAlias());
 				
@@ -462,8 +462,8 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			}
 		}
 		
-		if (qtyOccurences == 0) {
-			for (EtlDataSource notPref : this.allNotPrefferredDataSource) {
+		if (qtyOccurences == 0 && utilities.listHasElement(getAllNotPrefferredDataSource()) ) {
+			for (EtlDataSource notPref : this.getAllNotPrefferredDataSource()) {
 				if (notPref.containsField(fm.getSrcField())) {
 					qtyOccurences++;
 					

@@ -82,6 +82,10 @@ public class GenericTableConfiguration extends AbstractTableConfiguration {
 	public String getQuery() {
 		String condition = super.generateConditionsFields(null, null, null);
 		
+		condition += utilities.stringHasValue(this.getExtraConditionForExtract())
+		        ? " AND (" + this.getExtraConditionForExtract() + ")"
+		        : "";
+		
 		return this.generateSelectFromQuery() + " WHERE " + condition;
 	}
 	

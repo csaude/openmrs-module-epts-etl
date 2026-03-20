@@ -65,6 +65,8 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 	
 	private String mappingDstField;
 	
+	private String extraConditionForExtract;
+	
 	private volatile TableConfiguration tableConfig;
 	
 	private static final Map<String, MappingFieldTransformer> INSTANCES = new ConcurrentHashMap<>();
@@ -73,14 +75,15 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 	
 	private final Object lock = new Object();
 	
-	public MappingFieldTransformer(String mappingTable, String mappingSrcField, String mappingDstField) {
+	public MappingFieldTransformer(String mappingTable, String mappingSrcField, String mappingDstField,
+	    String extraConditionForExtract) {
 		this.mappingTable = mappingTable;
 		this.mappingSrcField = mappingSrcField;
 		this.mappingDstField = mappingDstField;
+		this.extraConditionForExtract = extraConditionForExtract;
 	}
 	
 	private void buildMappingCache(Connection srcConn) throws DBException {
-		
 		List<EtlDatabaseObject> rows = this.tableConfig.searchRecords(null, null, srcConn);
 		
 		Map<String, Object> cache = new HashMap<>();
@@ -104,23 +107,29 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 	
 	public static MappingFieldTransformer getInstance(List<Object> parameters) {
 		
-		if (parameters == null || parameters.size() != 3) {
+		if (parameters == null || parameters.size() < 3) {
 			throw new EtlExceptionImpl(
-			        "MappingFieldTransformer requires exactly 3 parameters: mappingTable, mappingSrcField and mappingDstField.");
+			        "MappingFieldTransformer requires at least 3 parameters: mappingTable, mappingSrcField and mappingDstField.");
+		} else if (parameters.size() != 4) {
+			throw new EtlExceptionImpl(
+			        "MappingFieldTransformer support at most 4 parameters: mappingTable, mappingSrcField, mappingDstField and extraConditionForExtract.");
 		}
 		
 		String table = parameters.get(0).toString();
 		String srcField = parameters.get(1).toString();
 		String dstField = parameters.get(2).toString();
+		String extraConditionForExtract = parameters.size() > 3 ? parameters.get(3).toString() : null;
 		
-		String key = buildCacheKey(table, srcField, dstField);
+		String key = buildCacheKey(table, srcField, dstField, extraConditionForExtract);
 		
-		return INSTANCES.computeIfAbsent(key, k -> new MappingFieldTransformer(table, srcField, dstField));
+		return INSTANCES.computeIfAbsent(key,
+		    k -> new MappingFieldTransformer(table, srcField, dstField, extraConditionForExtract));
 	}
 	
-	private static String buildCacheKey(String table, String srcField, String dstField) {
+	private static String buildCacheKey(String table, String srcField, String dstField, String extraConditionForExtract) {
 		
-		return table + "|" + srcField + "|" + dstField;
+		return table + "|" + srcField + "|" + dstField
+		        + (extraConditionForExtract != null ? "|" + extraConditionForExtract : "");
 	}
 	
 	@Override
@@ -141,6 +150,7 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 					this.tableConfig = new GenericTableConfiguration(mappingTable,
 					        (TableConfiguration) additionalSrcObjects.get(0).getRelatedConfiguration());
 					
+					this.tableConfig.setExtraConditionForExtract(this.extraConditionForExtract);
 					this.tableConfig.fullLoad(srcConn);
 					
 					buildMappingCache(srcConn);
@@ -162,8 +172,8 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 		}
 		
 		if (field.getDefaultValue() == null) {
-			throw new MissingMappingException(additionalSrcObjects.get(0), field.getSrcField(), srcValueWithParamsReplaced, this,
-			        additionalSrcObjects.get(0).getRelatedConfiguration().getGeneralBehaviourOnEtlException());
+			throw new MissingMappingException(additionalSrcObjects.get(0), field.getSrcField(), srcValueWithParamsReplaced,
+			        this, additionalSrcObjects.get(0).getRelatedConfiguration().getGeneralBehaviourOnEtlException());
 		}
 		
 		return null;
