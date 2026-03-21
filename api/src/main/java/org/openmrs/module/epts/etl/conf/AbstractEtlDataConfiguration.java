@@ -7,8 +7,20 @@ public abstract class AbstractEtlDataConfiguration extends AbstractBaseConfigura
 	
 	private EtlConfiguration relatedSyncConfiguration;
 	
+	private EtlTemplateInfo template;
+	
 	public EtlConfiguration getRelatedEtlConf() {
 		return relatedSyncConfiguration;
+	}
+	
+	@Override
+	public EtlTemplateInfo getTemplate() {
+		return template;
+	}
+	
+	@Override
+	public void setTemplate(EtlTemplateInfo template) {
+		this.template = template;
 	}
 	
 	public void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration) {

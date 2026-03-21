@@ -28,4 +28,5 @@ public abstract class AbstractBaseConfiguration implements BaseConfiguration {
 	public void setComments(Object comments) {
 		this.comments = comments;
 	}
+	
 }

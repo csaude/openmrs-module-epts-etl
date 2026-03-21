@@ -13,7 +13,6 @@ public interface BaseConfiguration {
 	
 	List<Extension> getExtension();
 	
-	
 	public void setExtension(List<Extension> extension);
 	
 	default Extension findExtension(String coding) throws ForbiddenOperationException{

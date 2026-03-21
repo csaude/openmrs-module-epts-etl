@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -61,6 +62,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	private DatabaseObjectLoaderHelper loadHealper;
 	
 	private PreparedQuery defaultPreparedQuery;
+
+	private EtlTemplateInfo template;
 	
 	public QueryDataSourceConfig() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
@@ -72,6 +75,16 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		setRelatedSrcConf(relatedSrcVonf);
 		
 		setQuery(query);
+	}
+	
+	@Override
+	public EtlTemplateInfo getTemplate() {
+		return template;
+	}
+	
+	@Override
+	public void setTemplate(EtlTemplateInfo template) {
+		this.template = template;
 	}
 	
 	@Override

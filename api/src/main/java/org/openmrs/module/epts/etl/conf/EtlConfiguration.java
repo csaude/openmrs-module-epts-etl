@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.datasource.EtlConfigurationSrcConf;
@@ -60,9 +59,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public static final String ETL_RECORD_ERROR_TABLE_NAME = "etl_record_error";
 	
-	private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([A-Za-z0-9_.-]+)}");
+	private static final String DEFAULT_ETL_ELEMENTS_TEMPLATE_FILE = "etl_elements_templates.json";
 	
 	private String etlRootDirectory;
+	
+	private String etlTemplatesFilePath;
 	
 	private String originAppLocationCode;
 	
@@ -179,6 +180,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private ActionOnEtlException generalBehaviourOnEtlException;
 	
+	/**
+	 * Other etl src tables not explicitly configured but related to configured src tables
+	 */
+	private List<String> relatedEtlSrcTables;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -193,6 +199,22 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.waitTimeToCheckStatus = 5;
 		
 		this.generalBehaviourOnEtlException = ActionOnEtlException.ABORT;
+	}
+	
+	public List<String> getRelatedEtlSrcTables() {
+		return relatedEtlSrcTables;
+	}
+	
+	public void setRelatedEtlSrcTables(List<String> relatedEtlSrcTables) {
+		this.relatedEtlSrcTables = relatedEtlSrcTables;
+	}
+	
+	public String getEtlTemplatesFilePath() {
+		return etlTemplatesFilePath;
+	}
+	
+	public void setEtlTemplatesFilePath(String etlTemplatesFilePath) {
+		this.etlTemplatesFilePath = etlTemplatesFilePath;
 	}
 	
 	public List<String> getStartupScripts() {
@@ -628,36 +650,13 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return relatedConfFile;
 	}
 	
-	private static String resolvePlaceholders(String text, java.util.Properties sysProps, Map<String, String> env) {
-		
-		Matcher m = PLACEHOLDER.matcher(text);
-		StringBuffer sb = new StringBuffer();
-		
-		while (m.find()) {
-			String key = m.group(1);
-			
-			String value = sysProps.getProperty(key);
-			if (value == null)
-				value = env.get(key);
-			
-			if (value == null) {
-				throw new IllegalArgumentException("Missing placeholder value for: " + key);
-			}
-			
-			m.appendReplacement(sb, Matcher.quoteReplacement(value));
-		}
-		m.appendTail(sb);
-		
-		return sb.toString();
-	}
-	
 	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromFile(File file)
 	        throws IOException, ForbiddenOperationException {
 		
 		String json = FileUtilities.realAllFileAsString(file);
 		
 		EtlConfiguration conf = EtlConfiguration
-		        .loadFromJSON(resolvePlaceholders(json, System.getProperties(), System.getenv()));
+		        .loadFromJSON(EtlDataConfiguration.resolvePlaceholders(json, System.getProperties(), System.getenv()));
 		
 		conf.setConfigFilePath(file.getAbsolutePath());
 		
@@ -760,6 +759,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				this.setPrimaryKeyInitialIncrementValue(0);
 			}
 			
+			if (this.etlTemplatesFilePath == null) {
+				etlTemplatesFilePath = this.getRelatedConfFile().getParent() + File.pathSeparator
+				        + DEFAULT_ETL_ELEMENTS_TEMPLATE_FILE;
+			}
+			
 			for (EtlOperationConfig operation : this.getOperations()) {
 				if (operation.getMaxSupportedProcessors() == 1) {
 					operation.setUseSharedConnectionPerThread(false);
@@ -822,6 +826,12 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			if (this.hasTestingItem()) {
 				initItem(this.getTestingEtlItemConfiguration(), true);
 			}
+			
+			if (this.relatedEtlSrcTables != null) {
+				for (String tableName : this.relatedEtlSrcTables) {
+					addConfiguredTable(new GenericTableConfiguration(tableName));
+				}
+			}
 		}
 	}
 	
@@ -844,6 +854,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		item.getSrcConf().setParentConf(item);
 		item.setTesting(testing);
 		
+		item.tryToLoadFromTemplate();
+		
+		item.getSrcConf().tryToLoadFromTemplate();
+		
 		if (!item.getSrcConf().hasDstType()) {
 			//We start with the first operation dst type. Eventual this should be changed if the nested operation has different dstType
 			item.getSrcConf().setDstType(this.getOperations().get(0).getDstType());
@@ -861,6 +875,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		List<EtlAdditionalDataSource> allAvaliableDataSources = item.getSrcConf().getAvaliableExtraDataSource();
 		
 		for (EtlAdditionalDataSource t : allAvaliableDataSources) {
+			t.tryToLoadFromTemplate();
+			
 			if (t instanceof AbstractTableConfiguration) {
 				TableConfiguration tAsTabConf = (TableConfiguration) t;
 				
@@ -878,6 +894,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		if (item.getSrcConf().hasAuxExtractTable()) {
 			for (AuxExtractTable t : item.getSrcConf().getAuxExtractTable()) {
+				t.tryToLoadFromTemplate();
+				
 				if (t.hasAlias()) {
 					t.setUsingManualDefinedAlias(true);
 					
@@ -892,6 +910,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		if (utilities.listHasElement(item.getDstConf())) {
 			for (DstConf dst : item.getDstConf()) {
+				dst.tryToLoadFromTemplate();
 				
 				dst.tryToLoadSchemaInfo(item.getRelatedEtlSchemaObject());
 				
@@ -925,6 +944,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	private void tryToLoadChildItemConf(EtlItemConfiguration item, boolean testing) {
 		if (item.hasChildItemConf()) {
 			for (EtlItemConfiguration childItem : item.getChildItemConf()) {
+				childItem.tryToLoadFromTemplate();
+				
 				childItem.setParentItemConf(item);
 				
 				if (!utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
@@ -1869,5 +1890,18 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public void setGeneralBehaviourOnEtlException(ActionOnEtlException generalBehaviourOnEtlException) {
 		this.generalBehaviourOnEtlException = generalBehaviourOnEtlException;
+	}
+	
+	@Override
+	public void setTemplate(EtlTemplateInfo template) {
+	}
+	
+	@Override
+	public void copyFromTemplate(EtlDataConfiguration template) {
+	}
+	
+	@Override
+	public EtlTemplateInfo getTemplate() {
+		return null;
 	}
 }
