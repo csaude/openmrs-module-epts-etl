@@ -181,7 +181,13 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	private ActionOnEtlException generalBehaviourOnEtlException;
 	
 	/**
-	 * Other etl src tables not explicitly configured but related to configured src tables
+	 * Defines additional source tables that are not explicitly configured as ETL sources but are
+	 * related to the configured source tables.
+	 * <p>
+	 * These tables must be declared so they are treated as part of the ETL data domain rather than
+	 * as metadata tables. This ensures that relationships such as joins, foreign keys, and
+	 * dependent records are correctly resolved during the transformation process.
+	 * </p>
 	 */
 	private List<String> relatedEtlSrcTables;
 	
@@ -656,7 +662,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		String json = FileUtilities.realAllFileAsString(file);
 		
 		EtlConfiguration conf = EtlConfiguration
-		        .loadFromJSON(EtlDataConfiguration.resolvePlaceholders(json, System.getProperties(), System.getenv()));
+		        .loadFromJSON(EtlDataConfiguration.resolvePlaceholders(json, System.getProperties(), System.getenv()), file);
 		
 		conf.setConfigFilePath(file.getAbsolutePath());
 		
@@ -850,11 +856,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public void initItem(EtlItemConfiguration item, boolean testing) {
+		item.tryToLoadFromTemplate();
+		
 		item.setRelatedEtlConfig(this);
 		item.getSrcConf().setParentConf(item);
 		item.setTesting(testing);
-		
-		item.tryToLoadFromTemplate();
 		
 		item.getSrcConf().tryToLoadFromTemplate();
 		
@@ -1045,7 +1051,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 	}
 	
-	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromJSON(String json)
+	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromJSON(String json, File srcFile)
 	        throws ForbiddenOperationException {
 		
 		OpenConnection conn = null;
@@ -1060,6 +1066,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			
 			if (!etlConfiguration.isDynamic()) {
 				conn = etlConfiguration.openSrcConn();
+				
+				etlConfiguration.setConfigFilePath(srcFile.getAbsolutePath());
+				
+				etlConfiguration.setRelatedConfFile(srcFile);
+				
 				etlConfiguration.init(conn);
 				
 				conn.markAsSuccessifullyTerminated();

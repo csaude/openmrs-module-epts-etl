@@ -8,6 +8,9 @@ public class EtlTemplateInfo {
 	
 	private Map<String, String> parameters;
 	
+	public EtlTemplateInfo() {
+	}
+	
 	public String getName() {
 		return name;
 	}
