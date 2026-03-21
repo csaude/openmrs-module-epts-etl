@@ -121,46 +121,57 @@ The etl item configuration section defines the rules of extraction, transformati
 
 ```
 {
+{
    "srcConf":{
-	  "tableName":"",
-	  "extraConditionForExtract":"",
-	  "observationDateFields":[
-		 
-	  ],
-	  "sharePkWith":"",
-	  "metadata":"",
-	  "removeForbidden":"",
-	  "uniqueKeys":[
-		 
-	  ],
-	  "parents":[
-		 
-	  ],
-	  "extraTableDataSource":[
-		 
-	  ],
-	  "extraQueryDataSource":[
-		 
-	  ],
-          "onConflict": ""
+      "tableName":"",
+      "extraConditionForExtract":"",
+      "observationDateFields":[
+         
+      ],
+      "sharePkWith":"",
+      "metadata":"",
+      "removeForbidden":"",
+      "uniqueKeys":[
+         
+      ],
+      "parents":[
+         
+      ],
+      "extraTableDataSource":[
+         
+      ],
+      "extraQueryDataSource":[
+         
+      ],
+      "onConflict":""
    },
    "dstConf":[
-	  
+      
    ],
-   "createDstTableIfNotExists": "",
+   "createDstTableIfNotExists":"",
    "autoIncrementHandlingType":"",
    "etlItemSrcConf":{
-	  
+      
    },
    "disabled":"",
    "childItemConf":[
-   ]
+      
+   ],
+   "template":{
+      "name":"template_name",
+      "parameters":{
+         "param1":"paramValue1",
+         "param2":"paramValue2"
+      }
+   }
 }
 ```
 
-The srcConf define the configuration of the source of etl process for an item and the dstConf list the data destination table in the Etl process. This configuration can be omited if there is no transformation in the process and the destination table field can automatically mapped from the data source
+The srcConf defines the configuration of the data source for an ETL item, while the dstConf defines the destination tables and how data should be loaded into them. These configurations may be omitted in simple scenarios where no transformation is required, allowing destination fields to be automatically mapped from the source.
 
-Bellow are explained the relevant configuration for "srcConf" and "dstConf".
+In addition, ETL items may optionally use a template, which allows configurations to be reused and parameterized, reducing duplication across similar ETL definitions. Templates can be applied at different levels of the configuration (e.g., srcConf, dstConf, childItemConf, etc.). Further details on how templates work and how to define them are provided below.
+
+Below are the main configuration elements available for an ETL Item.
 
 ### The "srcConf"
 The "srcConf '' allows the configuration of datasource in an etl process. The relevant configuration fields are explained below
@@ -609,23 +620,71 @@ This attribute specifies which dstConf from the parent etlItemConf the child ite
 
 Additionally, since *childItemConf* itself supports nested childItemConf, it is possible to define multiple levels of related entities, allowing the ETL process to handle complex hierarchical data structures.
 
+### The Template
+Defines a reusable configuration template that can be applied to an ETL item or any of its nested elements. Templates allow the reuse of common configurations, reducing duplication and improving maintainability by parameterizing only the parts that vary (such as extraction conditions, table names, or filters).
+
+A template is referenced using its name and an optional list of parameters:
+
+```
+   "template":{
+      "name":"template_name",
+      "parameters":{
+         "param1":"paramValue1",
+         "param2":"paramValue2"
+      }
+   }
+```
+
+Templates are defined externally in a JSON file with the following structure:
+```
+[
+   {
+      "name":"template_name",
+      "parameters":[
+         "param1",
+         "param2"
+      ],
+      "template":{
+         ...
+      }
+   }
+]
+```
+By default, templates are loaded from a file named etl_elements_templates.json, which must be located in the same directory as the main ETL configuration file. If a different location is required, it can be specified using the global ETL configuration property:
+```
+etlTemplatesFilePath
+```
+This property should contain the full path to the templates file.
+
+Templates can be used in any part of the EtlItemConfiguration, including but not limited to:
+
+  - the root level of the item configuration
+  - srcConf
+  - dstConf
+  - childItemConf
+  - or any nested configuration element
+
+When a template is applied, its configuration is merged into the target element, replacing or complementing the existing configuration based on the provided parameters.
+
+This mechanism is especially useful for scenarios where multiple ETL items share similar configurations, differing only in specific parameters such as extraction conditions, field mappings, or filters.
+
 ## Default configuration files templates
 In this section are listed some templates for configuration files for specific etl processes. For demo please check [this session](https://github.com/csaude/openmrs-module-epts-etl/blob/master/docs/demo/README.md#etl-quick-examples).
 
-#### The generic etl configuration template
+### The generic etl configuration template
 This could be used for simple or complex etl processes. Using this template each src record will be transformed and saved to the destination database. The template for this process can be found [here](docs/process_templates/generic_etl.json)
 
 
-#### The database merge configuration template
+### The database merge configuration template
 The database merge is a process of joining together one or more databases. The template for this process can be found [here](docs/process_templates/db_merge.json)
 
-#### The database extract configuration template
+### The database extract configuration template
 The database extraction is a process of extracting a set of data from the src database to a dst database. The template for this process can be found [here](docs/process_templates/db_extract.json)
 
-#### The records update configuration template
+### The records update configuration template
 The record update can be useful if you want to perform the update of records using data from a src database. The template for this process can be found [here](docs/process_templates/db_update.json)
 
-#### The records deletion configuration template
+### The records deletion configuration template
 This process performs physical remotion of records on the target database. The template for this process can be found [here](docs/process_templates/db_delete.json) 
 
 
