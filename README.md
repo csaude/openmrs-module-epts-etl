@@ -26,7 +26,7 @@ The process configuration file is the heart of the application. For each process
 - **The section 3** defines the operations configuration parameters.
 - **The section 4** lists the ETL configuration. This define the rules of how the extraction, transformation and load will be hundled.
 
-## The common configuration
+## The common configuration/
 - *processType*: A string representing the Process Type. The supported types are listed in the section "Supported Process Types."
 - *etlRootDirectory*: a full path to the directory where the process files will be placed.
 - *childConfigFilePath*: a full path to another JSON configuration file which defines a process that will be executed when the current process is finished. This parameter allows multiple processes to be executed in sequence. This can be useful, for example, when there is a need to merge multiple databases.
@@ -44,6 +44,7 @@ The process configuration file is the heart of the application. For each process
 - *finalizer*: represents a object which define the additional tasks to be performed after the process if finished.
 - *startupScripts*:  A list of SQL scripts to be executed at startup. The files should be placed in @etlRootDirectory/dump-scripts/startup. It is important to ensure that multiple executions of these scripts do not result in inconsistencies;
 - *reRunable*: Normally, when a process is completed, the application skips its execution if the user attempts to re-run it. This property allows the process to be executed multiple times. If the user initiates the process after it has finished, it will restart and execute from the beginning.
+- *relatedEtlSrcTables*: Defines additional source tables that are not explicitly configured in the ETL process but are related to the primary configured source tables. These tables must be declared to ensure they are correctly recognized as part of the data domain rather than being treated as metadata tables. Properly listing all related source tables is essential for accurate relationship resolution during the ETL process, particularly when handling joins, foreign keys, or dependent records.
 
 ## The Database configuration
 This section allowd the database configuration. The "srcConnConf" allows the configuration of source database and the "dstConnConf" allows the configuration of destination database. Each element allow bellows parameters: 
