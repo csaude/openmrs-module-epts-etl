@@ -688,7 +688,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		this.getSrcConf().tryToLoadFromTemplate();
 		this.getSrcConf().setRelatedEtlConfig(this.getRelatedEtlConf());
-		this.setParentItemConf(this);
+		this.getSrcConf().setParentConf(this);
 		
 		if (this.hasDstConf()) {
 			for (DstConf conf : this.getDstConf()) {
