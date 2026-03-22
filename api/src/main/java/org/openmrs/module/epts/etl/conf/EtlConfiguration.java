@@ -766,7 +766,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			}
 			
 			if (this.etlTemplatesFilePath == null) {
-				etlTemplatesFilePath = this.getRelatedConfFile().getParent() + File.pathSeparator
+				etlTemplatesFilePath = this.getRelatedConfFile().getParent() + File.separator
 				        + DEFAULT_ETL_ELEMENTS_TEMPLATE_FILE;
 			}
 			
@@ -824,6 +824,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					allItem.add(item);
 					
 					initItem(item, false);
+					
+					System.out.println();
 				}
 			}
 			
@@ -860,9 +862,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		item.setRelatedEtlConfig(this);
 		item.getSrcConf().setParentConf(item);
-		item.setTesting(testing);
 		
-		item.getSrcConf().tryToLoadFromTemplate();
+		item.setTesting(testing);
 		
 		if (!item.getSrcConf().hasDstType()) {
 			//We start with the first operation dst type. Eventual this should be changed if the nested operation has different dstType
@@ -950,9 +951,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	private void tryToLoadChildItemConf(EtlItemConfiguration item, boolean testing) {
 		if (item.hasChildItemConf()) {
 			for (EtlItemConfiguration childItem : item.getChildItemConf()) {
-				childItem.tryToLoadFromTemplate();
-				
 				childItem.setParentItemConf(item);
+				childItem.setRelatedEtlConfig(this);
 				
 				if (!utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
 					if (utilities.arrayHasExactlyOneElement(item.getDstConf())) {
@@ -964,7 +964,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				}
 				
 				childItem.setRelatedParentDstConf(item.findDstConf(childItem.getRelatedParentDstConfName()));
-				childItem.setRelatedEtlConfig(this.getRelatedEtlConf());
 				
 				initItem(childItem, testing);
 			}

@@ -682,4 +682,20 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		}
 	}
 	
+	@Override
+	public void tryToLoadFromTemplate() {
+		super.tryToLoadFromTemplate();
+		
+		this.getSrcConf().tryToLoadFromTemplate();
+		this.getSrcConf().setRelatedEtlConfig(this.getRelatedEtlConf());
+		this.setParentItemConf(this);
+		
+		if (this.hasDstConf()) {
+			for (DstConf conf : this.getDstConf()) {
+				conf.tryToLoadFromTemplate();
+				conf.setRelatedEtlConfig(getRelatedEtlConf());
+				conf.setParentConf(this);
+			}
+		}
+	}
 }

@@ -110,7 +110,7 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 		if (parameters == null || parameters.size() < 3) {
 			throw new EtlExceptionImpl(
 			        "MappingFieldTransformer requires at least 3 parameters: mappingTable, mappingSrcField and mappingDstField.");
-		} else if (parameters.size() != 4) {
+		} else if (parameters.size() > 4) {
 			throw new EtlExceptionImpl(
 			        "MappingFieldTransformer support at most 4 parameters: mappingTable, mappingSrcField, mappingDstField and extraConditionForExtract.");
 		}

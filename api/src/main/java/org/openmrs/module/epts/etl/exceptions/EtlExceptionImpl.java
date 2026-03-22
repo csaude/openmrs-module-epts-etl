@@ -26,7 +26,7 @@ public class EtlExceptionImpl extends RuntimeException implements EtlException {
 	}
 	
 	public EtlExceptionImpl(String msg, Exception e) {
-		super(e.getLocalizedMessage(), e);
+		super(msg, e);
 		
 		this.action = ActionOnEtlException.ABORT;
 	}

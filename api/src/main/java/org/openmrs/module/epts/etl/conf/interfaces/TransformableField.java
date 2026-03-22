@@ -163,7 +163,7 @@ public interface TransformableField {
 	}
 	
 	default boolean hasTransformer() {
-		return getTransformer() != null;
+		return utilities.stringHasValue(getTransformer());
 	}
 	
 	@SuppressWarnings({ "unchecked" })

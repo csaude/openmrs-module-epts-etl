@@ -35,4 +35,12 @@ public class DatabaseObjectLoaderHelper implements VOLoaderHelper {
 		}
 	}
 	
+	@Override
+	public String toString() {
+		return this.tableConf.toString();
+	}
+	
+	public void setTableConf(DatabaseObjectConfiguration tableConf) {
+		this.tableConf = tableConf;
+	}
 }

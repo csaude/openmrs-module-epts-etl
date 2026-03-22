@@ -43,10 +43,6 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 			throw new ForbiddenOperationException("parentInOrigin cannot be null");
 		}
 		
-		if (srcObject.getParentValue(parentRefInfo) == null) {
-			throw new ForbiddenOperationException("The src_parent_id cannot be empty");
-		}
-		
 		rec.setFieldValue("record_origin_location_code", parentRefInfo.getRelatedEtlConf().getOriginAppLocationCode());
 		rec.setFieldValue("src_table_name", srcObject.generateTableName());
 		rec.setFieldValue("dst_table_name", dstObject.generateTableName());
@@ -54,7 +50,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		rec.setFieldValue("dst_rec_id", dstObject.getObjectId().asSimpleValue());
 		rec.setFieldValue("parent_table", parentRefInfo.getTableName());
 		rec.setFieldValue("parent_field", parentRefInfo.getChildColumnOnSimpleMapping());
-		rec.setFieldValue("src_parent_id", srcObject.getParentValue(parentRefInfo));
+		rec.setFieldValue("src_parent_id", parentInOrigin.getObjectId().asSimpleNumericValue());
 		rec.setFieldValue("inconsistent_parent", -1);
 		
 		return rec;

@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class EtlConfigurationTemplate {
@@ -20,7 +21,7 @@ public class EtlConfigurationTemplate {
 	
 	private List<String> parameters;
 	
-	private Object template;
+	private JsonNode template;
 	
 	public String getName() {
 		return name;
@@ -38,23 +39,24 @@ public class EtlConfigurationTemplate {
 		this.parameters = parameters;
 	}
 	
-	public Object getTemplate() {
+	public JsonNode getTemplate() {
 		return template;
 	}
 	
-	public void setTemplate(Object template) {
+	public void setTemplate(JsonNode template) {
 		this.template = template;
 	}
 	
 	public <T extends EtlDataConfiguration> T parseToEtlDataConfiguration(Class<T> clazz, Map<String, String> inputParams) {
-		
-		String json = EtlDataConfiguration.resolvePlaceholders(this.template.toString(), null, inputParams);
+		String json = null;
 		
 		try {
+			json = EtlDataConfiguration.resolvePlaceholders(this.template.toString(), null, inputParams);
+			
 			return new ObjectMapperProvider().getContext(clazz).readValue(json, clazz);
 		}
-		catch (IOException e) {
-			throw new EtlExceptionImpl(e);
+		catch (IOException | IllegalArgumentException e) {
+			throw new EtlExceptionImpl("Error happened loading template " + this.name, e);
 		}
 	}
 	

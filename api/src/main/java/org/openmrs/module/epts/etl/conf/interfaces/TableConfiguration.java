@@ -32,7 +32,6 @@ import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -69,7 +68,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	void setTableAlias(String tableAlias);
 	
-	void setLoadHealper(DatabaseObjectLoaderHelper loadHealper);
+	//void setLoadHealper(DatabaseObjectLoaderHelper loadHealper);
 	
 	String getInsertSQLWithObjectId();
 	
@@ -540,7 +539,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 						keyInfo.setFieldValue("table_name", defaultObject.getRelatedConfiguration().getObjectName());
 						keyInfo.setFieldValue("column_name", key.getName());
 						keyInfo.setFieldValue("key_value", key.getValue());
-											
+						
 						keyInfo.save(defaultGeneratedObjectKeyTabConf, conn);
 					}
 					
@@ -786,7 +785,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 											if (dstConf.hasParentDstConf()) {
 												//Try to retrieve parent from the parent etlItemConf
 												
-												if (dstConf.getParentDstConf().getTableName().equals(this.getSharePkWith())) {
+												if (dstConf.getParentDstConf().getTableName()
+												        .equals(this.getSharePkWith())) {
 													parentTabConf.setIgnorableFields(
 													    dstConf.getParentDstConf().getIgnorableFields());
 												}
@@ -2213,7 +2213,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		if (utilities.stringHasValue(joinExtraCondition)) {
 			conditionFields += " AND (" + joinExtraCondition + ")";
 		}
-	
+		
 		return utilities.stringHasValue(conditionFields) ? conditionFields : "1=1";
 	}
 	

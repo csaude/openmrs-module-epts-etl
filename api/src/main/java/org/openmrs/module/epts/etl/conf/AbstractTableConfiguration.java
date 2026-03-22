@@ -86,7 +86,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private String updateSql;
 	
-	private DatabaseObjectLoaderHelper loadHealper;
+	protected DatabaseObjectLoaderHelper loadHealper;
 	
 	private boolean allRelatedTablesFullLoaded;
 	
@@ -442,10 +442,6 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		return this.loadHealper;
 	}
 	
-	public void setLoadHealper(DatabaseObjectLoaderHelper loadHealper) {
-		this.loadHealper = loadHealper;
-	}
-	
 	public String getInsertSQLWithObjectId() {
 		return insertSQLWithObjectId;
 	}
@@ -686,6 +682,13 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	public void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery) {
 		this.defaultPreparedQuery = defaultPreparedQuery;
+	}
+	
+	@Override
+	public void tryToLoadFromTemplate() {
+		super.tryToLoadFromTemplate();
+		
+		this.loadHealper.setTableConf(this);
 	}
 	
 	public abstract void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc);
