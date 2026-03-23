@@ -203,7 +203,9 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 				}
 			}
 			
-			srcObjects.add(relatedSrcObject);
+			if (relatedSrcObject != null) {
+				srcObjects.add(relatedSrcObject);
+			}
 		}
 	}
 	

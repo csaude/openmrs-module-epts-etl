@@ -129,9 +129,9 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	
-	private final Object lock = new Object();
+	protected final Object lock = new Object();
 	
-	private static final Map<String, ParentOnDemandLoadTransformer> INSTANCES = new ConcurrentHashMap<>();
+	protected static final Map<String, ParentOnDemandLoadTransformer> INSTANCES = new ConcurrentHashMap<>();
 	
 	private String parentTable;
 	
@@ -200,7 +200,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		return fieldMap;
 	}
 	
-	String getTransformerDsc() {
+	public String getTransformerDsc() {
 		String sql = "ParentOnDemandLoadTransformer: (" + parentTable + ", " + parentField;
 		
 		if (utilities.listHasElement(this.parentFieldDefinitions)) {
@@ -210,8 +210,12 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		return sql + ")";
 	}
 	
-	private static String buildCacheKey(String parentTableName, String parentField, List<String> fields) {
+	public static String buildCacheKey(String parentTableName, String parentField, List<String> fields) {
 		return parentTableName + "|" + parentField + "|" + fields;
+	}
+	
+	public DstConf getRelatedDstConf() {
+		return relatedDstConf;
 	}
 	
 	public static ParentOnDemandLoadTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
@@ -347,7 +351,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		return this.etlItemConfForExistingSrcParent.getDstConf().get(0);
 	}
 	
-	DstConf getDstConfForNonExistingSrcParent(Connection srcConn, Connection dstConn) throws DBException {
+	protected DstConf getDstConfForNonExistingSrcParent(Connection srcConn, Connection dstConn) throws DBException {
 		return this.etlItemConfForNonExistingSrcParent.getDstConf().get(0);
 	}
 	
@@ -363,7 +367,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		return this.etlItemConfForExistingSrcParent.getSrcConf();
 	}
 	
-	void tryToInitDstConfForNonExistingSrcParent(Connection srcConn, Connection dstConn) throws DBException {
+	protected void tryToInitDstConfForNonExistingSrcParent(Connection srcConn, Connection dstConn) throws DBException {
 		tryToInitEtlItemConfForNonExistingSrcParent(srcConn, dstConn);
 		
 		DstConf dstConf = getDstConfForNonExistingSrcParent(dstConn, dstConn);
@@ -429,7 +433,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 		}
 	}
 	
-	void tryToInitEtlItemConfForNonExistingSrcParent(Connection srcConn, Connection dstConn) throws DBException {
+	protected void tryToInitEtlItemConfForNonExistingSrcParent(Connection srcConn, Connection dstConn) throws DBException {
 		
 		if (this.etlItemConfForNonExistingSrcParent == null) {
 			synchronized (lock) {

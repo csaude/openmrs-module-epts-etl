@@ -1659,6 +1659,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return null;
 	}
 	
+	default EtlDatabaseObject find(String condition, Object[] params, Connection conn)
+	        throws DBException, ForbiddenOperationException {
+		String sql = generateSelectFromQuery();
+		sql += "WHERE " + condition;
+		
+		return DatabaseObjectDAO.find(getLoadHealper(), this.getSyncRecordClass(), sql, params, conn);
+	}
+	
 	default ParentTable findParentRefInfoByField(String fieldName) {
 		for (ParentTable ref : this.getParentRefInfo()) {
 			try {
@@ -2600,19 +2608,36 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	default EtlConfigurationTableConf generateRelatedSrcStageTableConf(Connection conn) throws DBException {
+		
+		if (!existRelatedExportStageTable(conn)) {
+			createRelatedSrcStageAreaTable(conn);
+		}
+		
 		return this.generateRelatedStageTabConf(this.generateRelatedStageTableName(), this.getSyncStageSchema(), conn);
 	}
 	
 	default EtlConfigurationTableConf generateRelatedDstStageTableConf(Connection conn) throws DBException {
+		if (!existRelatedDstStageTable(conn)) {
+			createRelatedDstSyncStage(conn);
+		}
+		
 		return this.generateRelatedStageTabConf(this.generateRelatedDstStageTableName(), this.getSyncStageSchema(), conn);
 	}
 	
 	default EtlConfigurationTableConf generateRelatedStageDstUniqueKeysTableConf(Connection conn) throws DBException {
+		if (!existRelatedStageDstUniqueKeysTable(conn)) {
+			createRelatedSyncStageAreaDstUniqueKeysTable(conn);
+		}
+		
 		return this.generateRelatedStageTabConf(this.generateRelatedStageDstUniqueKeysTableName(), this.getSyncStageSchema(),
 		    conn);
 	}
 	
 	default EtlConfigurationTableConf generateRelatedStageSrcUniqueKeysTableConf(Connection conn) throws DBException {
+		if (!existRelatedStageSrcUniqueKeysTable(conn)) {
+			createRelatedStageAreaSrcUniqueKeysTable(conn);
+		}
+		
 		return this.generateRelatedStageTabConf(this.generateRelatedStageSrcUniqueKeysTableName(), this.getSyncStageSchema(),
 		    conn);
 	}

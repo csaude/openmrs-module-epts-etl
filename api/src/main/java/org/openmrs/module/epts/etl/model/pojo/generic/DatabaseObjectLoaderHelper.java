@@ -43,4 +43,8 @@ public class DatabaseObjectLoaderHelper implements VOLoaderHelper {
 	public void setTableConf(DatabaseObjectConfiguration tableConf) {
 		this.tableConf = tableConf;
 	}
+	
+	public DatabaseObjectConfiguration getTableConf() {
+		return tableConf;
+	}
 }

@@ -17,8 +17,6 @@ import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
@@ -83,7 +81,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
 		this.controllerId = (getDstType() + "_" + getOperationType().name().toLowerCase() + "_on_"
-		        + processController.getControllerId()).toLowerCase();
+		        + processController.getControllerId()).toLowerCase() + "_using_" + this.getEtlConfiguration().getConfigName();
 		
 		OpenConnection conn = null;
 		try {

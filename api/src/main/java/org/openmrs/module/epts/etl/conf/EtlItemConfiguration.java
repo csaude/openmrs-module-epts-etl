@@ -684,6 +684,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	@Override
 	public void tryToLoadFromTemplate() {
+		boolean disabled = this.isDisabled();
+		
 		super.tryToLoadFromTemplate();
 		
 		this.getSrcConf().tryToLoadFromTemplate();
@@ -697,5 +699,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				conf.setParentConf(this);
 			}
 		}
+		
+		setDisabled(disabled);
 	}
 }

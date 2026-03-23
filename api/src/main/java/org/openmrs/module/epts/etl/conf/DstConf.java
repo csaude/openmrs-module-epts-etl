@@ -462,7 +462,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			}
 		}
 		
-		if (qtyOccurences == 0 && utilities.listHasElement(getAllNotPrefferredDataSource()) ) {
+		if (qtyOccurences == 0 && utilities.listHasElement(getAllNotPrefferredDataSource())) {
 			for (EtlDataSource notPref : this.getAllNotPrefferredDataSource()) {
 				if (notPref.containsField(fm.getSrcField())) {
 					qtyOccurences++;
@@ -1349,5 +1349,25 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	@Override
 	public String getQuery() {
 		return null;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		boolean se = super.equals(obj);
+		
+		if (obj instanceof DstConf && se) {
+			DstConf thisDstConf = (DstConf) this;
+			DstConf otherDstConf = (DstConf) obj;
+			
+			if (thisDstConf.hasSrcObjectCondition()) {
+				return thisDstConf.getSrcObjectCondition().equals(otherDstConf.getSrcObjectCondition());
+			}
+			
+			if (otherDstConf.hasSrcObjectCondition()) {
+				return otherDstConf.getSrcObjectCondition().equals(thisDstConf.getSrcObjectCondition());
+			}
+		}
+		
+		return se;
 	}
 }

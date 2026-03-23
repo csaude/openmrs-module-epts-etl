@@ -637,5 +637,4 @@ public class LoadRecord {
 		
 		return new LoadRecord(srcObject, destObject, (SrcConf) srcObject.getRelatedConfiguration(), mappingInfo, processor);
 	}
-	
 }

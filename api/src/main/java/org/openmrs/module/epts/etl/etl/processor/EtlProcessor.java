@@ -137,6 +137,13 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				
 				for (DstConf mappingInfo : itemConf.getDstConf()) {
 					
+					try {
+						if (srcRecord.getFieldValue("value_text") != null) {
+							System.out.println();
+						}
+					}
+					catch (Exception e) {}
+					
 					if (mappingInfo.checkIfSrcObjectCanBeLoaded(srcRecord)) {
 						
 						EtlDatabaseObject dstObject = mappingInfo.getTransformerInstance().transform(this, srcRecord,

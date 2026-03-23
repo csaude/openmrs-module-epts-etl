@@ -1914,4 +1914,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	public EtlTemplateInfo getTemplate() {
 		return null;
 	}
+	
+	public String getConfigName() {
+		return FileUtilities.generateFileNameFromRealPathWithoutExtension(this.getConfigFilePath());
+	}
 }
