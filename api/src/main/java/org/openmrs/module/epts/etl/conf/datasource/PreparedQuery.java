@@ -14,6 +14,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParameterException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -313,6 +314,9 @@ public class PreparedQuery {
 				if (param.getContextType().compareClause() || param.getContextType().selectField()) {
 					queryParams.add(param.getValue());
 				} else if (param.getContextType().inClause()) {
+					
+					if (param.getValue() == null)
+						throw new EtlExceptionImpl("No value was provided to parameter " + param.getName());
 					
 					String parts[] = param.getValue().toString().split(",");
 					

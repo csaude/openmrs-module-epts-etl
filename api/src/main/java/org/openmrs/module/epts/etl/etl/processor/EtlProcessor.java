@@ -64,6 +64,10 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				try {
 					
 					for (DstConf mappingInfo : getEtlItemConfiguration().getDstConf()) {
+						if (mappingInfo.isDisabled()) {
+							continue;
+						}
+						
 						EtlDatabaseObject dstObject = mappingInfo.getTransformerInstance().transform(this, srcRecord,
 						    mappingInfo, null, TransformationType.PRINCIPAL, srcConn, dstConn);
 						
@@ -136,13 +140,9 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			try {
 				
 				for (DstConf mappingInfo : itemConf.getDstConf()) {
-					
-					try {
-						if (srcRecord.getFieldValue("value_text") != null) {
-							System.out.println();
-						}
+					if (mappingInfo.isDisabled()) {
+						continue;
 					}
-					catch (Exception e) {}
 					
 					if (mappingInfo.checkIfSrcObjectCanBeLoaded(srcRecord)) {
 						

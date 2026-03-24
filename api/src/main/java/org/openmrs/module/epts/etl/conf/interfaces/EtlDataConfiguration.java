@@ -75,7 +75,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 					
 					Object templateValue = field.get(template);
 					
-					if (templateValue != null) {
+					if (templateValue != null && !field.getName().equals("template")) {
 						field.set(this, templateValue);
 					}
 				}

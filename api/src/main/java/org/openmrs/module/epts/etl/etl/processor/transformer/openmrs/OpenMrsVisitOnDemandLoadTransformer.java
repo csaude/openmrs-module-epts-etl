@@ -8,7 +8,6 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
-import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
@@ -17,7 +16,6 @@ import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.merge.model.ParentInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -30,16 +28,6 @@ public class OpenMrsVisitOnDemandLoadTransformer extends ParentOnDemandLoadTrans
 		super("visit", "visit_id", field, params, relatedDstConf);
 		
 		this.visitTypeParam = visitTypeParam;
-	}
-	
-	public static List<String> generateTransformerParameters(int visitTypeId) {
-		List<String> parentFieldDefinitions = new ArrayList<>();
-		
-		parentFieldDefinitions.add("date_started:encounter_datetime");
-		parentFieldDefinitions.add("date_stopped:");
-		parentFieldDefinitions.add("indication_concept_id:");
-		
-		return parentFieldDefinitions;
 	}
 	
 	public String getTransformerDsc() {

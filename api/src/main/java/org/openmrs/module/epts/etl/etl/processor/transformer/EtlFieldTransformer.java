@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.etl.processor.transformer.openmrs.OpenMrsEncounterForObsOnDemandLoadTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.openmrs.OpenMrsVisitOnDemandLoadTransformer;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
@@ -44,6 +45,9 @@ public interface EtlFieldTransformer {
 	
 	static final String OPENMRS_VISIT_ON_DEMAND_TRANSFORMER = OpenMrsVisitOnDemandLoadTransformer.class.getCanonicalName();
 	
+	static final String OPENMRS_ENCOUNTER_ON_DEMAND_TRANSFORMER = OpenMrsEncounterForObsOnDemandLoadTransformer.class
+	        .getCanonicalName();
+	
 	FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject transformedRecord,
 	        List<EtlDatabaseObject> additionalSrcObjects, TransformableField field, Connection srcConn, Connection dstConn)
 	        throws DBException, EtlTransformationException;
@@ -52,7 +56,10 @@ public interface EtlFieldTransformer {
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, FieldsMapping field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
-		FieldTransformingInfo fieldTransformingInfo;
+		EtlTransformationException transformationException = null;
+		
+		FieldTransformingInfo fieldTransformingInfo = null;
+		Object dstValue = null;
 		
 		if (field.isMapToNullValue()) {
 			fieldTransformingInfo = new FieldTransformingInfo(field, null, null);
@@ -62,14 +69,19 @@ public interface EtlFieldTransformer {
 				field.setSrcValue("@" + field.getSrcField());
 			}
 			
-			fieldTransformingInfo = this.transform(processor, srcObject, transformedRecord, additionalSrcObjects, field,
-			    srcConn, dstConn);
+			try {
+				fieldTransformingInfo = this.transform(processor, srcObject, transformedRecord, additionalSrcObjects, field,
+				    srcConn, dstConn);
+			}
+			catch (EtlTransformationException e) {
+				transformationException = e;
+			}
 			
 			if (fieldTransformingInfo == null) {
 				fieldTransformingInfo = new FieldTransformingInfo(field, null, null);
 			}
 			
-			Object dstValue = fieldTransformingInfo != null ? fieldTransformingInfo.getTransformedValue() : null;
+			dstValue = fieldTransformingInfo != null ? fieldTransformingInfo.getTransformedValue() : null;
 			
 			//Override the value if it should be override
 			if (dstValue != null && field.shouldOverrideValue(dstValue)) {
@@ -96,6 +108,10 @@ public interface EtlFieldTransformer {
 		transformedRecord.setFieldValue(field.getDstField(), fieldTransformingInfo.getTransformedValue());
 		
 		transformedRecord.getField(field.getDstField()).setTransformingInfo(fieldTransformingInfo);
+		
+		if (dstValue == null && transformationException != null) {
+			throw transformationException;
+		}
 		
 	}
 	

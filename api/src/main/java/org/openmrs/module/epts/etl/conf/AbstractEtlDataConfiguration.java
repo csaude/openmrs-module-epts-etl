@@ -5,12 +5,12 @@ import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 
 public abstract class AbstractEtlDataConfiguration extends AbstractBaseConfiguration implements EtlDataConfiguration {
 	
-	private EtlConfiguration relatedSyncConfiguration;
+	private EtlConfiguration relatedEtlConf;
 	
 	private EtlTemplateInfo template;
 	
 	public EtlConfiguration getRelatedEtlConf() {
-		return relatedSyncConfiguration;
+		return relatedEtlConf;
 	}
 	
 	@Override
@@ -23,13 +23,13 @@ public abstract class AbstractEtlDataConfiguration extends AbstractBaseConfigura
 		this.template = template;
 	}
 	
-	public void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration) {
-		this.relatedSyncConfiguration = relatedSyncConfiguration;
+	public void setRelatedEtlConfig(EtlConfiguration relatedEtlConf) {
+		this.relatedEtlConf = relatedEtlConf;
 	}
 	
 	@Override
 	public ActionOnEtlException getGeneralBehaviourOnEtlException() {
-		return relatedSyncConfiguration.getGeneralBehaviourOnEtlException();
+		return relatedEtlConf.getGeneralBehaviourOnEtlException();
 	}
 	
 }

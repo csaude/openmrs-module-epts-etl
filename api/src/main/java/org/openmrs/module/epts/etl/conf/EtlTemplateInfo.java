@@ -27,4 +27,9 @@ public class EtlTemplateInfo {
 		this.parameters = parameters;
 	}
 	
+	@Override
+	public String toString() {
+		return this.getName();
+	}
+	
 }

@@ -149,6 +149,8 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 	
 	private List<FieldsMapping> nonExistingParentFieldMappings;
 	
+	private List<String> ignorableFields;
+	
 	public ParentOnDemandLoadTransformer(String parentTable, String parentField, TransformableField field,
 	    List<String> parentFieldDefinitions, DstConf relatedDstConf) {
 		
@@ -182,6 +184,14 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 				this.nonExistingParentFieldMappings.add(fm);
 			}
 		}
+	}
+	
+	public void setIgnorableFields(List<String> ignorableFields) {
+		this.ignorableFields = ignorableFields;
+	}
+	
+	public List<String> getIgnorableFields() {
+		return ignorableFields;
 	}
 	
 	private FieldsMapping fastCreateFieldMap(String parentFieldName, String dstField, DstConf dstConf) {
@@ -377,6 +387,7 @@ public class ParentOnDemandLoadTransformer implements EtlFieldTransformer {
 				if (!dstConf.isFullLoaded()) {
 					
 					dstConf.setDoNotUseSrcConfAsDataSource(true);
+					dstConf.setIgnorableFields(this.getIgnorableFields());
 					
 					dstConf.addAllToAvaliableDataSource(this.relatedDstConf.getAllAvaliableDataSource());
 					dstConf.addAllToPreferredDataSource(this.relatedDstConf.getAllPrefferredDataSource());

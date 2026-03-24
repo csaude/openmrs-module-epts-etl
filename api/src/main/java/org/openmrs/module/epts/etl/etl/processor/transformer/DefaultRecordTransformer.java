@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
@@ -15,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.MissingRequiredTransformationObject;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -39,6 +41,16 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	public EtlDatabaseObject transform(EtlProcessor processor, EtlDatabaseObject srcObject, DstConf dstConf,
 	        EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
+		
+		EtlTemplateInfo t = dstConf.getParentConf().getTemplate();
+		
+		if (t != null && t.getName().equals("obs_joined_with_grouping_obs_to_obs")) {
+			System.out.println("stop");
+		}
+		
+		if (dstConf.isDisabled()) {
+			throw new EtlExceptionImpl("Attempt to tranform to disabled dstConf");
+		}
 		
 		if (srcObject == null) {
 			throw new EtlTransformationException("SrcObject cannot be null", null, ActionOnEtlException.ABORT);

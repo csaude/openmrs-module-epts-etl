@@ -83,7 +83,9 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 				}
 				
 				if (srcField.getTransformingInfo() != null) {
-					return srcField.getTransformingInfo();
+					if (srcField.getTransformingInfo().getTransformedValue().equals(dstValue)) {
+						return srcField.getTransformingInfo();	
+					}
 				}
 				
 				ds = (EtlDataSource) srcObj.getRelatedConfiguration();

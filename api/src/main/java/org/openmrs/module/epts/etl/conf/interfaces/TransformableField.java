@@ -15,6 +15,7 @@ import org.openmrs.module.epts.etl.etl.processor.transformer.MappingFieldTransfo
 import org.openmrs.module.epts.etl.etl.processor.transformer.ParentOnDemandLoadTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.SimpleValueTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.StringTranformer;
+import org.openmrs.module.epts.etl.etl.processor.transformer.openmrs.OpenMrsEncounterForObsOnDemandLoadTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.openmrs.OpenMrsVisitOnDemandLoadTransformer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -202,6 +203,9 @@ public interface TransformableField {
 			} else if (this.getTransformer().startsWith(EtlFieldTransformer.OPENMRS_VISIT_ON_DEMAND_TRANSFORMER)) {
 				this.setTransformerInstance(
 				    OpenMrsVisitOnDemandLoadTransformer.getInstance(this.tryToLoadTransformerParameters(), dstConf, this));
+			} else if (this.getTransformer().startsWith(EtlFieldTransformer.OPENMRS_ENCOUNTER_ON_DEMAND_TRANSFORMER)) {
+				this.setTransformerInstance(OpenMrsEncounterForObsOnDemandLoadTransformer
+				        .getInstance(this.tryToLoadTransformerParameters(), dstConf, this));
 			} else {
 				try {
 					ClassLoader loader = EtlRecordTransformer.class.getClassLoader();
