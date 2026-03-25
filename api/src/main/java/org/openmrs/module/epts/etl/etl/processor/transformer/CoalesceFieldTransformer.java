@@ -57,20 +57,19 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * <li>If still null, use the literal value {@code 'UNKNOWN'}</li>
  * </ol>
  */
-public class CoalesceFieldTransformer implements EtlFieldTransformer {
+public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	private static final Map<String, CoalesceFieldTransformer> INSTANCES = new ConcurrentHashMap<>();
 	
 	private final List<FieldsMapping> coalesceFields;
 	
-	private final DstConf dstConf;
-	
-	public CoalesceFieldTransformer(List<Object> coalesceValues, DstConf dstConf, TransformableField field) {
+	public CoalesceFieldTransformer(List<Object> parameters, DstConf dstConf, TransformableField field) {
+		
+		super(parameters, dstConf, field);
 		
 		this.coalesceFields = new ArrayList<>();
-		this.dstConf = dstConf;
 		
-		for (Object obj : coalesceValues) {
+		for (Object obj : parameters) {
 			
 			String[] fieldParts = obj.toString().split("\\.");
 			
@@ -115,10 +114,6 @@ public class CoalesceFieldTransformer implements EtlFieldTransformer {
 		String params = parameters.stream().map(Object::toString).collect(Collectors.joining("|"));
 		
 		return dstConf.hashCode() + ":" + field.getDstField() + ":" + params;
-	}
-	
-	public DstConf getDstConf() {
-		return dstConf;
 	}
 	
 	public List<FieldsMapping> getCoalesceFields() {

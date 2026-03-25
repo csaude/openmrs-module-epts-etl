@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -47,7 +48,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * {@link EtlTransformationException} is raised.
  * </p>
  */
-public class StringTranformer implements EtlFieldTransformer {
+public class StringTranformer extends AbstractEtlFieldTransformer{
 	
 	private static StringTranformer defaultTransformer;
 	
@@ -55,10 +56,11 @@ public class StringTranformer implements EtlFieldTransformer {
 	
 	private static final Object LOCK = new Object();
 	
-	public StringTranformer() {
+	public StringTranformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+		super(parameters, relatedDstConf, field);
 	}
 	
-	public static StringTranformer getInstance() {
+	public static StringTranformer getInstance(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
 		if (defaultTransformer != null)
 			return defaultTransformer;
 		
@@ -66,7 +68,7 @@ public class StringTranformer implements EtlFieldTransformer {
 			if (defaultTransformer != null)
 				return defaultTransformer;
 			
-			defaultTransformer = new StringTranformer();
+			defaultTransformer = new StringTranformer(parameters, relatedDstConf, field);
 			
 			return defaultTransformer;
 		}

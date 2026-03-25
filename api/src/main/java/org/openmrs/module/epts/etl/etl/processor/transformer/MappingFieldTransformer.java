@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
@@ -57,7 +58,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * F             | Female
  * </pre> the transformer will return {@code "Male"}.
  */
-public class MappingFieldTransformer implements EtlFieldTransformer {
+public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	private String mappingTable;
 	
@@ -75,12 +76,16 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 	
 	private final Object lock = new Object();
 	
-	public MappingFieldTransformer(String mappingTable, String mappingSrcField, String mappingDstField,
-	    String extraConditionForExtract) {
-		this.mappingTable = mappingTable;
-		this.mappingSrcField = mappingSrcField;
-		this.mappingDstField = mappingDstField;
-		this.extraConditionForExtract = extraConditionForExtract;
+	public MappingFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+		
+		super(parameters, relatedDstConf, field);
+		
+		validateParams(parameters);
+		
+		this.mappingTable = parameters.get(0).toString();
+		this.mappingSrcField = parameters.get(1).toString();
+		this.mappingDstField = parameters.get(2).toString();
+		this.extraConditionForExtract = parameters.size() > 3 ? parameters.get(3).toString() : null;
 	}
 	
 	private void buildMappingCache(Connection srcConn) throws DBException {
@@ -105,15 +110,8 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 		return mappingTable;
 	}
 	
-	public static MappingFieldTransformer getInstance(List<Object> parameters) {
-		
-		if (parameters == null || parameters.size() < 3) {
-			throw new EtlExceptionImpl(
-			        "MappingFieldTransformer requires at least 3 parameters: mappingTable, mappingSrcField and mappingDstField.");
-		} else if (parameters.size() > 4) {
-			throw new EtlExceptionImpl(
-			        "MappingFieldTransformer support at most 4 parameters: mappingTable, mappingSrcField, mappingDstField and extraConditionForExtract.");
-		}
+	public static MappingFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
+	        TransformableField field) {
 		
 		String table = parameters.get(0).toString();
 		String srcField = parameters.get(1).toString();
@@ -122,8 +120,18 @@ public class MappingFieldTransformer implements EtlFieldTransformer {
 		
 		String key = buildCacheKey(table, srcField, dstField, extraConditionForExtract);
 		
-		return INSTANCES.computeIfAbsent(key,
-		    k -> new MappingFieldTransformer(table, srcField, dstField, extraConditionForExtract));
+		return INSTANCES.computeIfAbsent(key, k -> new MappingFieldTransformer(parameters, relatedDstConf, field));
+	}
+	
+	public static void validateParams(List<Object> parameters) {
+		if (parameters == null || parameters.size() < 3) {
+			throw new EtlExceptionImpl(
+			        "MappingFieldTransformer requires at least 3 parameters: mappingTable, mappingSrcField and mappingDstField.");
+		} else if (parameters.size() > 4) {
+			throw new EtlExceptionImpl(
+			        "MappingFieldTransformer support at most 4 parameters: mappingTable, mappingSrcField, mappingDstField and extraConditionForExtract.");
+		}
+		
 	}
 	
 	private static String buildCacheKey(String table, String srcField, String dstField, String extraConditionForExtract) {

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
@@ -12,7 +13,6 @@ import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.EmptyTransformedValueException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
@@ -47,7 +47,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * </pre> In this example the transformer executes the SQL query and assigns the resulting UUID
  * value to the destination field.
  */
-public class FastSqlFieldTransformer implements EtlFieldTransformer {
+public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	private final Object lock = new Object();
 	
@@ -57,16 +57,25 @@ public class FastSqlFieldTransformer implements EtlFieldTransformer {
 	
 	private volatile QueryDataSourceConfig dataSourceConfig;
 	
-	public FastSqlFieldTransformer(String sqlQuery) {
-		this.sqlQuery = sqlQuery;
+	public FastSqlFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+		super(parameters, relatedDstConf, field);
+		
+		this.sqlQuery = retrieveSqlQueryFromParameters(parameters);
 	}
 	
 	public String getSqlQuery() {
 		return sqlQuery;
 	}
 	
-	public static FastSqlFieldTransformer getInstance(List<Object> parameters) {
+	public static FastSqlFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
+	        TransformableField field) {
 		
+		String sqlQuery = retrieveSqlQueryFromParameters(parameters);
+		
+		return INSTANCES.computeIfAbsent(sqlQuery, k -> new FastSqlFieldTransformer(parameters, relatedDstConf, field));
+	}
+	
+	private static String retrieveSqlQueryFromParameters(List<Object> parameters) {
 		if (parameters == null || parameters.isEmpty()) {
 			throw new EtlExceptionImpl("A FastSqlFieldTransformer needs a sqlQuery as parameter.\n"
 			        + "ex: org.openmrs.module.epts.etl.etl.processor.transformer.FastSqlFieldTransformer(select uuid())");
@@ -77,8 +86,7 @@ public class FastSqlFieldTransformer implements EtlFieldTransformer {
 		}
 		
 		String sqlQuery = parameters.get(0).toString();
-		
-		return INSTANCES.computeIfAbsent(sqlQuery, FastSqlFieldTransformer::new);
+		return sqlQuery;
 	}
 	
 	@Override

@@ -62,8 +62,10 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	private DatabaseObjectLoaderHelper loadHealper;
 	
 	private PreparedQuery defaultPreparedQuery;
-
+	
 	private EtlTemplateInfo template;
+	
+	private boolean doNotLoadFields;
 	
 	public QueryDataSourceConfig() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
@@ -75,6 +77,14 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		setRelatedSrcConf(relatedSrcVonf);
 		
 		setQuery(query);
+	}
+	
+	public boolean isDoNotLoadFields() {
+		return doNotLoadFields;
+	}
+	
+	public void setDoNotLoadFields(boolean doNotLoadFields) {
+		this.doNotLoadFields = doNotLoadFields;
 	}
 	
 	@Override
@@ -226,15 +236,18 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf(),
 			    DbmsType.determineFromConnection(conn));
 			
-			List<Object> paramsAsList = query.generateQueryParameters();
-			
-			Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
-			
-			try {
-				setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), params, conn));
-			}
-			catch (DBException e) {
-				throw new DBException("Error computing the query " + this.getName(), e);
+			if (!isDoNotLoadFields()) {
+				
+				List<Object> paramsAsList = query.generateQueryParameters();
+				
+				Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
+				
+				try {
+					setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), params, conn));
+				}
+				catch (DBException e) {
+					throw new DBException("Error computing the query " + this.getName(), e);
+				}
 			}
 			
 			this.defaultPreparedQuery = query;

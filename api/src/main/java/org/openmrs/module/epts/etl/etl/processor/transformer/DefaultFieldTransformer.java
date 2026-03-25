@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
@@ -38,14 +39,21 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * is commonly used internally by other transformers.
  * </p>
  */
-public class DefaultFieldTransformer implements EtlFieldTransformer {
+public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 	
-	private static final DefaultFieldTransformer INSTANCE = new DefaultFieldTransformer();
+	private static DefaultFieldTransformer INSTANCE;
 	
-	public DefaultFieldTransformer() {
+	private DefaultFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+		super(parameters, relatedDstConf, field);
 	}
 	
-	public static DefaultFieldTransformer getInstance() {
+	public static DefaultFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
+	        TransformableField field) {
+		
+		if (INSTANCE == null) {
+			INSTANCE = new DefaultFieldTransformer(parameters, relatedDstConf, field);
+		}
+		
 		return INSTANCE;
 	}
 	
@@ -84,7 +92,7 @@ public class DefaultFieldTransformer implements EtlFieldTransformer {
 				
 				if (srcField.getTransformingInfo() != null) {
 					if (srcField.getTransformingInfo().getTransformedValue().equals(dstValue)) {
-						return srcField.getTransformingInfo();	
+						return srcField.getTransformingInfo();
 					}
 				}
 				

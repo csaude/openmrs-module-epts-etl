@@ -7,11 +7,9 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlField;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
-import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
-import org.openmrs.module.epts.etl.etl.processor.transformer.ParentOnDemandLoadTransformer;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -172,6 +170,11 @@ public class FieldsMapping implements TransformableField {
 		fieldMap.tryToLoadTransformer(dstConf);
 		
 		return fieldMap;
+		
+	}
+	
+	public void fullLoad(DstConf dstConf) {
+		this.copyFrom(fastCreate(this.srcField, this.dstField, dstConf));
 		
 	}
 	
@@ -447,6 +450,23 @@ public class FieldsMapping implements TransformableField {
 		return cloned;
 	}
 	
+	public void copyFrom(FieldsMapping toCopyForm) {
+		this.srcValue = toCopyForm.srcValue;
+		this.dstValue = toCopyForm.dstValue;
+		this.srcField = toCopyForm.srcField;
+		this.dataSourceName = toCopyForm.dataSourceName;
+		this.dstField = toCopyForm.dstField;
+		this.mapToNullValue = toCopyForm.mapToNullValue;
+		this.transformer = toCopyForm.transformer;
+		this.transformerInstance = toCopyForm.transformerInstance;
+		this.extension = toCopyForm.extension;
+		this.dataType = toCopyForm.dataType;
+		this.dataTypeLoaded = toCopyForm.dataTypeLoaded;
+		this.possibleSrc = toCopyForm.possibleSrc;
+		this.defaultValue = toCopyForm.defaultValue;
+		this.overrideTriggerValue = toCopyForm.overrideTriggerValue;
+	}
+	
 	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
 		setSrcValue(utilities.tryToReplacePlaceholders(getSrcValue(), schemaInfoSrc));
 		setSrcField(utilities.tryToReplacePlaceholders(getSrcField(), schemaInfoSrc));
@@ -463,8 +483,8 @@ public class FieldsMapping implements TransformableField {
 			}
 		}
 	}
-	
-	public void tryToGenerateTranformerInfo(DstConf dstConf) {
+	/*
+	public void tryToGenerateParentOnDemandTranformerInfo_(DstConf dstConf) {
 		if (dstConf.useSharedPKKey() && getTransformerInstance() == null && getTransformerInstance() == null) {
 			if (this.getDstField().equals(dstConf.getPrimaryKey().asSimpleKey().getName())) {
 				String transformerInfo = ParentOnDemandLoadTransformer.class.getCanonicalName() + "(";
@@ -479,4 +499,5 @@ public class FieldsMapping implements TransformableField {
 			}
 		}
 	}
+	*/
 }

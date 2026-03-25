@@ -9,8 +9,6 @@ import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
-import org.openmrs.module.epts.etl.etl.processor.transformer.openmrs.OpenMrsEncounterForObsOnDemandLoadTransformer;
-import org.openmrs.module.epts.etl.etl.processor.transformer.openmrs.OpenMrsVisitOnDemandLoadTransformer;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -26,27 +24,6 @@ public interface EtlFieldTransformer {
 	public static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	static final Pattern PARAM_PATTERN = Pattern.compile("@(\\w+)");
-	
-	static final String DEFAULT_TRANSFORMER = DefaultFieldTransformer.class.getCanonicalName();
-	
-	static final String ARITHMETIC_TRANSFORMER = ArithmeticFieldTransformer.class.getCanonicalName();
-	
-	static final String STRING_TRANSFORMER = StringTranformer.class.getCanonicalName();
-	
-	static final String SRC_VALUE_TRANSFORMER = SimpleValueTransformer.class.getCanonicalName();
-	
-	static final String MAPPING_TRANSFORMER = MappingFieldTransformer.class.getCanonicalName();
-	
-	static final String FAST_SQL_TRANSFORMER = FastSqlFieldTransformer.class.getCanonicalName();
-	
-	static final String COALESCE_TRANSFORMER = CoalesceFieldTransformer.class.getCanonicalName();
-	
-	static final String PARENT_ON_DEMAND_TRANSFORMER = ParentOnDemandLoadTransformer.class.getCanonicalName();
-	
-	static final String OPENMRS_VISIT_ON_DEMAND_TRANSFORMER = OpenMrsVisitOnDemandLoadTransformer.class.getCanonicalName();
-	
-	static final String OPENMRS_ENCOUNTER_ON_DEMAND_TRANSFORMER = OpenMrsEncounterForObsOnDemandLoadTransformer.class
-	        .getCanonicalName();
 	
 	FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject transformedRecord,
 	        List<EtlDatabaseObject> additionalSrcObjects, TransformableField field, Connection srcConn, Connection dstConn)

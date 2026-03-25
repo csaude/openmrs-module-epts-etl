@@ -9,8 +9,8 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
- * Indicate that dstRecord is in inconsisten state which indicate that the dstRecord is orphaned of one or
- * more parents
+ * Indicate that dstRecord is in inconsistent state which indicate that the dstRecord is orphaned of
+ * one or more parents
  * 
  * @author jpboane
  */
@@ -24,6 +24,10 @@ public class InconsistentStateException extends EtlExceptionImpl {
 	
 	public InconsistentStateException() {
 		super("The dstRecord is in inconsistent state. There are missing some parents");
+	}
+	
+	public InconsistentStateException(String msg) {
+		super(msg);
 	}
 	
 	public InconsistentStateException(EtlDatabaseObject obj, Map<ParentTableImpl, Integer> missingParents) {

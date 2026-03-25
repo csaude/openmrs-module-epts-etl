@@ -388,7 +388,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			if (!this.getAllMapping().contains(fm)) {
 				try {
 					
-					fm.tryToGenerateTranformerInfo(this);
+					//fm.tryToGenerateParentOnDemandTranformerInfo(this);
 					
 					fm.tryToLoadTransformer(this);
 					

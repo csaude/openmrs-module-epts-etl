@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 import java.sql.Connection;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -33,14 +34,25 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * </pre> If {@code patient_uuid = "1234-5678"}, the transformer will assign {@code "1234-5678"}
  * directly to the destination field.
  */
-public class SimpleValueTransformer implements EtlFieldTransformer {
+public class SimpleValueTransformer extends AbstractEtlFieldTransformer {
 	
-	public static final SimpleValueTransformer INSTANCE = new SimpleValueTransformer();
+	public static SimpleValueTransformer INSTANCE;
 	
-	private SimpleValueTransformer() {
+	private static Object LOCK = new Object();
+	
+	private SimpleValueTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+		super(parameters, relatedDstConf, field);
 	}
 	
-	public static SimpleValueTransformer getInstance() {
+	public static SimpleValueTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
+	        TransformableField field) {
+		
+		if (INSTANCE == null) {
+			synchronized (LOCK) {
+				INSTANCE = new SimpleValueTransformer(parameters, relatedDstConf, field);
+			}
+		}
+		
 		return INSTANCE;
 	}
 	

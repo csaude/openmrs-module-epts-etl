@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -45,7 +46,7 @@ import net.objecthunter.exp4j.ExpressionBuilder;
  * 22.857142857142858
  * </pre> which will be assigned to the destination field.
  */
-public class ArithmeticFieldTransformer implements EtlFieldTransformer {
+public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	public static ArithmeticFieldTransformer defaultTransformer;
 	
@@ -53,10 +54,12 @@ public class ArithmeticFieldTransformer implements EtlFieldTransformer {
 	
 	private static final Map<String, Expression> CACHE = new ConcurrentHashMap<>();
 	
-	private ArithmeticFieldTransformer() {
+	public ArithmeticFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+		super(parameters, relatedDstConf, field);
 	}
 	
-	public static ArithmeticFieldTransformer getInstance() {
+	public static ArithmeticFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
+	        TransformableField field) {
 		if (defaultTransformer != null)
 			return defaultTransformer;
 		
@@ -64,7 +67,7 @@ public class ArithmeticFieldTransformer implements EtlFieldTransformer {
 			if (defaultTransformer != null)
 				return defaultTransformer;
 			
-			defaultTransformer = new ArithmeticFieldTransformer();
+			defaultTransformer = new ArithmeticFieldTransformer(parameters, relatedDstConf, field);
 			
 			return defaultTransformer;
 		}

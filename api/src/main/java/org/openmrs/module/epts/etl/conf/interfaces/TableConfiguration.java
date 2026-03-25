@@ -38,7 +38,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
-import org.openmrs.module.epts.etl.utils.Utils;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -1391,7 +1391,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				
 				if (hasExtraConditionForExtract()) {
 					setExtraConditionForExtract(
-					    Utils.qualifyUnqualifiedSqlFields(getExtraConditionForExtract(), getTableName()));
+					    SQLUtilities.qualifyUnqualifiedSqlFields(getExtraConditionForExtract(), getTableName()));
 				}
 				
 				if (this.hasExtraConditionForExtract()) {
