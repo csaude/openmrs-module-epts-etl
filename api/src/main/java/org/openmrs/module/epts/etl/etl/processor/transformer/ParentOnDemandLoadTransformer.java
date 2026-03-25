@@ -277,11 +277,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		try {
 			dstParent = resolveParent(processor, srcObject, transformedRecord, additionalSrcObjects, srcConn, dstConn);
 		}
-		catch (EtlTransformationException e) {
-			if (e.getMessage().contains("does not represent a valid Src Object within")) {
-				srcObject.setFieldValue(this.parentField, null);
-			} else
-				throw e;
+		catch (InconsistentStateException e) {
+			srcObject.setFieldValue(this.parentField, null);
 		}
 		
 		if (dstParent == null) {
