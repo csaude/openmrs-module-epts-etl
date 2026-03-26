@@ -8,6 +8,7 @@ import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -362,9 +363,18 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 	}
 	
-	public void throwDefaultExcetions() throws RuntimeException {
+	public void throwDefaultExcetions() throws Exception {
 		if (hasFatalException()) {
-			throw new RuntimeException(getFatalException());
+			
+			if (getFatalException() instanceof EtlException) {
+				EtlException e = (EtlException) getFatalException();
+				
+				if (e.getEtlObject() != null) {
+					throw new EtlExceptionImpl("Error happened within object:" + e.getEtlObject(), (Exception) e);
+				}
+			}
+			
+			throw getFatalException();
 		}
 		
 		for (EtlOperationItemResult<T> o : getRecordsWithUnexpectedErrors()) {

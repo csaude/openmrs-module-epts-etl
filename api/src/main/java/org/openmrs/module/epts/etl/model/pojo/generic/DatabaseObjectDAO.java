@@ -14,6 +14,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SimpleValue;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
+import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -608,16 +609,29 @@ public class DatabaseObjectDAO extends BaseDAO {
 							if (tabConf.getRelatedEtlConf().getGeneralBehaviourOnEtlException().log()
 							        && generateOperationResult) {
 								result.addToRecordsWithUnresolvedErrors(record.getSrcRelatedObject(), e1);
-							} else
+							} else {
+								tryToLoadObjToException(e, objects.get(0));
+								
 								throw e;
+							}
 						}
 					}
-				} else
+				} else {
+					if (objects.size() == 1) {
+						tryToLoadObjToException(e, objects.get(0));
+					}
 					throw e;
+				}
 			}
 		}
 		
 		return result;
+	}
+	
+	static void tryToLoadObjToException(DBException e, EtlDatabaseObject obj) {
+		obj = obj.getSrcRelatedObject() != null ? obj.getSrcRelatedObject() : obj;
+		
+		e.setEtlObject(obj);
 	}
 	
 	public static Integer getAvaliableObjectId(TableConfiguration tabConf, Integer maxAcceptableId, Connection conn)

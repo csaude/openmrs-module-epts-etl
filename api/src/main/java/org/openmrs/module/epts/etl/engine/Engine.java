@@ -415,7 +415,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	/**
 	 * @throws DBException
 	 */
-	public void performeTaskInSingleProcessor() throws DBException {
+	public void performeTaskInSingleProcessor() throws DBException, Exception {
 		ThreadRecordIntervalsManager<T> iManager = getThreadRecordIntervalsManager();
 		
 		while (iManager.canGoNext() || !iManager.getCurrentLimits().isFullProcessed()) {
@@ -454,7 +454,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		}
 	}
 	
-	public void tryToProcessSkippedrecords() throws DBException, RuntimeException {
+	public void tryToProcessSkippedrecords() throws DBException, Exception {
 		ThreadRecordIntervalsManager<T> iManager = this.getThreadRecordIntervalsManager();
 		
 		logDebug("TRY TO PROCESS SKIPPED RECORDS ON INTERVAL " + iManager.getCurrentLimits());
@@ -503,7 +503,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	/**
 	 * @throws DBException
 	 */
-	public void perfomeFinalization() throws DBException {
+	public void perfomeFinalization() throws DBException, Exception {
 		this.finalCheckStatus = MigrationFinalCheckStatus.ONGOING;
 		
 		logDebug("INITIALIZING FINAL CHECK...");
@@ -528,7 +528,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 	 * @throws ExecutionException
 	 * @throws InterruptedException
 	 */
-	public void performeTaskInMultiProcessors() throws DBException, InterruptedException, ExecutionException {
+	public void performeTaskInMultiProcessors() throws DBException, InterruptedException, ExecutionException, Exception {
 		
 		EtlProgressMeter globalProgressMeter = this.getProgressMeter();
 		
