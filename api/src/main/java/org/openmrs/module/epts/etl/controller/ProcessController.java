@@ -184,34 +184,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			}
 			
 			if (!dstDbExists) {
-				
-				String databaseName = getDstConnInfo().determineSchema();
-				
-				if (!DBUtilities.isSameDatabaseServer(getDefaultConnInfo().getConnectionURI(),
-				    getDstConnInfo().getConnectionURI())) {
-					throw new ForbiddenOperationException("The database '" + databaseName
-					        + "' does not exists and the application cannot connect to the related database to automcatically create it!");
-				}
-				
-				if (getDstConnInfo().getDatabaseSchemaPath() != null) {
-					DBUtilities.createDatabaseSchema(databaseName, conn);
-					
-					OpenConnection dstConn = null;
-					
-					try {
-						dstConn = getDstConnInfo().openConnection();
-						
-						DBUtilities.executeSqlScript(dstConn, getDstConnInfo().getDatabaseSchemaPath());
-						
-						dstConn.markAsSuccessifullyTerminated();
-					}
-					finally {
-						if (dstConn != null) {
-							dstConn.finalizeConnection();
-						}
-					}
-				}
-				
+				configuration.getDstConnInfo().restoreDump(getConfiguration());
 			}
 		}
 		

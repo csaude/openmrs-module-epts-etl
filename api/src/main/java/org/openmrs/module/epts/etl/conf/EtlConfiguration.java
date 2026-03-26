@@ -1918,4 +1918,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	public String getConfigName() {
 		return FileUtilities.generateFileNameFromRealPathWithoutExtension(this.getConfigFilePath());
 	}
+	
+	public String generateDatabaseSchemaFullPath(DBConnectionInfo dbConnConf) {
+		if (!dbConnConf.hasDatabaseSchemaPath())
+			throw new EtlExceptionImpl("No databaseSchemaPath was defined for thos dbConnConf");
+		
+		return getSqlScriptsDirectory() + FileUtilities.getPathSeparator() + dbConnConf.getDatabaseSchemaPath();
+	}
 }

@@ -118,42 +118,12 @@ public class DBConnectionService {
 		return service;
 	}
 	
-	/*public static DBConnectionService getInstance() {
-		if (service == null)
-			throw new ForbiddenOperationException(
-					"The service is not initialized. Initialize it using DBConnectionService.init (...) method ");
-	
-		return service;
-	}*/
-	
 	@JsonIgnore
 	public OpenConnection openConnection() throws DBException {
 		OpenConnection conn = new OpenConnection(openConnection(50, null), this);
 		
-		/*
-		try {
-			conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-		}
-		catch (SQLException e) {
-			throw new DBException(e);
-		}*/
-		
 		return conn;
 	}
-	
-	/*
-	public synchronized static void incriseOpenConnections() {
-		openConnections++;
-		
-		logger.info("TOTAL Open Connections [" + openConnections + "] Closed [" + closedConnections + "] active [" + (openConnections - closedConnections) + "]");
-	}
-	
-	public synchronized static void increseClosedConnections() {
-		closedConnections++;
-		
-		logger.info("TOTAL Open Connections [" + openConnections + "] Closed [" + closedConnections + "] active [" + (openConnections - closedConnections) + "]");
-	}
-	*/
 	
 	private Connection openConnection(int qtyTry, SQLException e) throws DBException {
 		if (qtyTry <= 0)

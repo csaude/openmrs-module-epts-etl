@@ -1,10 +1,13 @@
 package org.openmrs.module.epts.etl.utilities.db.conn;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
@@ -30,6 +33,10 @@ public class DBConnectionInfo {
 	private int minIdleConnections;
 	
 	private String databaseSchemaPath;
+	
+	private String dbHost;
+	
+	private Integer dbHostPort;
 	
 	private DBConnectionService dbService;
 	
@@ -71,6 +78,22 @@ public class DBConnectionInfo {
 		if (dbService == null) {
 			dbService = DBConnectionService.init(this);
 		}
+	}
+	
+	public String getDbHost() {
+		return dbHost;
+	}
+	
+	public void setDbHost(String dbHost) {
+		this.dbHost = dbHost;
+	}
+	
+	public Integer getDbHostPort() {
+		return dbHostPort;
+	}
+	
+	public void setDbHostPort(Integer dbHostPort) {
+		this.dbHostPort = dbHostPort;
 	}
 	
 	public String getDatabaseSchemaPath() {
@@ -226,6 +249,142 @@ public class DBConnectionInfo {
 	
 	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {
 		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
+	}
+	
+	public boolean hasDatabaseSchemaPath() {
+		return utilities.stringHasValue(this.getDatabaseSchemaPath());
+	}
+	
+	public void restoreDump(EtlConfiguration etlConf) throws EtlExceptionImpl, DBException {
+		
+		String databaseName = this.determineSchema();
+		String databaseSchemaFullPath = etlConf.generateDatabaseSchemaFullPath(this);
+		
+		etlConf.logWarn("Database '" + databaseName + "' Does not exist but schema exists.");
+		
+		etlConf.logDebug("Database '" + databaseName + "' created!");
+		
+		OpenConnection dstConn = null;
+		
+		try {
+			performeDBCreation(etlConf);
+			performeRestoreDump(etlConf);
+		}
+		catch (Exception e) {
+			etlConf.logErr("An error occurred restoring dump: " + databaseSchemaFullPath);
+			
+			try {
+				dropDB(etlConf);
+			}
+			catch (Exception e1) {}
+			
+			throw new EtlExceptionImpl(e);
+		}
+		finally {
+			if (dstConn != null) {
+				dstConn.finalizeConnection();
+			}
+		}
+	}
+	
+	private void performeRestoreDump(EtlConfiguration etlConf) throws IOException, InterruptedException {
+		tryToExtractHostInfoFromMysqlUri(this.getConnectionURI());
+		
+		String databaseSchemaFullPath = etlConf.generateDatabaseSchemaFullPath(this);
+		
+		etlConf.logWarn("Start restore of database using dump: " + databaseSchemaFullPath);
+		
+		ProcessBuilder pb = new ProcessBuilder("mysql", "-u", this.getDataBaseUserName(),
+		        "-p" + this.getDataBaseUserPassword(), "-h", getDbHost(), "-P", String.valueOf(getDbHostPort()), 
+		        this.determineSchema());
+		
+		pb.redirectInput(new File(databaseSchemaFullPath));
+		
+		Process process = pb.start();
+		
+		StringBuilder errorOutput = captureErrorOutput(process);
+		
+		int exitCode = process.waitFor();
+		
+		if (exitCode != 0) {
+			throw new RuntimeException("MySQL restore failed (exitCode=" + exitCode + ")\n" + "ERROR:\n" + errorOutput);
+		}
+	}
+	
+	private void performeDBCreation(EtlConfiguration etlConf) throws IOException, InterruptedException {
+		executeCommandOnDbServer(etlConf, "CREATE DATABASE IF NOT EXISTS `" + this.determineSchema() + "`");
+	}
+	
+	private void dropDB(EtlConfiguration etlConf) throws IOException, InterruptedException {
+		executeCommandOnDbServer(etlConf, "DROP DATABASE IF EXISTS `" + this.determineSchema() + "`");
+	}
+	
+	private void executeCommandOnDbServer(EtlConfiguration etlConf, String command)
+	        throws IOException, InterruptedException {
+		tryToExtractHostInfoFromMysqlUri(this.getConnectionURI());
+		
+		String databaseSchemaFullPath = etlConf.generateDatabaseSchemaFullPath(this);
+		
+		etlConf.logWarn("Start restore of database using dump: " + databaseSchemaFullPath);
+		
+		ProcessBuilder pb = new ProcessBuilder("mysql", "-u", this.getDataBaseUserName(),
+		        "-p" + this.getDataBaseUserPassword(), "-h", getDbHost(), "-P", String.valueOf(getDbHostPort()), "-e",
+		        command);
+		
+		pb.redirectInput(new File(databaseSchemaFullPath));
+		
+		Process process = pb.start();
+		
+		StringBuilder errorOutput = captureErrorOutput(process);
+		
+		int exitCode = process.waitFor();
+		
+		if (exitCode != 0) {
+			throw new RuntimeException("MySQL restore failed (exitCode=" + exitCode + ")\n" + "ERROR:\n" + errorOutput);
+		}
+	}
+	
+	public void tryToExtractHostInfoFromMysqlUri(String jdbcUrl) {
+		
+		if (jdbcUrl == null || !jdbcUrl.startsWith("jdbc:mysql://")) {
+			throw new IllegalArgumentException("Invalid MySQL JDBC URL: " + jdbcUrl);
+		}
+		
+		String withoutPrefix = jdbcUrl.substring("jdbc:mysql://".length());
+		
+		int slashIndex = withoutPrefix.indexOf("/");
+		String hostPortPart = (slashIndex != -1) ? withoutPrefix.substring(0, slashIndex) : withoutPrefix;
+		
+		if (hostPortPart.contains(",")) {
+			hostPortPart = hostPortPart.split(",")[0];
+		}
+		
+		String host;
+		int port = 3306;
+		
+		if (hostPortPart.contains(":")) {
+			String[] parts = hostPortPart.split(":");
+			host = parts[0];
+			port = Integer.parseInt(parts[1]);
+		} else {
+			host = hostPortPart;
+		}
+		
+		this.setDbHost("localhost".equalsIgnoreCase(host) ? "127.0.0.1" : host);
+		this.setDbHostPort(port);
+	}
+	
+	StringBuilder captureErrorOutput(Process process) throws IOException {
+		BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+		
+		StringBuilder errorOutput = new StringBuilder();
+		String line;
+		
+		while ((line = errorReader.readLine()) != null) {
+			errorOutput.append(line).append("\n");
+		}
+		
+		return errorOutput;
 	}
 	
 }

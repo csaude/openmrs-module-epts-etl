@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.utilities.db.conn;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
@@ -27,7 +28,6 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.TypePrecision;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
-import org.openmrs.module.epts.etl.model.pojo.generic.AuxEtlDataBaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
@@ -1111,6 +1111,26 @@ public class DBUtilities {
 		}
 	}
 	
+	public void restoreDump(String pathToScript, DBConnectionInfo connInfo, Connection conn)
+	        throws IOException, InterruptedException, DBException {
+		
+		if (isMySQLDB(conn)) {
+			ProcessBuilder pb = new ProcessBuilder("mysql", "-u", connInfo.getDataBaseUserName(),
+			        "-p" + connInfo.getDataBaseUserPassword(), connInfo.getDatabaseSchemaPath());
+			
+			pb.redirectInput(new File(pathToScript));
+			
+			Process process = pb.start();
+			int exitCode = process.waitFor();
+			
+			if (exitCode != 0) {
+				throw new RuntimeException("MySQL restore failed");
+			}
+		} else {
+			throw new ForbiddenOperationException("Unsupported database for restoure!!!");
+		}
+	}
+	
 	public static List<Field> getTableFields(String tableName, String schema, Connection conn) throws DBException {
 		List<Field> fields = new ArrayList<Field>();
 		
@@ -1294,12 +1314,16 @@ public class DBUtilities {
 		return "CONSTRAINT " + keyName + " CHECK (" + checkCondition + ")";
 	}
 	
-	public static void createDatabaseSchema(String databaseName, OpenConnection conn) throws DBException {
+	public static void createDatabaseSchema(String databaseName, Connection conn) throws DBException {
 		
 		if (isMySQLDB(conn)) {
 			executeBatch(conn, "create database " + databaseName);
 		} else
 			throw new ForbiddenOperationException("DBMS not supported for schema creation");
+	}
+	
+	public static void dropDatabaseSchema(String databaseName, OpenConnection conn) throws DBException {
+		executeBatch(conn, "drop database " + databaseName);
 	}
 	
 	public static void renameTable(String schema, String oldTableName, String newTableName, Connection conn)
@@ -1552,17 +1576,6 @@ public class DBUtilities {
 		return splitQueries;
 	}
 	
-	public static void main(String[] args) {
-		String sql = "select @@param";
-		
-		AuxEtlDataBaseObject g = new AuxEtlDataBaseObject();
-		
-		g.setParam("paramValue");
-		
-		System.out.println(tryToReplaceParamsInQuery(sql, g));
-		
-	}
-	
 	public static void handlePostgresExceptionIssue(Connection conn) throws DBException {
 		if (DBUtilities.isPostgresDB(conn)) {
 			/*
@@ -1619,8 +1632,7 @@ public class DBUtilities {
 					matcher.appendReplacement(result, "@" + paramName);
 				}
 			}
-			catch (ForbiddenOperationException e) {
-			}
+			catch (ForbiddenOperationException e) {}
 			
 		}
 		matcher.appendTail(result);

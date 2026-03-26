@@ -126,26 +126,37 @@ public enum FieldTransformerType {
 	public static FieldTransformerType resolveType(TransformableField field) {
 		
 		String def = field.getTransformer();
+		FieldTransformerType transformer;
 		
 		if (def == null || def.isBlank()) {
-			return field.getValueToTransform() != null ? SIMPLE_VALUE_TRANSFORMER : DEFAULT_TRANSFORMER;
+			transformer = field.getValueToTransform() != null ? SIMPLE_VALUE_TRANSFORMER : DEFAULT_TRANSFORMER;
+		} else {
+			
+			String selector = extractClassName(def);
+			
+			if (selector.contains(".")) {
+				try {
+					transformer = fromClassName(def);
+				}
+				catch (Exception e) {
+					transformer = CUSTOM_TRANSFORMER;
+				}
+			} else
+				try {
+					transformer = FieldTransformerType.valueOf(selector.toUpperCase().replace("-", "_"));
+				}
+				catch (Exception ignored) {
+					transformer = null;
+				}
 		}
 		
-		String selector = extractClassName(def);
-		
-		if (selector.contains(".")) {
-			try {
-				return fromClassName(def);
+		if (transformer != null) {
+			if (!field.hasTransformer()) {
+				field.setTransformer(transformer.className);
 			}
-			catch (Exception e) {
-				return CUSTOM_TRANSFORMER;
-			}
+			
+			return transformer;
 		}
-		
-		try {
-			return FieldTransformerType.valueOf(selector.toUpperCase().replace("-", "_"));
-		}
-		catch (Exception ignored) {}
 		
 		throw new IllegalArgumentException("Unknown transformer: " + def);
 	}
