@@ -176,11 +176,9 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		        ? parameters.subList(3, parameters.size()).stream().map(Object::toString).toList()
 		        : null;
 		
-		this.parentSourceFieldMapping = FieldsMapping.fastCreate(parentField, field.getDstField(), relatedDstConf);
-		
-		if (this.parentTable.equals("encounter") ) {
-			System.err.println();
-		}
+		this.parentSourceFieldMapping = utilities.stringHasValue(this.parentField)
+		        ? new FieldsMapping(parentField, dstConf.getSrcConf().getTableAlias(), field.getDstField())
+		        : null;
 		
 		if (utilities.listHasElement(this.parentFieldDefinitions)) {
 			this.nonExistingParentFieldMappings = new ArrayList<>();
@@ -311,23 +309,22 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		
 		EtlDatabaseObject srcParent = null;
 		
-		FieldTransformingInfo fieldInfo = null;
-		
-		try {
-			fieldInfo = parentSourceFieldMapping.getTransformerInstance().transform(processor, srcObject, transformedRecord,
-			    additionalSrcObjects, parentSourceFieldMapping, srcConn, dstConn);
-		}
-		catch (EtlExceptionImpl e) {
-			e.printStackTrace();
-		}
-		
-		if (fieldInfo != null && fieldInfo.getTransformedValue() != null) {
-			srcParent = DatabaseObjectDAO.getByOid(getSrcConfForExistingSrcParent(srcConn, dstConn),
-			    Oid.fastCreate(getSrcConfForExistingSrcParent(srcConn, dstConn), fieldInfo.getTransformedValue()), srcConn);
+		if (this.parentSourceFieldMapping != null) {
 			
-			if (srcParent == null) {
-				throw new InconsistentStateException("The related srcValue (" + fieldInfo.getTransformedValue()
-				        + ") does not represent a valid Src Object within " + getTransformerDsc());
+			FieldTransformingInfo fieldInfo = null;
+			
+			fieldInfo = this.parentSourceFieldMapping.getTransformerInstance().transform(processor, srcObject,
+			    transformedRecord, additionalSrcObjects, parentSourceFieldMapping, srcConn, dstConn);
+			
+			if (fieldInfo != null && fieldInfo.getTransformedValue() != null) {
+				srcParent = DatabaseObjectDAO.getByOid(getSrcConfForExistingSrcParent(srcConn, dstConn),
+				    Oid.fastCreate(getSrcConfForExistingSrcParent(srcConn, dstConn), fieldInfo.getTransformedValue()),
+				    srcConn);
+				
+				if (srcParent == null) {
+					throw new InconsistentStateException("The related srcValue (" + fieldInfo.getTransformedValue()
+					        + ") does not represent a valid Src Object within " + getTransformerDsc());
+				}
 			}
 		}
 		
@@ -404,7 +401,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		tryToInitOnDemandCheckConditionElements(srcConn, dstConn);
 		
 		SrcConf srcConf = getSrcConfForNonExistingSrcParent(srcConn, dstConn);
-		DstConf dstConf = getDstConfForExistingSrcParent(srcConn, dstConn);
+		DstConf dstConf = getDstConfForNonExistingSrcParent(srcConn, dstConn);
 		
 		String condition = this.questionMarkedOnDemandCheckCondition;
 		

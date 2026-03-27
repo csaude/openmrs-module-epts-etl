@@ -138,7 +138,7 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		
 		if (hasObjectFields()) {
 			for (DataSourceField f : this.getObjectFields()) {
-				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(f.getValue().toString(), f.getDstField());
+				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(f.getValue().toString(), f.getDstField(), true);
 				
 				if (auxFieldMapping.hasDataSourceName()) {
 					f.setValue(null);

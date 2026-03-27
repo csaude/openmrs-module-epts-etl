@@ -905,4 +905,11 @@ public class SQLUtilities {
 		return result;
 	}
 	
+	public static boolean checkIfFieldDefinitionIncludeQualifier(String fieldName) {
+		String[] fieldParts = fieldName.toString().split("\\.");
+		
+		return fieldParts.length > 1;
+		
+	}
+	
 }

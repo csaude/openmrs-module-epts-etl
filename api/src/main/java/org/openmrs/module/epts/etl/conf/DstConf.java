@@ -379,17 +379,14 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			EtlField etlField = this.getSrcConf().getEtlField(field.getName(), this.getAllPrefferredDataSource(), true);
 			
 			if (etlField != null) {
-				fm = FieldsMapping.fastCreate(etlField.getSrcField().getName(), field.getName());
+				fm = FieldsMapping.fastCreate(etlField.getSrcField().getName(), field.getName(), true);
 				fm.setDataSourceName(etlField.getSrcDataSource().getName());
 			} else {
-				fm = FieldsMapping.fastCreate(field.getName(), field.getName());
+				fm = FieldsMapping.fastCreate(field.getName(), field.getName(), true);
 			}
 			
 			if (!this.getAllMapping().contains(fm)) {
 				try {
-					
-					//fm.tryToGenerateParentOnDemandTranformerInfo(this);
-					
 					fm.tryToLoadTransformer(this);
 					
 					tryToLoadDataSourceToFieldMapping(fm);

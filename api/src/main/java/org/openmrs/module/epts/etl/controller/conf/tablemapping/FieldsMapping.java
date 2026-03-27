@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 /**
  * This class is used to map fields between any source table and destination table
@@ -55,12 +56,16 @@ public class FieldsMapping implements TransformableField {
 	
 	private Object overrideTriggerValue;
 	
+	private String originalSrcFieldDefinition;
+	
 	public FieldsMapping() {
 		this.possibleSrc = new ArrayList<>(5);
 	}
 	
-	public FieldsMapping(String srcFieldFullName, String dstField) {
+	public FieldsMapping(String srcFieldFullName, String dstField, boolean tryToLoadTransformer) {
 		this();
+		
+		this.setOriginalSrcFieldDefinition(srcFieldFullName);
 		
 		String[] fieldParts = utilities.stringHasValue(srcFieldFullName) ? srcFieldFullName.toString().split("\\.") : null;
 		
@@ -77,11 +82,24 @@ public class FieldsMapping implements TransformableField {
 		
 		this.dstField = dstField != null ? dstField : this.srcField;
 		
-		tryToLoadTransformer(null);
+		if (dstField == null) {
+			throw new EtlExceptionImpl("A FieldsMapping must have at least a srcFieldName or dstField");
+		}
+		
+		if (tryToLoadTransformer)
+			tryToLoadTransformer(null);
 	}
 	
-	public FieldsMapping(String srcField, String dataSourceName, String dstConf) {
-		this(srcField, dstConf);
+	public String getOriginalSrcFieldDefinition() {
+		return originalSrcFieldDefinition;
+	}
+	
+	public void setOriginalSrcFieldDefinition(String originalSrcFieldDefinition) {
+		this.originalSrcFieldDefinition = originalSrcFieldDefinition;
+	}
+	
+	public FieldsMapping(String srcField, String dataSourceName, String dstField) {
+		this(srcField, dstField, false);
 		
 		if (dataSourceName != null) {
 			if (hasDataSourceName() && dataSourceName != null && this.dataSourceName.equals(dataSourceName)) {
@@ -91,6 +109,8 @@ public class FieldsMapping implements TransformableField {
 			}
 			
 			this.possibleSrc.add(dataSourceName);
+			this.dataSourceName = dataSourceName;
+			
 		} else {
 			this.dataSourceName = dataSourceName;
 		}
@@ -98,6 +118,8 @@ public class FieldsMapping implements TransformableField {
 		if (srcField == null) {
 			setMapToNullValue(true);
 		}
+		
+		tryToLoadTransformer(null);
 	}
 	
 	@Override
@@ -143,62 +165,48 @@ public class FieldsMapping implements TransformableField {
 		this.dataType = dataType;
 	}
 	
-	public static FieldsMapping fastCreate(String srcField, String destField) {
-		return new FieldsMapping(srcField, destField);
+	public static FieldsMapping fastCreate(String srcField, String destField, boolean tryToLoadTYransformer) {
+		return new FieldsMapping(srcField, destField, tryToLoadTYransformer);
 	}
 	
 	public static FieldsMapping fastCreate(String fieldName) {
-		return fastCreate(fieldName, fieldName);
+		boolean loadTransformer = SQLUtilities.checkIfFieldDefinitionIncludeQualifier(fieldName);
+		
+		return fastCreate(fieldName, fieldName, loadTransformer);
 	}
 	
 	public static FieldsMapping fastCreate(String fullFieldName, String dstField, DstConf dstConf) {
-		String[] fieldParts = utilities.stringHasValue(fullFieldName) ? fullFieldName.toString().split("\\.") : null;
+		FieldsMapping fieldMap = FieldsMapping.fastCreate(fullFieldName, dstField, false);
 		
-		String dataSourceName = null;
-		String srcFieldName = null;
+		fieldMap.tryToLoadDataSourceAndTransformer(fieldMap.getDataSourceName(), dstConf);
 		
-		if (fieldParts != null) {
-			if (fieldParts.length > 1) {
-				dataSourceName = fieldParts[0];
-				srcFieldName = fieldParts[1];
-			} else {
-				srcFieldName = fieldParts[0];
-			}
-		}
+		return fieldMap;
 		
-		dstField = dstField != null ? dstField : srcFieldName;
-		
-		if (dstField == null) {
-			throw new EtlExceptionImpl("A FieldsMapping must have at least a srcFieldName or dstField");
-		}
-		
-		FieldsMapping fieldMap = FieldsMapping.fastCreate(srcFieldName, dstField);
-		
+	}
+	
+	private void tryToLoadDataSourceAndTransformer(String dataSourceName, DstConf dstConf) {
 		if (dataSourceName != null) {
 			EtlDataSource ds = dstConf.findDataSource(dataSourceName);
 			
 			if (ds != null) {
-				fieldMap.setDataSourceName(ds.getAlias());
+				this.setDataSourceName(ds.getAlias());
 			} else {
-				throw new EtlExceptionImpl(
-				        "Invalid datasource '" + dataSourceName + "' on field definition '" + fullFieldName + "'");
+				throw new EtlExceptionImpl("Invalid datasource '" + dataSourceName + "' on field definition '"
+				        + this.getOriginalSrcFieldDefinition() + "'");
 			}
 			
 		} else {
 			try {
-				dstConf.tryToLoadDataSourceToFieldMapping(fieldMap);
+				dstConf.tryToLoadDataSourceToFieldMapping(this);
 			}
 			catch (FieldNotAvaliableInAnyDataSource e) {
-				fieldMap.setSrcField(null);
-				fieldMap.setSrcValue(srcFieldName);
+				this.setSrcValue(this.getSrcField());
+				this.setSrcField(null);
 			}
 			
 		}
 		
-		fieldMap.tryToLoadTransformer(dstConf);
-		
-		return fieldMap;
-		
+		this.tryToLoadTransformer(dstConf);
 	}
 	
 	public void fullLoad(DstConf dstConf) {
