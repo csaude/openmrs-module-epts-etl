@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.JavaObjectFieldsValuesGenerat
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ObjectLanguageType;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -137,7 +138,19 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		
 		if (hasObjectFields()) {
 			for (DataSourceField f : this.getObjectFields()) {
-				f.setDataSource(this);
+				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(f.getValue().toString(), f.getDstField());
+				
+				if (auxFieldMapping.hasDataSourceName()) {
+					f.setValue(null);
+					
+					f.setSrcField(auxFieldMapping.getSrcField());
+					
+					f.setDataSource(this.getRelatedSrcConf()
+					        .findDataSourceOnAllAvaliabeDatasources(auxFieldMapping.getDataSourceName()));
+					
+					f.setAuxFieldMapping(auxFieldMapping);
+				}
+				
 				f.tryToLoadTransformer(null);
 				f.loadType(null, this);
 			}

@@ -2,8 +2,8 @@ package org.openmrs.module.epts.etl.utilities.db.conn;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -23,6 +23,7 @@ import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.datasource.SqlFunctionInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -1084,51 +1085,82 @@ public class DBUtilities {
 		}
 	}
 	
-	public static void executeSqlScript(Connection conn, String scriptFilePath) throws DBException {
-		// Read the SQL script file
-		try (BufferedReader reader = new BufferedReader(new FileReader(scriptFilePath))) {
-			StringBuilder sql = new StringBuilder();
-			String line;
-			while ((line = reader.readLine()) != null) {
-				sql.append(line).append("\n");
-			}
-			
-			// Execute the SQL script
-			try (Statement stmt = conn.createStatement()) {
-				String[] sqlCommands = sql.toString().split(";");
-				for (String command : sqlCommands) {
-					if (!command.trim().isEmpty()) {
-						stmt.execute(command);
-					}
-				}
-			}
-		}
-		catch (SQLException e) {
-			throw new DBException(e);
-		}
-		catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+	public static void createDb(DBConnectionInfo connInfo, String dbName) throws EtlExceptionImpl {
+		executeCommandOnDbServer(connInfo, "CREATE DATABASE IF NOT EXISTS `" + dbName + "`");
 	}
 	
-	public void restoreDump(String pathToScript, DBConnectionInfo connInfo, Connection conn)
-	        throws IOException, InterruptedException, DBException {
+	public static void dropDB(DBConnectionInfo connInfo, String dbName) throws EtlExceptionImpl {
+		executeCommandOnDbServer(connInfo, "DROP DATABASE IF EXISTS `" + dbName + "`");
+	}
+	
+	public static void executeCommandOnDbServer(DBConnectionInfo connInfo, String command) throws EtlExceptionImpl {
 		
-		if (isMySQLDB(conn)) {
+		connInfo.tryToExtractHostInfoFromMysqlUri();
+		
+		try {
 			ProcessBuilder pb = new ProcessBuilder("mysql", "-u", connInfo.getDataBaseUserName(),
-			        "-p" + connInfo.getDataBaseUserPassword(), connInfo.getDatabaseSchemaPath());
-			
-			pb.redirectInput(new File(pathToScript));
+			        "-p" + connInfo.getDataBaseUserPassword(), "-h", connInfo.getDbHost(), "-P",
+			        String.valueOf(connInfo.getDbHostPort()), "-e", command);
 			
 			Process process = pb.start();
+			
+			StringBuilder errorOutput = captureErrorOutput(process);
+			
 			int exitCode = process.waitFor();
 			
 			if (exitCode != 0) {
-				throw new RuntimeException("MySQL restore failed");
+				throw new RuntimeException("MySQL restore failed (exitCode=" + exitCode + ")\n" + "ERROR:\n" + errorOutput);
 			}
-		} else {
-			throw new ForbiddenOperationException("Unsupported database for restoure!!!");
 		}
+		catch (IOException | InterruptedException e) {
+			throw new EtlExceptionImpl(e);
+		}
+	}
+	
+	public static void runScriptOnDbServer(DBConnectionInfo connInfo, String databaseSchemaFullPath)
+	        throws EtlExceptionImpl {
+		
+		if (!connInfo.isMySQLConnection())
+			throw new EtlExceptionImpl("Currently only mysql db supports script execution");
+		try {
+			connInfo.tryToExtractHostInfoFromMysqlUri();
+			
+			connInfo.getRelatedEtlConf().logWarn("Start restore of database using dump: " + databaseSchemaFullPath);
+			
+			ProcessBuilder pb = new ProcessBuilder("mysql", "-u", connInfo.getDataBaseUserName(),
+			        "-p" + connInfo.getDataBaseUserPassword(), "-h", connInfo.getDbHost(), "-P",
+			        String.valueOf(connInfo.getDbHostPort()), connInfo.determineSchema());
+			
+			pb.redirectInput(new File(databaseSchemaFullPath));
+			
+			Process process = pb.start();
+			
+			StringBuilder errorOutput = captureErrorOutput(process);
+			
+			int exitCode = process.waitFor();
+			
+			if (exitCode != 0) {
+				throw new RuntimeException(
+				        "Script execution failed (exitCode=" + exitCode + ")\n" + "ERROR:\n" + errorOutput);
+			}
+		}
+		catch (InterruptedException | IOException e) {
+			throw new EtlExceptionImpl(e);
+		}
+		
+	}
+	
+	static StringBuilder captureErrorOutput(Process process) throws IOException {
+		BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+		
+		StringBuilder errorOutput = new StringBuilder();
+		String line;
+		
+		while ((line = errorReader.readLine()) != null) {
+			errorOutput.append(line).append("\n");
+		}
+		
+		return errorOutput;
 	}
 	
 	public static List<Field> getTableFields(String tableName, String schema, Connection conn) throws DBException {
@@ -1312,18 +1344,6 @@ public class DBUtilities {
 	public static String generateTableCheckConstraintDefinition(String keyName, String checkCondition, Connection conn)
 	        throws DBException {
 		return "CONSTRAINT " + keyName + " CHECK (" + checkCondition + ")";
-	}
-	
-	public static void createDatabaseSchema(String databaseName, Connection conn) throws DBException {
-		
-		if (isMySQLDB(conn)) {
-			executeBatch(conn, "create database " + databaseName);
-		} else
-			throw new ForbiddenOperationException("DBMS not supported for schema creation");
-	}
-	
-	public static void dropDatabaseSchema(String databaseName, OpenConnection conn) throws DBException {
-		executeBatch(conn, "drop database " + databaseName);
 	}
 	
 	public static void renameTable(String schema, String oldTableName, String newTableName, Connection conn)

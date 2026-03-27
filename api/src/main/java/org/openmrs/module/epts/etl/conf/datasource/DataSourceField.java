@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.Extension;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.model.Field;
 
@@ -22,18 +24,22 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	private Object defaultValue;
 	
-	private ObjectDataSource dataSource;
+	private EtlDataSource dataSource;
 	
 	private Object overrideTriggerValue;
+	
+	private String srcField;
+	
+	private FieldsMapping auxFieldMapping;
 	
 	public DataSourceField() {
 	}
 	
-	public void setDataSource(ObjectDataSource dataSource) {
+	public void setDataSource(EtlDataSource dataSource) {
 		this.dataSource = dataSource;
 	}
 	
-	public ObjectDataSource getDataSource() {
+	public EtlDataSource getDataSource() {
 		return dataSource;
 	}
 	
@@ -94,6 +100,18 @@ public class DataSourceField extends Field implements TransformableField {
 		this.dataTypeLoaded = dataTypeLoaded;
 	}
 	
+	public FieldsMapping getAuxFieldMapping() {
+		return auxFieldMapping;
+	}
+	
+	public void setAuxFieldMapping(FieldsMapping auxFieldMapping) {
+		this.auxFieldMapping = auxFieldMapping;
+	}
+	
+	public boolean hasAuxFieldMapping() {
+		return this.auxFieldMapping != null;
+	}
+	
 	@Override
 	public void copyFrom(Field f) {
 		super.copyFrom(f);
@@ -104,6 +122,8 @@ public class DataSourceField extends Field implements TransformableField {
 			this.setTransformerInstance(fDs.getTransformerInstance());
 			this.setExtension(fDs.getExtension());
 			this.setDataTypeLoaded(fDs.isDataTypeLoaded());
+			this.setSrcField(fDs.getSrcField());
+			this.setAuxFieldMapping(fDs.getAuxFieldMapping());
 		}
 	}
 	
@@ -124,7 +144,11 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	@Override
 	public String getSrcField() {
-		return this.getName();
+		return this.srcField;
+	}
+	
+	public void setSrcField(String srcField) {
+		this.srcField = srcField;
 	}
 	
 	public static List<DataSourceField> cloneAll(List<DataSourceField> toCloneFrom, ObjectDataSource toCloneTo) {

@@ -59,13 +59,41 @@ public class FieldsMapping implements TransformableField {
 		this.possibleSrc = new ArrayList<>(5);
 	}
 	
-	public FieldsMapping(String srcField, String dataSourceName, String destField) {
+	public FieldsMapping(String srcFieldFullName, String dstField) {
 		this();
 		
-		this.srcField = srcField;
-		this.dataSourceName = dataSourceName;
-		this.dstField = destField;
-		this.possibleSrc.add(dataSourceName);
+		String[] fieldParts = utilities.stringHasValue(srcFieldFullName) ? srcFieldFullName.toString().split("\\.") : null;
+		
+		if (fieldParts != null) {
+			if (fieldParts.length > 1) {
+				this.dataSourceName = fieldParts[0];
+				this.srcField = fieldParts[1];
+			} else {
+				this.srcField = fieldParts[0];
+			}
+		} else {
+			setMapToNullValue(true);
+		}
+		
+		this.dstField = dstField != null ? dstField : this.srcField;
+		
+		tryToLoadTransformer(null);
+	}
+	
+	public FieldsMapping(String srcField, String dataSourceName, String dstConf) {
+		this(srcField, dstConf);
+		
+		if (dataSourceName != null) {
+			if (hasDataSourceName() && dataSourceName != null && this.dataSourceName.equals(dataSourceName)) {
+				throw new EtlExceptionImpl(
+				        "Mismatch datasource definition for " + srcField + ". On Field datasource definition '"
+				                + this.dataSourceName + "' difer to parameter datasource '" + dataSourceName + "'");
+			}
+			
+			this.possibleSrc.add(dataSourceName);
+		} else {
+			this.dataSourceName = dataSourceName;
+		}
 		
 		if (srcField == null) {
 			setMapToNullValue(true);
@@ -116,7 +144,7 @@ public class FieldsMapping implements TransformableField {
 	}
 	
 	public static FieldsMapping fastCreate(String srcField, String destField) {
-		return new FieldsMapping(srcField, null, destField);
+		return new FieldsMapping(srcField, destField);
 	}
 	
 	public static FieldsMapping fastCreate(String fieldName) {

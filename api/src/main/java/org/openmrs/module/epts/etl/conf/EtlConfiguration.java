@@ -174,8 +174,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 */
 	private Integer primaryKeyInitialIncrementValue;
 	
-	private List<String> startupScripts;
-	
 	private boolean reRunable;
 	
 	private ActionOnEtlException generalBehaviourOnEtlException;
@@ -221,14 +219,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public void setEtlTemplatesFilePath(String etlTemplatesFilePath) {
 		this.etlTemplatesFilePath = etlTemplatesFilePath;
-	}
-	
-	public List<String> getStartupScripts() {
-		return startupScripts;
-	}
-	
-	public void setStartupScripts(List<String> startupScripts) {
-		this.startupScripts = startupScripts;
 	}
 	
 	public Integer getPrimaryKeyInitialIncrementValue() {
@@ -726,7 +716,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 * @throws ForbiddenOperationException
 	 * @throws DBException
 	 */
-	public void init(Connection conn) throws ForbiddenOperationException, DBException {
+	public void init(OpenConnection conn) throws ForbiddenOperationException, DBException {
 		if (initialized) {
 			return;
 		}
@@ -743,13 +733,16 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			        this.getRecordWithDefaultParentInfoTableName(), this);
 			
 			if (this.hasMainConnInfo()) {
+				this.getMainConnInfo().setRelatedEtlConf(this);
 				this.getMainConnInfo().tryToLoadPlaceHolders(this);
 			}
 			if (this.hasSrcConnInfo()) {
+				this.getSrcConnInfo().setRelatedEtlConf(this);
 				this.getSrcConnInfo().tryToLoadPlaceHolders(this);
 			}
 			
 			if (this.hasDstConnInfo()) {
+				this.getDstConnInfo().setRelatedEtlConf(this);
 				this.getDstConnInfo().tryToLoadPlaceHolders(this);
 			}
 			
@@ -786,7 +779,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			
 			List<EtlItemConfiguration> allItem = new ArrayList<>();
 			
-			tryToExecuteStartupScripts(conn);
+			tryToExecuteStartupScripts(conn.getDbConnInfo());
 			
 			int pos = 0;
 			
@@ -843,12 +836,12 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 	}
 	
-	private void tryToExecuteStartupScripts(Connection conn) throws DBException {
+	private void tryToExecuteStartupScripts(DBConnectionInfo connInfo) throws DBException {
 		File scriptsDir = this.getSqlStartupScriptsDirectory();
 		
 		if (scriptsDir.listFiles() != null) {
 			for (File script : scriptsDir.listFiles()) {
-				DBUtilities.executeSqlScript(conn, script.getAbsolutePath());
+				DBUtilities.runScriptOnDbServer(connInfo, script.getAbsolutePath());
 			}
 		}
 	}

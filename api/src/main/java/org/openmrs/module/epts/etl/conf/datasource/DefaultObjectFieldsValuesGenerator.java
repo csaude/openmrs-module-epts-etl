@@ -26,6 +26,12 @@ public class DefaultObjectFieldsValuesGenerator implements JavaObjectFieldsValue
 		Map<String, FieldTransformingInfo> map = new HashMap<>();
 		
 		for (DataSourceField field : dataSource.getObjectFields()) {
+			
+			if (field.hasAuxFieldMapping()) {
+				field.setValue(field.getAuxFieldMapping().getTransformerInstance().transform(processor, srcObject, null,
+				    avaliableSrcObjects, field.getAuxFieldMapping(), srcConn, dstConn).getTransformedValue());
+			}
+			
 			FieldTransformingInfo fieldInfo = field.getTransformerInstance().transform(processor, srcObject, null,
 			    avaliableSrcObjects, field, srcConn, dstConn);
 			

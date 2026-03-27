@@ -178,6 +178,10 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		
 		this.parentSourceFieldMapping = FieldsMapping.fastCreate(parentField, field.getDstField(), relatedDstConf);
 		
+		if (this.parentTable.equals("encounter") ) {
+			System.err.println();
+		}
+		
 		if (utilities.listHasElement(this.parentFieldDefinitions)) {
 			this.nonExistingParentFieldMappings = new ArrayList<>();
 			
@@ -307,8 +311,15 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		
 		EtlDatabaseObject srcParent = null;
 		
-		FieldTransformingInfo fieldInfo = parentSourceFieldMapping.getTransformerInstance().transform(processor, srcObject,
-		    transformedRecord, additionalSrcObjects, parentSourceFieldMapping, srcConn, dstConn);
+		FieldTransformingInfo fieldInfo = null;
+		
+		try {
+			fieldInfo = parentSourceFieldMapping.getTransformerInstance().transform(processor, srcObject, transformedRecord,
+			    additionalSrcObjects, parentSourceFieldMapping, srcConn, dstConn);
+		}
+		catch (EtlExceptionImpl e) {
+			e.printStackTrace();
+		}
 		
 		if (fieldInfo != null && fieldInfo.getTransformedValue() != null) {
 			srcParent = DatabaseObjectDAO.getByOid(getSrcConfForExistingSrcParent(srcConn, dstConn),

@@ -90,7 +90,7 @@ public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 					dstValue = srcObj.getFieldValue(fieldNameCamel);
 				}
 				
-				if (srcField.getTransformingInfo() != null && dstValue != null) {
+				if (srcField.getTransformingInfo() != null && srcField.getTransformingInfo().getTransformedValue() != null) {
 					if (srcField.getTransformingInfo().getTransformedValue().equals(dstValue)) {
 						return srcField.getTransformingInfo();
 					}

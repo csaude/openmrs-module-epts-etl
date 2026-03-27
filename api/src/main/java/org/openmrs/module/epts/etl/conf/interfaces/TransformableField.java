@@ -33,8 +33,6 @@ public interface TransformableField {
 	
 	void setTransformer(String transformer);
 	
-	boolean hasSrcField();
-	
 	void setDataTypeLoaded(boolean dataTypeLoaded);
 	
 	String getDstField();
@@ -62,6 +60,10 @@ public interface TransformableField {
 	 *            be used instead
 	 */
 	void setOverrideTriggerValue(Object obj);
+	
+	default boolean hasSrcField() {
+		return utilities.stringHasValue(this.getSrcField());
+	}
 	
 	/**
 	 * Determines whether the provided value should be overridden by the configured

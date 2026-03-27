@@ -786,7 +786,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {
-				DBUtilities.createDatabaseSchema(getConfiguration().getSyncStageSchema(), conn);
+				DBUtilities.createDb(getDefaultConnInfo(), getConfiguration().getSyncStageSchema());
 			} else {
 				BaseDAO.executeBatch(conn, "CREATE SCHEMA " + getConfiguration().getSyncStageSchema());
 			}

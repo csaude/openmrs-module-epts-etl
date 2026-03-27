@@ -19,6 +19,7 @@ import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -729,4 +730,39 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		
 		return this.generateSelectFromQuery() + " WHERE " + condition;
 	}
+	
+	public EtlDataSource findDataSourceOnAllAvaliabeDatasources(String dsName) {
+		if (dsName.equals(this.getName()) || dsName.equals(this.getTableAlias())) {
+			return this;
+		}
+		
+		if (this.hasAuxExtractTable()) {
+			for (JoinableEntity auxExtractTable : this.getJoiningTable()) {
+				if (auxExtractTable.doNotUseAsDatasource()) {
+					continue;
+				}
+				
+				if (dsName.equals(auxExtractTable.getName()) || dsName.equals(auxExtractTable.getTableAlias())) {
+					return auxExtractTable;
+				}
+				
+				if (auxExtractTable.isMainJoiningEntity() && auxExtractTable.parseToJoining().hasAuxExtractTable()) {
+					for (JoinableEntity innerAuxExtractTable : auxExtractTable.parseToJoining().getJoiningTable()) {
+						if (innerAuxExtractTable.doNotUseAsDatasource()) {
+							continue;
+						}
+						
+						if (dsName.equals(innerAuxExtractTable.getName())
+						        || dsName.equals(innerAuxExtractTable.getTableAlias())) {
+							return innerAuxExtractTable;
+						}
+						
+					}
+				}
+			}
+		}
+		
+		throw new EtlExceptionImpl("Datasource not found within the srcConf " + this);
+	}
+	
 }

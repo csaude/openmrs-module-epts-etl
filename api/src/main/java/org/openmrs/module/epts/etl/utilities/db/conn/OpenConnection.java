@@ -55,6 +55,10 @@ public class OpenConnection implements Connection, Closeable {
 		this.connService = service;
 	}
 	
+	public DBConnectionInfo getDbConnInfo() {
+		return connService.getDbConnInfo();
+	}
+	
 	public Date getOpenDate() {
 		return openDate;
 	}
