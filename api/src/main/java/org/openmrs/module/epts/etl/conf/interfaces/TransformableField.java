@@ -41,6 +41,10 @@ public interface TransformableField {
 	
 	Object getDefaultValue();
 	
+	default boolean hasTypeClass() {
+		return this.getTypeClass() != null;
+	}
+	
 	/**
 	 * Returns the value that triggers the override mechanism. If the source field value equals this
 	 * value, the field value will be replaced by the configured {@code defaultValue}. Example:
@@ -145,9 +149,14 @@ public interface TransformableField {
 				throw new ForbiddenOperationException("There is no transformer for dstField " + this.getDstField());
 			}
 		}
+		this.determineTypeClass();
 		
 		this.setDataTypeLoaded(true);
 	}
+	
+	void determineTypeClass();
+	
+	Class<?> getTypeClass();
 	
 	default boolean hasTransformerInstance() {
 		return this.getTransformerInstance() != null;

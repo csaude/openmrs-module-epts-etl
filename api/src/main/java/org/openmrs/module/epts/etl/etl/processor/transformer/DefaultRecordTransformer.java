@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
-import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
@@ -41,12 +40,6 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	public EtlDatabaseObject transform(EtlProcessor processor, EtlDatabaseObject srcObject, DstConf dstConf,
 	        EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
-		
-		EtlTemplateInfo t = dstConf.getParentConf().getTemplate();
-		
-		if (t != null && t.getName().equals("obs_joined_with_grouping_obs_to_obs")) {
-			System.out.println("stop");
-		}
 		
 		if (dstConf.isDisabled()) {
 			throw new EtlExceptionImpl("Attempt to tranform to disabled dstConf");

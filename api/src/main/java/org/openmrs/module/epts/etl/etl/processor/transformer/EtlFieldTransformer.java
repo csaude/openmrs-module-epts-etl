@@ -73,12 +73,6 @@ public interface EtlFieldTransformer {
 				}
 			}
 			
-			if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(field.getDstField()))) {
-				dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
-			} else if (dstValue != null && utilities.isBooleanType(transformedRecord.getFieldType(field.getDstField()))) {
-				dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
-			}
-			
 			fieldTransformingInfo.setTransformedValue(dstValue);
 		}
 		
