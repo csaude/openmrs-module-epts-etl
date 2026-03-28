@@ -51,7 +51,7 @@ public class EtlConfigurationTemplate {
 		String json = null;
 		
 		try {
-			json = EtlDataConfiguration.resolvePlaceholders(this.template.toString(), null, inputParams);
+			json = EtlDataConfiguration.resolvePlaceholders(this.template.toString(), null, null, inputParams);
 			
 			return new ObjectMapperProvider().getContext(clazz).readValue(json, clazz);
 		}

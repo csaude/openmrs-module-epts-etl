@@ -1,7 +1,9 @@
 package org.openmrs.module.epts.etl.conf;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -13,6 +15,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Matcher;
 
@@ -651,14 +654,53 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		String json = FileUtilities.realAllFileAsString(file);
 		
-		EtlConfiguration conf = EtlConfiguration
-		        .loadFromJSON(EtlDataConfiguration.resolvePlaceholders(json, System.getProperties(), System.getenv()), file);
+		Properties fileProps = loadProperties(loadEnvPath(file));
+		
+		EtlConfiguration conf = EtlConfiguration.loadFromJSON(
+		    EtlDataConfiguration.resolvePlaceholders(json, fileProps, System.getProperties(), System.getenv()), file);
 		
 		conf.setConfigFilePath(file.getAbsolutePath());
 		
 		conf.setRelatedConfFile(file);
 		
 		return conf;
+	}
+	
+	public static String loadEnvPath(File file) {
+		
+		if (file == null) {
+			throw new IllegalArgumentException("Config file cannot be null");
+		}
+		
+		File parentDir = file.getParentFile();
+		
+		if (parentDir == null) {
+			throw new IllegalStateException("Cannot determine parent directory for file: " + file.getAbsolutePath());
+		}
+		
+		File envFile = new File(parentDir, "env.properties");
+		
+		if (!envFile.exists()) {
+			return null;
+		}
+		
+		return envFile.getAbsolutePath();
+	}
+	
+	public static Properties loadProperties(String path) {
+		if (path == null)
+			return null;
+		
+		Properties props = new Properties();
+		
+		try (InputStream is = new FileInputStream(path)) {
+			props.load(is);
+		}
+		catch (IOException e) {
+			throw new RuntimeException("Error loading properties file: " + path, e);
+		}
+		
+		return props;
 	}
 	
 	void initLogger() {

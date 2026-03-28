@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,7 +89,8 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		}
 	}
 	
-	static String resolvePlaceholders(String text, java.util.Properties sysProps, Map<String, String> env) {
+	public static String resolvePlaceholders(String text, Properties fileProps, Properties sysProps,
+	        Map<String, String> env) {
 		
 		Matcher m = PLACEHOLDER.matcher(text);
 		StringBuffer sb = new StringBuffer();
@@ -96,9 +98,20 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		while (m.find()) {
 			String key = m.group(1);
 			
-			String value = sysProps != null ? sysProps.getProperty(key) : null;
-			if (value == null)
-				value = env.get(key);
+			String value = null;
+			
+			// 1. ENV
+			value = env.get(key);
+			
+			// 2. System props
+			if (value == null && sysProps != null) {
+				value = sysProps.getProperty(key);
+			}
+			
+			// 3. File props
+			if (value == null && fileProps != null) {
+				value = fileProps.getProperty(key);
+			}
 			
 			if (value == null) {
 				throw new IllegalArgumentException("Missing placeholder value for: " + key);
@@ -106,6 +119,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 			
 			m.appendReplacement(sb, Matcher.quoteReplacement(value));
 		}
+		
 		m.appendTail(sb);
 		
 		return sb.toString();
