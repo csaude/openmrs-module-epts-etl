@@ -83,7 +83,7 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 				srcFieldName = fieldParts[0];
 			}
 			
-			FieldsMapping fm = FieldsMapping.fastCreate(srcFieldName, field.getDstField());
+			FieldsMapping fm = FieldsMapping.fastCreate(srcFieldName, field.getDstField(), true);
 			fm.tryToLoadTransformer(dstConf);
 			
 			if (dataSourceName != null) {
