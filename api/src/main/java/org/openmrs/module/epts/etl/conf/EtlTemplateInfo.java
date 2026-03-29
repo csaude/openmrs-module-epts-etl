@@ -11,6 +11,10 @@ public class EtlTemplateInfo {
 	public EtlTemplateInfo() {
 	}
 	
+	public EtlTemplateInfo(String name) {
+		this.name = name;
+	}
+	
 	public String getName() {
 		return name;
 	}

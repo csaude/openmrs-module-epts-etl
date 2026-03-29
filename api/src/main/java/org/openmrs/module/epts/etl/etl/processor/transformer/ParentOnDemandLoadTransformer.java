@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SqlConditionElement;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
@@ -31,105 +32,134 @@ import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
-
 /**
- * Transformer responsible for ensuring that a parent record exists in the destination table and
- * returning its primary key as the transformed value.
+ * Transformer responsible for resolving, reusing, or creating a parent record on demand in the
+ * destination table and returning its primary key as the transformed value.
+ *
  * <p>
- * This transformer is typically used to enforce the creation of related parent records in the
- * destination database during the transformation of a child record. If the corresponding parent
- * record does not yet exist in the destination, the transformer will trigger its migration or
- * creation before returning the parent primary key.
+ * This transformer is used when the current record being transformed depends on a parent record
+ * that may or may not already exist in the destination database. The transformer first tries to
+ * resolve an existing parent from the source data, then tries to locate an already created
+ * on-demand parent in the destination using a configurable condition, and finally creates the
+ * parent record on demand when necessary.
  * </p>
+ *
  * <p>
  * Transformer syntax:
  * </p>
+ *
  * <pre>
  * ParentOnDemandLoadTransformer(
  *      parentTable,
- *      parentFieldOnDataSourceObject,
+ *      parent_field_in_datasource_object:srcField,
+ *      on_demand_check_condition:sqlCondition,
+ *      template:templateName,
  *      dstField1:srcFieldOrValue1,
  *      dstField2:srcFieldOrValue2,
  *      ...
  * )
  * </pre>
+ *
  * <p>
  * Parameters:
  * </p>
+ *
  * <ul>
- * <li><b>parentTable</b> – Name of the parent table in the destination database whose record must
- * exist before the child record is saved.</li>
- * <li><b>parentFieldOnDataSourceObject</b> – Field used to resolve the parent identifier from the
- * available source data objects.</li>
- * <li><b>dstField:srcFieldOrValue</b> – Optional additional field mappings used when creating the
- * parent record in the destination database. Each parameter defines how a field in the parent
- * record should be populated.
- * <p>
- * Supported forms:
- * </p>
- * <ul>
- * <li><b>dstField:srcField</b> – copy the value from a field available in the source data.</li>
- * <li><b>dstField:constantValue</b> – assign a constant value.</li>
- * <li><b>dstField:@parameter</b> – assign a dynamic ETL parameter value.</li>
- * <li><b>dstField:null</b> – explicitly set the destination field to <code>null</code>.</li>
- * <li><b>dstField:</b> – omit the value to implicitly assign <code>null</code>.</li>
+ *   <li>
+ *     <b>parentTable</b> – Name of the parent table in the destination database whose record
+ *     must exist before the child record is saved.
+ *   </li>
+ *
+ *   <li>
+ *     <b>parent_field_in_datasource_object:srcField</b> – Defines the field from the available
+ *     source data objects that should be used to resolve the parent record from the source
+ *     database. This parameter replaces the old positional
+ *     <code>parentFieldOnDataSourceObject</code> argument.
+ *   </li>
+ *
+ *   <li>
+ *     <b>on_demand_check_condition:sqlCondition</b> – Optional condition used to search for an
+ *     already existing parent record previously created on demand in the destination database.
+ *     If a record matching this condition is found, it will be reused as the parent instead of
+ *     creating a new one.
+ *   </li>
+ *
+ *   <li>
+ *     <b>template:templateName</b> – Optional template name used to initialize the
+ *     {@link org.openmrs.module.epts.etl.conf.EtlItemConfiguration} that will be used for
+ *     on-demand parent loading or creation.
+ *   </li>
+ *
+ *   <li>
+ *     <b>dstField:srcFieldOrValue</b> – Optional additional field mappings used when creating the
+ *     parent record in the destination database. Each parameter defines how a field in the parent
+ *     record should be populated.
+ *
+ *     <p>Supported forms:</p>
+ *
+ *     <ul>
+ *       <li><b>dstField:srcField</b> – copy the value from a field available in the source data.</li>
+ *       <li><b>dstField:constantValue</b> – assign a constant value.</li>
+ *       <li><b>dstField:@parameter</b> – assign a dynamic ETL parameter value.</li>
+ *       <li><b>dstField:null</b> – explicitly set the destination field to <code>null</code>.</li>
+ *       <li><b>dstField:</b> – omit the value to implicitly assign <code>null</code>.</li>
+ *     </ul>
+ *   </li>
  * </ul>
- * <p>
- * Examples:
- * </p>
- * <pre>
- *     visit_type_id:42
- *     date_started:encounter_datetime
- *     location_id:@migration_location_id
- *     date_stopped:null
- *     indication_concept_id:
- *     </pre>
- * <p>
- * Dynamic parameters start with <code>@</code> and are resolved using the ETL configuration
- * parameters during transformation.
- * </p>
- * </li>
- * </ul>
+ *
  * <p>
  * Behavior:
  * </p>
+ *
  * <ol>
- * <li>Resolve the parent identifier from the source data.</li>
- * <li>Locate the corresponding parent record in the destination database.</li>
- * <li>If the parent does not exist in the destination, create or migrate it using the provided
- * field mappings.</li>
- * <li>Return the parent record primary key as the transformed value.</li>
+ *   <li>Try to resolve the parent from the source database using
+ *       <code>parent_field_in_datasource_object</code>.</li>
+ *   <li>If the source parent exists, try to locate its corresponding record in the destination.</li>
+ *   <li>If no destination parent is found, and <code>on_demand_check_condition</code> is defined,
+ *       search for an already existing parent previously created on demand.</li>
+ *   <li>If no existing parent is found, create or migrate the parent on demand.</li>
+ *   <li>Return the parent primary key as the transformed value.</li>
  * </ol>
+ *
  * <p>
  * Example:
  * </p>
+ *
  * <pre>
  * ParentOnDemandLoadTransformer(
  *     visit,
- *     visit_id,
- *     date_started:encounter_datetime,
+ *     parent_field_in_datasource_object:visit_id,
+ *     on_demand_check_condition:patient_id=patient_id and date_started=encounter_datetime,
+ *     template:visit_on_demand_template,
  *     visit_type_id:42,
+ *     date_started:encounter_datetime,
  *     location_id:@migration_location_id,
- *     date_stopped:null,
+ *     date_stopped:null,m
  *     indication_concept_id:
  * )
  * </pre>
+ *
  * <p>
  * In this example:
  * </p>
  * <ul>
- * <li>The parent record is created in the <b>visit</b> table.</li>
- * <li>The parent identifier is resolved using the field <b>visit_id</b>.</li>
- * <li>The field <b>date_started</b> is populated from <b>encounter_datetime</b>.</li>
- * <li>The field <b>visit_type_id</b> receives the constant value <b>42</b>.</li>
- * <li>The field <b>location_id</b> receives the dynamic ETL parameter
- * <b>@migration_location_id</b>.</li>
- * <li>The field <b>date_stopped</b> is explicitly set to <code>null</code>.</li>
- * <li>The field <b>indication_concept_id</b> is implicitly set to <code>null</code>.</li>
+ *   <li>The parent record belongs to the <b>visit</b> table.</li>
+ *   <li>The source parent is resolved using the field <b>visit_id</b>.</li>
+ *   <li>If no mapped destination parent is found, the transformer checks whether a visit already
+ *       exists for the same <b>patient_id</b> and <b>encounter_datetime</b>.</li>
+ *   <li>The ETL item configuration used for on-demand loading is initialized from the template
+ *       <b>visit_on_demand_template</b>.</li>
+ *   <li>The field <b>visit_type_id</b> receives the constant value <b>42</b>.</li>
+ *   <li>The field <b>date_started</b> is populated from <b>encounter_datetime</b>.</li>
+ *   <li>The field <b>location_id</b> is populated from the ETL parameter
+ *       <b>@migration_location_id</b>.</li>
+ *   <li>The field <b>date_stopped</b> is explicitly set to <code>null</code>.</li>
+ *   <li>The field <b>indication_concept_id</b> is implicitly set to <code>null</code>.</li>
  * </ul>
+ *
  * <p>
- * This transformer is designed for high-performance migrations where parent objects must be loaded
- * on-demand during the transformation of child records.
+ * This transformer is intended for high-performance ETL scenarios where parent records must be
+ * resolved or created dynamically during child record transformation.
  * </p>
  */
 public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
@@ -140,7 +170,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	
 	private String parentTable;
 	
-	private String parentField;
+	private String parentFieldOnDataSourceObject;
 	
 	private EtlItemConfiguration etlItemConfForNonExistingSrcParent;
 	
@@ -160,24 +190,20 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	
 	private List<String> ignorableFields;
 	
+	private String template;
+	
 	public ParentOnDemandLoadTransformer(List<Object> parameters, DstConf dstConf, TransformableField field) {
 		super(parameters, dstConf, field);
 		
-		if (parameters == null || parameters.size() < 3) {
-			throw new ForbiddenOperationException("A ParentOnDemandLoadTransformer needs at least 3 parameters.\n"
-			        + "ParentOnDemandLoadTransformer(parentTableName, parentFieldName, onDemandCheckCondition)");
+		if (parameters == null || parameters.size() < 1) {
+			throw new ForbiddenOperationException("A ParentOnDemandLoadTransformer needs at least 1 parameters.\n"
+			        + "ParentOnDemandLoadTransformer(parentTableName)");
 		}
 		
 		this.parentTable = parameters.get(0).toString();
-		this.parentField = parameters.get(1).toString();
-		this.onDemandCheckCondition = parameters.get(2).toString();
 		
-		this.parentFieldDefinitions = parameters.size() > 3
-		        ? parameters.subList(3, parameters.size()).stream().map(Object::toString).toList()
-		        : null;
-		
-		this.parentSourceFieldMapping = utilities.stringHasValue(this.parentField)
-		        ? new FieldsMapping(parentField, dstConf.getSrcConf().getTableAlias(), field.getDstField())
+		this.parentFieldDefinitions = parameters.size() > 1
+		        ? parameters.subList(1, parameters.size()).stream().map(Object::toString).toList()
 		        : null;
 		
 		if (utilities.listHasElement(this.parentFieldDefinitions)) {
@@ -194,14 +220,40 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 				String dstField = mapping[0];
 				String srcFieldOrValue = mapping[1];
 				
-				if (!utilities.stringHasValue(srcFieldOrValue) || srcFieldOrValue.toLowerCase().equals("null")) {
-					srcFieldOrValue = null;
+				if (dstField.equals("parent_field_in_datasource_object")) {
+					if (!utilities.stringHasValue(srcFieldOrValue)) {
+						throw new ForbiddenOperationException("The parent_field_in_datasource_object has no value");
+					}
+					
+					this.parentFieldOnDataSourceObject = srcFieldOrValue;
+				} else if (dstField.equals("on_demand_check_condition")) {
+					if (!utilities.stringHasValue(srcFieldOrValue)) {
+						throw new ForbiddenOperationException("The on_demand_check_condition has no value");
+					}
+					
+					this.onDemandCheckCondition = srcFieldOrValue;
+				} else if (dstField.equals("template")) {
+					if (!utilities.stringHasValue(srcFieldOrValue)) {
+						throw new ForbiddenOperationException("The template has no value");
+					}
+					
+					this.template = srcFieldOrValue;
+				} else {
+					if (!utilities.stringHasValue(srcFieldOrValue) || srcFieldOrValue.toLowerCase().equals("null")) {
+						srcFieldOrValue = null;
+					}
+					
+					FieldsMapping fm = fastCreateFieldMap(srcFieldOrValue, dstField, relatedDstConf);
+					
+					this.nonExistingParentFieldMappings.add(fm);
 				}
-				
-				FieldsMapping fm = fastCreateFieldMap(srcFieldOrValue, dstField, relatedDstConf);
-				
-				this.nonExistingParentFieldMappings.add(fm);
 			}
+		}
+		
+		if (!utilities.stringHasValue(this.onDemandCheckCondition)
+		        && !utilities.stringHasValue(this.parentFieldOnDataSourceObject)) {
+			throw new ForbiddenOperationException(
+			        "At least on_demand_check_condition or parent_field_in_datasource_object must be specified");
 		}
 	}
 	
@@ -230,7 +282,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	}
 	
 	public String getTransformerDsc() {
-		String sql = "ParentOnDemandLoadTransformer: (" + parentTable + ", " + parentField;
+		String sql = "ParentOnDemandLoadTransformer: (" + parentTable + ", " + parentFieldOnDataSourceObject;
 		
 		if (utilities.listHasElement(this.parentFieldDefinitions)) {
 			sql += ", " + this.parentFieldDefinitions.toString();
@@ -239,9 +291,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		return sql + ")";
 	}
 	
-	public static String buildCacheKey(String parentTableName, String parentField, String onDemandCheckCondition,
-	        List<String> fields) {
-		return parentTableName + "|" + parentField + "|" + onDemandCheckCondition + "|" + fields;
+	public static String buildCacheKey(String parentTableName, List<String> fields) {
+		return parentTableName + "|" + fields;
 	}
 	
 	public DstConf getRelatedDstConf() {
@@ -251,20 +302,18 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	public static ParentOnDemandLoadTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
 	        TransformableField field) {
 		
-		if (parameters == null || parameters.size() < 3) {
+		if (parameters == null || parameters.size() < 1) {
 			throw new ForbiddenOperationException("A ParentOnDemandLoadTransformer needs at least 3 parameters.\n"
-			        + "ParentOnDemandLoadTransformer(parentTableName, parentFieldName, onDemandCheckCondition)");
+			        + "ParentOnDemandLoadTransformer(parentTableName)");
 		}
 		
 		String parentTable = parameters.get(0).toString();
-		String parentTableField = parameters.get(1).toString();
-		String onDemandCheckCondition = parameters.get(2).toString();
 		
-		List<String> defaultObjectData = parameters.size() > 3
-		        ? parameters.subList(3, parameters.size()).stream().map(Object::toString).toList()
+		List<String> defaultObjectData = parameters.size() > 1
+		        ? parameters.subList(1, parameters.size()).stream().map(Object::toString).toList()
 		        : null;
 		
-		String key = buildCacheKey(parentTable, parentTableField, onDemandCheckCondition, defaultObjectData);
+		String key = buildCacheKey(parentTable, defaultObjectData);
 		
 		return INSTANCES.computeIfAbsent(key, k -> new ParentOnDemandLoadTransformer(parameters, relatedDstConf, field));
 	}
@@ -273,14 +322,14 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	public FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
-			
+		
 		EtlDatabaseObject dstParent = null;
 		
 		try {
 			dstParent = resolveParent(processor, srcObject, transformedRecord, additionalSrcObjects, srcConn, dstConn);
 		}
 		catch (InconsistentStateException e) {
-			srcObject.setFieldValue(this.parentField, null);
+			srcObject.setFieldValue(this.parentFieldOnDataSourceObject, null);
 		}
 		
 		if (dstParent == null) {
@@ -569,23 +618,34 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 			synchronized (lock) {
 				if (etlItemConfForNonExistingSrcParent == null) {
 					
-					AbstractTableConfiguration parentConf = new GenericTableConfiguration(parentTable);
-					parentConf.setRelatedEtlConfig(relatedDstConf.getRelatedEtlConf());
-					
-					EtlItemConfiguration conf = EtlItemConfiguration.fastCreate(parentConf, srcConn);
-					conf.setParentItemConf(relatedDstConf.getParentConf());
-					conf.setRelatedParentDstConfName(relatedDstConf.getTableAlias());
-					
-					conf.setDoNotFullLoadDstConf(true);
-					
-					conf.fullLoad(relatedDstConf.getRelatedEtlConf().getOperations().get(0));
-					
-					conf.getSrcConf().fullLoad(srcConn);
+					EtlItemConfiguration conf = generateEtlItemConf(srcConn);
 					
 					this.etlItemConfForNonExistingSrcParent = conf;
 				}
 			}
 		}
+	}
+	
+	private EtlItemConfiguration generateEtlItemConf(Connection srcConn) throws DBException {
+		AbstractTableConfiguration parentConf = new GenericTableConfiguration(parentTable);
+		parentConf.setRelatedEtlConfig(relatedDstConf.getRelatedEtlConf());
+		
+		EtlItemConfiguration conf = EtlItemConfiguration.fastCreate(parentConf, srcConn);
+		
+		EtlTemplateInfo template = utilities.stringHasValue(this.template) ? new EtlTemplateInfo(this.template) : null;
+		
+		conf.setTemplate(template);
+		conf.tryToLoadFromTemplate();
+		
+		conf.setParentItemConf(relatedDstConf.getParentConf());
+		conf.setRelatedParentDstConfName(relatedDstConf.getTableAlias());
+		
+		conf.setDoNotFullLoadDstConf(true);
+		
+		conf.fullLoad(relatedDstConf.getRelatedEtlConf().getOperations().get(0));
+		
+		conf.getSrcConf().fullLoad(srcConn);
+		return conf;
 	}
 	
 	void tryToInitEtlItemConfForExistingSrcParent(Connection srcConn, Connection dstConn) throws DBException {
@@ -594,17 +654,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 			synchronized (lock) {
 				if (etlItemConfForExistingSrcParent == null) {
 					
-					AbstractTableConfiguration parentConf = new GenericTableConfiguration(parentTable);
-					parentConf.setRelatedEtlConfig(relatedDstConf.getRelatedEtlConf());
-					
-					EtlItemConfiguration conf = EtlItemConfiguration.fastCreate(parentConf, srcConn);
-					conf.setParentItemConf(relatedDstConf.getParentConf());
-					conf.setRelatedParentDstConfName(relatedDstConf.getTableAlias());
-					
-					conf.setDoNotFullLoadDstConf(true);
-					conf.fullLoad(relatedDstConf.getRelatedEtlConf().getOperations().get(0));
-					
-					conf.getSrcConf().fullLoad(srcConn);
+					EtlItemConfiguration conf = generateEtlItemConf(srcConn);
 					
 					this.etlItemConfForExistingSrcParent = conf;
 				}
