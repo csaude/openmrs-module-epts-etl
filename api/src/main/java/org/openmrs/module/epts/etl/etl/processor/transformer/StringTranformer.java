@@ -1,10 +1,9 @@
 package org.openmrs.module.epts.etl.etl.processor.transformer;
 
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
@@ -48,30 +47,60 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * {@link EtlTransformationException} is raised.
  * </p>
  */
-public class StringTranformer extends AbstractEtlFieldTransformer{
+public class StringTranformer extends AbstractEtlFieldTransformer {
 	
-	private static StringTranformer defaultTransformer;
+	protected static final Map<String, StringTranformer> INSTANCES = new ConcurrentHashMap<>();
 	
-	private static final Pattern STRING_EXPRESSION_PATTERN = Pattern.compile("\\(([^)]+)\\)\\.(\\w+)\\((.*)\\)");
+	private String transformationString;
 	
-	private static final Object LOCK = new Object();
+	private StringTranformerElements transformerElements;
 	
 	public StringTranformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
 		super(parameters, relatedDstConf, field);
+		
+		if (utilities.listHasNoElement(parameters)) {
+			throw new EtlExceptionImpl("You must specify the string to transforn for STRING_TRANSFORMER");
+		}
+		
+		this.transformationString = (String) parameters.get(0);
+		
+		loadTransformerElements();
+	}
+	
+	private void loadTransformerElements() {
+		
+		String expr = this.transformationString;
+		
+		if (expr == null || !expr.startsWith("(")) {
+			throw new EtlExceptionImpl("Invalid string expression: " + expr);
+		}
+		
+		int firstClose = expr.indexOf(")");
+		
+		if (firstClose == -1) {
+			throw new EtlExceptionImpl("Invalid expression: " + expr);
+		}
+		
+		String initialValue = expr.substring(1, firstClose);
+		
+		String remaining = expr.substring(firstClose + 1);
+		
+		this.transformerElements = StringTranformerElements.buildChain(initialValue, remaining);
+	}
+	
+	public static String buildCacheKey(String transformationString) {
+		return transformationString;
 	}
 	
 	public static StringTranformer getInstance(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
-		if (defaultTransformer != null)
-			return defaultTransformer;
 		
-		synchronized (LOCK) {
-			if (defaultTransformer != null)
-				return defaultTransformer;
-			
-			defaultTransformer = new StringTranformer(parameters, relatedDstConf, field);
-			
-			return defaultTransformer;
+		if (utilities.listHasNoElement(parameters)) {
+			throw new EtlExceptionImpl("You must specify the string to transforn for STRING_TRANSFORMER");
 		}
+		String key = buildCacheKey(parameters.get(0).toString());
+		
+		return INSTANCES.computeIfAbsent(key, k -> new StringTranformer(parameters, relatedDstConf, field));
+		
 	}
 	
 	@Override
@@ -84,17 +113,9 @@ public class StringTranformer extends AbstractEtlFieldTransformer{
 			        ActionOnEtlException.ABORT);
 		}
 		
-		if (field.getValueToTransform() == null) {
-			throw new EtlTransformationException("Source value must be provided for string transformation.", srcObject,
-			        ActionOnEtlException.ABORT);
-		}
-		
-		String srcValueWithParamsReplaced = EtlFieldTransformer
-		        .tryToReplaceParametersOnSrcValue(additionalSrcObjects, field.getValueToTransform()).toString();
-		
 		try {
 			
-			Object result = evaluateStringExpression(srcValueWithParamsReplaced);
+			Object result = this.transformerElements.evaluate(additionalSrcObjects);
 			
 			FieldTransformingInfo transformingInfo = new FieldTransformingInfo(field, result, null);
 			
@@ -108,45 +129,6 @@ public class StringTranformer extends AbstractEtlFieldTransformer{
 			throw new EtlTransformationException("Failed to evaluate string expression: " + field.getValueToTransform(), e,
 			        srcObject, ActionOnEtlException.ABORT);
 		}
-	}
-	
-	private Object evaluateStringExpression(String expression) throws Exception {
-		
-		Matcher matcher = STRING_EXPRESSION_PATTERN.matcher(expression);
-		
-		if (!matcher.find()) {
-			throw new EtlExceptionImpl("Invalid string expression: " + expression);
-		}
-		
-		String param = matcher.group(1);
-		String methodName = matcher.group(2);
-		String methodArgs = matcher.group(3);
-		
-		String[] args = methodArgs.isEmpty() ? new String[0] : methodArgs.split("\\s*,\\s*");
-		
-		Object[] methodParameters = new Object[args.length];
-		Class<?>[] paramTypes = new Class<?>[args.length];
-		
-		for (int i = 0; i < args.length; i++) {
-			
-			Object parsed = parseArgument(args[i]);
-			
-			methodParameters[i] = parsed;
-			paramTypes[i] = parsed.getClass();
-		}
-		
-		Method method = String.class.getMethod(methodName, paramTypes);
-		
-		return method.invoke(param, methodParameters);
-	}
-	
-	private Object parseArgument(String arg) {
-		
-		if (arg.matches("-?\\d+")) {
-			return Integer.parseInt(arg);
-		}
-		
-		return arg;
 	}
 	
 }
