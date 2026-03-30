@@ -113,6 +113,8 @@ public interface TransformableField {
 	}
 	
 	default void loadType(DstConf dstConf, EtlDataSource dataSource) {
+		tryToLoadTransformer(dstConf);
+		
 		if (this.hasDataType()) {
 			if (!utilities.isStringIn(this.getDataType().toLowerCase(), "int", "double", "string", "date", "long",
 			    "boolean")) {

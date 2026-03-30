@@ -26,7 +26,9 @@ import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -306,15 +308,25 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
 		EtlDatabaseObject dstParent = null;
-		EtlDatabaseObject srcParent = resolveSrcParent(processor, srcObject, transformedRecord, additionalSrcObjects,
-		    srcConn, dstConn);
+		EtlDatabaseObject srcParent = null;
 		
 		try {
+			srcParent = resolveSrcParent(processor, srcObject, transformedRecord, additionalSrcObjects, srcConn, dstConn);
+			
 			dstParent = resolveParent(processor, srcParent, srcObject, transformedRecord, additionalSrcObjects, srcConn,
 			    dstConn);
 		}
 		catch (InconsistentStateException e) {
+			
+			InconsistenceInfo i = InconsistenceInfo.generate(srcObject.generateTableName(),
+				srcObject.getObjectId(),
+	            parentTableName,
+	            srcObject.getFieldValue(parentSourceField), null,
+	            processor.getRelatedEtlConfiguration().getOriginAppLocationCode());
+			
 			srcObject.setFieldValue(this.parentSourceField, null);
+			
+			i.save(relatedDstConf, srcConn);
 		}
 		
 		if (dstParent == null) {
@@ -373,9 +385,16 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		if (srcParent != null) {
 			ensureDstConfForExistingSrcParentInitialized(dstConn);
 			
+			DatabaseObjectConfiguration bkp = srcParent.getRelatedConfiguration();
+			
 			srcParent.setRelatedConfiguration(getDstConfForExistingSrcParent(srcConn, dstConn));
 			
-			return DatabaseObjectDAO.getByUniqueKeys(srcParent, dstConn);
+			EtlDatabaseObject dstObject = DatabaseObjectDAO.getByUniqueKeys(srcParent, dstConn);
+			
+			srcParent.setRelatedConfiguration(bkp);
+			
+			return dstObject;
+			
 		} else {
 			return null;
 		}
@@ -429,11 +448,24 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		if (!utilities.stringHasValue(this.onDemandCheckCondition)) {
 			return null;
 		}
-		ensureDstConfForNonExistingSrcParentInitialized(srcConn, dstConn);
-		ensureOnDemandCheckConditionElementsInitialized(srcConn, dstConn);
 		
-		SrcConf srcConf = loadSrcConfForNonExistingSrcParentIfNeeded(srcConn, dstConn);
-		DstConf dstConf = getDstConfForNonExistingSrcParent(srcConn, dstConn);
+		SrcConf srcConf = null;
+		DstConf dstConf = null;
+		
+		if (srcObject != null) {
+			ensureDstConfForExistingSrcParentInitialized(dstConn);
+			
+			srcConf = loadSrcConfForExistingSrcParentIfNeeded(srcConn, dstConn);
+			dstConf = getDstConfForExistingSrcParent(srcConn, dstConn);
+			
+		} else {
+			ensureDstConfForNonExistingSrcParentInitialized(srcConn, dstConn);
+			
+			srcConf = loadSrcConfForNonExistingSrcParentIfNeeded(srcConn, dstConn);
+			dstConf = getDstConfForNonExistingSrcParent(srcConn, dstConn);
+		}
+		
+		ensureOnDemandCheckConditionElementsInitialized(srcConn, dstConn);
 		
 		String condition = this.parametrizedOnDemandCheckCondition;
 		
@@ -499,7 +531,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		return this.existingParentItemConf.getSrcConf();
 	}
 	
-	protected void ensureDstConfForNonExistingSrcParentInitialized(Connection srcConn, Connection dstConn) throws DBException {
+	protected void ensureDstConfForNonExistingSrcParentInitialized(Connection srcConn, Connection dstConn)
+	        throws DBException {
 		ensureEtlItemConfForNonExistingSrcParentInitialized(srcConn, dstConn);
 		
 		DstConf dstConf = getDstConfForNonExistingSrcParent(srcConn, dstConn);
@@ -596,7 +629,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		}
 	}
 	
-	protected void ensureEtlItemConfForNonExistingSrcParentInitialized(Connection srcConn, Connection dstConn) throws DBException {
+	protected void ensureEtlItemConfForNonExistingSrcParentInitialized(Connection srcConn, Connection dstConn)
+	        throws DBException {
 		
 		if (this.onDemandCreateParentItemConf == null) {
 			synchronized (lock) {

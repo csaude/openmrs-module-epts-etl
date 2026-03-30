@@ -184,32 +184,35 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	
 	private void addExtraDataSources(EtlProcessor processor, Set<EtlDatabaseObject> srcObjects, EtlDatabaseObject srcObject,
 	        TransformationType transformationType, Connection srcConn) throws DBException {
-		SrcConf srcConf = (SrcConf) srcObject.getRelatedConfiguration();
 		
-		for (EtlAdditionalDataSource mappingInfo : srcConf.getAvaliableExtraDataSource()) {
+		if (srcObject.getRelatedConfiguration() instanceof SrcConf) {
+			SrcConf srcConf = (SrcConf) srcObject.getRelatedConfiguration();
 			
-			List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjectsForLoading()
-			        ? srcObjects.stream().toList()
-			        : utilities.parseToList(srcObject);
-			
-			EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(processor, srcObject, avaliableObjects,
-			    srcConn);
-			
-			if (relatedSrcObject == null) {
+			for (EtlAdditionalDataSource mappingInfo : srcConf.getAvaliableExtraDataSource()) {
 				
-				/*
-				 * If the transformation is not principal, then mean the record is being transformed as parent of other record. So we force the tranformation
-				 */
-				if (mappingInfo.isRequired() && transformationType.isPrincipal()) {
-					throw new MissingRequiredTransformationObject();
-				} else if (!transformationType.isPrincipal()) {
-					relatedSrcObject = mappingInfo.newInstance();
-					relatedSrcObject.setRelatedConfiguration(mappingInfo);
+				List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjectsForLoading()
+				        ? srcObjects.stream().toList()
+				        : utilities.parseToList(srcObject);
+				
+				EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(processor, srcObject, avaliableObjects,
+				    srcConn);
+				
+				if (relatedSrcObject == null) {
+					
+					/*
+					 * If the transformation is not principal, then mean the record is being transformed as parent of other record. So we force the tranformation
+					 */
+					if (mappingInfo.isRequired() && transformationType.isPrincipal()) {
+						throw new MissingRequiredTransformationObject();
+					} else if (!transformationType.isPrincipal()) {
+						relatedSrcObject = mappingInfo.newInstance();
+						relatedSrcObject.setRelatedConfiguration(mappingInfo);
+					}
 				}
-			}
-			
-			if (relatedSrcObject != null) {
-				srcObjects.add(relatedSrcObject);
+				
+				if (relatedSrcObject != null) {
+					srcObjects.add(relatedSrcObject);
+				}
 			}
 		}
 	}

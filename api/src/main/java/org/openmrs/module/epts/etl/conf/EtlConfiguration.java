@@ -859,8 +859,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					allItem.add(item);
 					
 					initItem(item, false);
-					
-					System.out.println();
 				}
 			}
 			
