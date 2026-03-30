@@ -446,7 +446,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				performeTask(taskProcessor, useMultiThreadSearch, persistTheWork, openSrcConn(), tryToOpenDstConn());
 				
 				if (taskProcessor.getTaskResultInfo().hasFatalError()) {
-					taskProcessor.getTaskResultInfo().throwDefaultExcetions();
+					taskProcessor.getTaskResultInfo().throwDefaultExcetions(this);
 				}
 			}
 			
@@ -478,7 +478,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		performeTask(taskProcessor, useMultiThreadSearch, persistTheWork, openSrcConn(), tryToOpenDstConn());
 		
 		if (taskProcessor.getTaskResultInfo().hasFatalError()) {
-			taskProcessor.getTaskResultInfo().throwDefaultExcetions();
+			taskProcessor.getTaskResultInfo().throwDefaultExcetions(this);
 		} else {
 			
 			OpenConnection srcConn = openSrcConn();
@@ -646,7 +646,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 						
 						EtlOperationResultHeader<T> r = EtlOperationResultHeader.getDefaultResultWithFatalError(results);
 						
-						r.throwDefaultExcetions();
+						r.throwDefaultExcetions(this);
 					} else {
 						
 						if (useSharedConnection && !this.getEtlConfiguration().hasTestingItem()) {

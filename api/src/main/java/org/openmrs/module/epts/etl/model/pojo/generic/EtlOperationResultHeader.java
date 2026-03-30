@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
@@ -363,14 +364,15 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 	}
 	
-	public void throwDefaultExcetions() throws Exception {
+	public void throwDefaultExcetions(Engine<T> engine) throws Exception {
 		if (hasFatalException()) {
 			
 			if (getFatalException() instanceof EtlException) {
 				EtlException e = (EtlException) getFatalException();
 				
 				if (e.getEtlObject() != null) {
-					throw new EtlExceptionImpl("Error happened within object:" + e.getEtlObject(), (Exception) e);
+					throw new EtlExceptionImpl("Error happened on etl '" + engine.getEngineId()
+					        + " while processing object: " + e.getEtlObject(), (Exception) e);
 				}
 			}
 			

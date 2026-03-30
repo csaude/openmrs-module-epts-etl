@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
@@ -81,7 +82,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
 		this.controllerId = (getDstType() + "_" + getOperationType().name().toLowerCase() + "_on_"
-		        + processController.getControllerId()).toLowerCase() + "_using_" + this.getEtlConfiguration().getConfigName();
+		        + processController.getControllerId()).toLowerCase() + "_using_"
+		        + this.getEtlConfiguration().getConfigName();
 		
 		OpenConnection conn = null;
 		try {
@@ -299,7 +301,12 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				this.enginesActivititieMonitor.add(engine);
 				
-				engine.run();
+				try {
+					engine.run();
+				}
+				catch (Exception e) {
+					new EtlExceptionImpl("Error occured on etl " + engine.getEngineId(), e);
+				}
 				
 				if (stopRequested() && engine.isStopped()) {
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"

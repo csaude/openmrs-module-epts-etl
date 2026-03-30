@@ -413,7 +413,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 		
 		if (mappingProblem.hasIssue()) {
-			throw new FieldsMappingException(this.getTableName(), mappingProblem);
+			throw new FieldsMappingException(this, mappingProblem);
 		}
 		
 	}
@@ -575,7 +575,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 					FieldsMappingIssues mappingProblem = loadConfiguredMappingAdditionalInfo(conn);
 					
 					if (mappingProblem.hasIssue()) {
-						throw new FieldsMappingException(this.getTableName(), mappingProblem);
+						throw new FieldsMappingException(this, mappingProblem);
 					}
 					
 					this.setFields(FieldsMapping.parseAllToField(this.getMapping(), this, avaliableDataSources()));
