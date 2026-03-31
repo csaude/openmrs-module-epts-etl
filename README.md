@@ -412,21 +412,22 @@ Each **extraObjectDataSource** is defined by the following properties:
       - **value** is the initial string to be transformed (can include dynamic placeholders)
       - **methodX** represents any valid method from the Java `String` class
       - **argX** are optional method arguments
-  The transformer evaluates the expression from left to right, where the result of each method invocation becomes the input of the next method in the chain.
+  		
+		The transformer evaluates the expression from left to right, where the result of each method invocation becomes the input of the next method in the chain.
 
-  Before execution:
-      - Dynamic placeholders within the expression are resolved using available source data
-      - Method arguments are automatically converted to the expected parameter types of the target method
-  The evaluation is performed using Java reflectin, dynamically resolving and invoking the appropriate `String` methods at runtime.
+  		Before execution:
+      		- Dynamic placeholders within the expression are resolved using available source data
+      		- Method arguments are automatically converted to the expected parameter types of the target method
+  		The evaluation is performed using Java reflectin, dynamically resolving and invoking the appropriate `String` methods at runtime.
   
-  Examples:
-```
-      (John).toUpperCase()
-      (hello world).substring(0,5).toUpperCase()
-      (abc123).replace("123","XYZ").concat("-DONE")
-      (${name}).trim().toLowerCase()
-```
-     If the expression is invalid or a method cannot be resolved/invoked, an exception is raised.
+		  Examples:
+			```
+		      STRING_TRANSFORMER((John).toUpperCase())
+		      STRING_TRANSFORMER(hello world).substring(0,5).toUpperCase()
+		      STRING_TRANSFORMER(abc123).replace("123","XYZ").concat("-DONE")
+		      STRING_TRANSFORMER(@name).trim().toLowerCase()
+			```
+		     If the expression is invalid or a method cannot be resolved/invoked, an exception is raised.
   
     - **MAPPING_TRANSFORMER(mapping_table_name,mapping_src_field,mapping_dst_field,extraConditionForExtract)** Performs value transformation using a lookup table stored in the database. The transformer searches for a record in the specified mapping table where the value of mapping_src_field matches the source field value being transformed. If a matching record is found, the value of mapping_dst_field is returned as the transformed value. If no mapping is found, the transformer will either apply the destination field default value (if defined) or raise a mapping exception.
     - **FAST_SQL_TRANSFORMER(sqlQuery)** Retrieves the field value by executing a SQL query against the source database. The SQL query must return at least one column; only the first column of the first row 
