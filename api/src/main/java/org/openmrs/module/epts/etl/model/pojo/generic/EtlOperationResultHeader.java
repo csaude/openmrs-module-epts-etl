@@ -367,16 +367,18 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 	public void throwDefaultExcetions(Engine<T> engine) throws Exception {
 		if (hasFatalException()) {
 			
+			String msg = "Error happened on etl '" + engine.getEngineId();
+			
 			if (getFatalException() instanceof EtlException) {
 				EtlException e = (EtlException) getFatalException();
 				
 				if (e.getEtlObject() != null) {
-					throw new EtlExceptionImpl("Error happened on etl '" + engine.getEngineId()
-					        + " while processing object: " + e.getEtlObject(), (Exception) e);
+					msg += " while processing object: " + e.getEtlObject();
 				}
 			}
 			
-			throw getFatalException();
+			throw new EtlExceptionImpl(msg, getFatalException());
+			
 		}
 		
 		for (EtlOperationItemResult<T> o : getRecordsWithUnexpectedErrors()) {

@@ -690,7 +690,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 		
 		if (ds == null)
-			throw new ForbiddenOperationException("Empty ds was provided");
+			throw new EtlExceptionImpl("Empty ds was provided");
 		
 		for (EtlDataSource ds1 : this.getAllPrefferredDataSource()) {
 			if (ds == ds1) {
