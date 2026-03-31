@@ -409,11 +409,12 @@ Each **extraObjectDataSource** is defined by the following properties:
   - (4) *transformer*: defines a transformation applied to the evaluated field value. Transformers allow complex processing such as expression evaluation, string manipulation, database lookups, or value mapping. The following transformer types are supported:
     - **ARITHMETIC_TRANSFORMER** Evaluates arithmetic expressions defined in the field value. The expression may contain numeric literals, arithmetic operators, and dynamic parameters referencing source fields. Before evaluation, any dynamic parameters are resolved and the resulting expression is evaluated using the exp4j expression engine.;
     - **STRING_TRANSFORMER**: Applies string manipulation operations using standard Java `String` methods, supporting chained method execution. The transformation expression must follow the format: (value).method1(arg1, arg2, ...).method2(...).methodN(...)
+
       Where:
       - **value** is the initial string to be transformed (can include dynamic placeholders)
       - **methodX** represents any valid method from the Java `String` class
       - **argX** are optional method arguments
-  		
+        
 		The transformer evaluates the expression from left to right, where the result of each method invocation becomes the input of the next method in the chain.
 
   		Before execution:
@@ -421,13 +422,14 @@ Each **extraObjectDataSource** is defined by the following properties:
       		- Method arguments are automatically converted to the expected parameter types of the target method
   		The evaluation is performed using Java reflectin, dynamically resolving and invoking the appropriate `String` methods at runtime.
   
-		  Examples:
-			  - STRING_TRANSFORMER((John).toUpperCase())
-		      - STRING_TRANSFORMER(hello world).substring(0,5).toUpperCase()
-		      - STRING_TRANSFORMER(abc123).replace("123","XYZ").concat("-DONE")
-		      - STRING_TRANSFORMER(@name).trim().toLowerCase()
-		
-			 If the expression is invalid or a method cannot be resolved/invoked, an exception is raised.
+		  **Examples:**
+
+            - STRING_TRANSFORMER((John).toUpperCase())
+		    - STRING_TRANSFORMER(hello world).substring(0,5).toUpperCase()
+		    - STRING_TRANSFORMER(abc123).replace("123","XYZ").concat("-DONE")
+		    - STRING_TRANSFORMER(@name).trim().toLowerCase()
+        
+        If the expression is invalid or a method cannot be resolved/invoked, an exception is raised.
   
     - **MAPPING_TRANSFORMER(mapping_table_name,mapping_src_field,mapping_dst_field,extraConditionForExtract)** Performs value transformation using a lookup table stored in the database. The transformer searches for a record in the specified mapping table where the value of mapping_src_field matches the source field value being transformed. If a matching record is found, the value of mapping_dst_field is returned as the transformed value. If no mapping is found, the transformer will either apply the destination field default value (if defined) or raise a mapping exception.
     - **FAST_SQL_TRANSFORMER(sqlQuery)** Retrieves the field value by executing a SQL query against the source database. The SQL query must return at least one column; only the first column of the first row 
@@ -449,8 +451,8 @@ Parameters may represent fixed values, dynamic parameters, or fields from availa
         - the literal null to explicitly set the field to null (e.g. date_stopped:null)
         - omitted after the colon to implicitly set the field to null (e.g. indication_concept_id:)
         
-```
-		 ParentOnDemandLoadTransformer(
+		```
+		 **ParentOnDemandLoadTransformer**(
 		    visit,
 		    parent_field_oin_datasource_object:visit_id,
 		    on_demand_check_condition:patient_id=patient_id and date_started=encounter_datetime,
@@ -461,7 +463,7 @@ Parameters may represent fixed values, dynamic parameters, or fields from availa
 		    date_stopped:null,
 		    indication_concept_id:
 		)
-```
+		```
 
         - In this example, a record in the visit table will be created on demand if it does not yet exist. The date_started field will be populated from encounter_datetime, visit_type_id will receive the constant value 42, location_id will use the dynamic parameter @migration_location_id, and the fields date_stopped and indication_concept_id will be set to null.
 - (5) *dataType*: an optional attribute used to explicitly define the data type of the field value. When not specified, the system will infer the type from the transformation result. Supported data types include: *int*, *long*, *double*, *string*, *date*, and *boolean*.
