@@ -173,7 +173,7 @@ public class ConfVM {
 			String json = this.etlConfiguration.getProcessType().isSourceSync() ? ConfigData.generateDefaultSourcetConfig()
 			        : ConfigData.generateDefaultDestinationConfig();
 			
-			reloadedSyncConfiguration = EtlConfiguration.loadFromJSON(json);
+			reloadedSyncConfiguration = EtlConfiguration.loadFromJSON(json, new File(""));
 			
 			reloadedSyncConfiguration.setEtlRootDirectory(
 			    rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "data");

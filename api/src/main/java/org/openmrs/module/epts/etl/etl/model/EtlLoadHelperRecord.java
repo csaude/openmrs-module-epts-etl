@@ -78,7 +78,7 @@ public class EtlLoadHelperRecord {
 				return r;
 			}
 		}
-		if (!dstConf.hasSrcObjectCondition()) {
+		if (!dstConf.isDisabled() && !dstConf.hasSrcObjectCondition()) {
 			throw new ForbiddenOperationException("No dstRecord found for DstConf " + dstConf);
 		}
 		

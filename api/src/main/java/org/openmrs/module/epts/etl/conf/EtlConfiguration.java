@@ -248,6 +248,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.parentEtlConf = parentEtlConf;
 	}
 	
+	public boolean hasParentEtlConf() {
+		return this.parentEtlConf != null;
+	}
+	
 	public EtlConfigurationSrcConf getDynamicSrcConf() {
 		return dynamicSrcConf;
 	}
@@ -877,11 +881,15 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	private void tryToExecuteStartupScripts(DBConnectionInfo connInfo) throws DBException {
-		File scriptsDir = this.getSqlStartupScriptsDirectory();
 		
-		if (scriptsDir.listFiles() != null) {
-			for (File script : scriptsDir.listFiles()) {
-				DBUtilities.runScriptOnDbServer(connInfo, script.getAbsolutePath());
+		if (!this.hasParentEtlConf()) {
+			
+			File scriptsDir = this.getSqlStartupScriptsDirectory();
+			
+			if (scriptsDir.listFiles() != null) {
+				for (File script : scriptsDir.listFiles()) {
+					DBUtilities.runScriptOnDbServer(connInfo, script.getAbsolutePath());
+				}
 			}
 		}
 	}

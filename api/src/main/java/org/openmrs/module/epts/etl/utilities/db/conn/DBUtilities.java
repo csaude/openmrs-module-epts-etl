@@ -1122,10 +1122,11 @@ public class DBUtilities {
 		
 		if (!connInfo.isMySQLConnection())
 			throw new EtlExceptionImpl("Currently only mysql db supports script execution");
+		
 		try {
 			connInfo.tryToExtractHostInfoFromMysqlUri();
 			
-			connInfo.getRelatedEtlConf().logWarn("Start restore of database using dump: " + databaseSchemaFullPath);
+			connInfo.getRelatedEtlConf().logWarn("Start execution of scripn on database: " + databaseSchemaFullPath);
 			
 			ProcessBuilder pb = new ProcessBuilder("mysql", "-u", connInfo.getDataBaseUserName(),
 			        "-p" + connInfo.getDataBaseUserPassword(), "-h", connInfo.getDbHost(), "-P",
@@ -1135,16 +1136,39 @@ public class DBUtilities {
 			
 			Process process = pb.start();
 			
-			StringBuilder errorOutput = captureErrorOutput(process);
+			StringBuilder errorOutput = new StringBuilder();
 			
-			int exitCode = process.waitFor();
+			Thread errorThread = new Thread(() -> {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+					
+					String line;
+					while ((line = reader.readLine()) != null) {
+						errorOutput.append(line).append("\n");
+					}
+					
+				}
+				catch (IOException ignored) {}
+			});
+			
+			errorThread.start();
+			
+			errorThread.join();
+			
+			int exitCode = 0;
+			
+			exitCode = process.waitFor();
 			
 			if (exitCode != 0) {
 				throw new RuntimeException(
 				        "Script execution failed (exitCode=" + exitCode + ")\n" + "ERROR:\n" + errorOutput);
 			}
 		}
-		catch (InterruptedException | IOException e) {
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			
+			connInfo.getRelatedEtlConf().logWarn("Execution of script " + databaseSchemaFullPath + " was interrupted!!!");
+		}
+		catch (IOException e) {
 			throw new EtlExceptionImpl(e);
 		}
 		
