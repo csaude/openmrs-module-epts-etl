@@ -483,7 +483,13 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		
 		String tableName = this.relatedConfiguration != null ? this.relatedConfiguration.getObjectName() : "Aknown Object";
 		
-		return tableName + ": " + super.toString();
+		String tableNameAlias = "N/A";
+		
+		if (this.relatedConfiguration instanceof TableConfiguration) {
+			tableNameAlias = ((TableConfiguration) this.relatedConfiguration).getTableAlias();
+		}
+		
+		return tableName + "(" + tableNameAlias + "): " + super.toString();
 	}
 	
 	@Override

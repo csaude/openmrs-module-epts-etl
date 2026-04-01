@@ -52,7 +52,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	@Override
 	public void performeEtl(List<EtlDatabaseObject> etlObjects, Connection srcConn, Connection dstConn) throws DBException {
 		try {
-			perform(this.getEtlItemConfiguration(), etlObjects, srcConn, dstConn);
+			perform(this.getEtlItemConfiguration(), etlObjects, null, srcConn, dstConn);
 		}
 		catch (Exception e) {
 			logWarn("Error ocurred on thread " + getProcessorId() + " On Records [" + getLimits() + "]... \n");
@@ -63,8 +63,8 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		}
 	}
 	
-	private void perform(EtlItemConfiguration etlItemConf, List<EtlDatabaseObject> etlObjects, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	private void perform(EtlItemConfiguration etlItemConf, List<EtlDatabaseObject> etlObjects,
+	        EtlDatabaseObject parentMigratedRec, Connection srcConn, Connection dstConn) throws DBException {
 		
 		for (EtlDatabaseObject record : etlObjects) {
 			EtlDatabaseObject srcRecord = (EtlDatabaseObject) record;
@@ -78,7 +78,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 				try {
 					if (mappingInfo.checkIfSrcObjectCanBeLoaded(srcRecord)) {
 						EtlDatabaseObject dstObject = mappingInfo.getTransformerInstance().transform(this, srcRecord,
-						    mappingInfo, null, TransformationType.PRINCIPAL, srcConn, dstConn);
+						    mappingInfo, parentMigratedRec, TransformationType.PRINCIPAL, srcConn, dstConn);
 						
 						if (dstObject != null) {
 							record.addDestinationRecord(dstObject);
@@ -138,7 +138,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(this.getEngine(),
 		    transformedParent.getEtlInfo().getRelatedSrcObject(), srcConn);
 		
-		perform(itemConf, etlObjects, srcConn, dstConn);
+		perform(itemConf, etlObjects, transformedParent, srcConn, dstConn);
 	}
 	
 	@Override

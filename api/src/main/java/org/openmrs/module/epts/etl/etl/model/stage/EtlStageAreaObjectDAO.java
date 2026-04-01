@@ -4,43 +4,48 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 	
-	public static void saveSrcInfo(EtlStageAreaInfo stageObjectInfo, Connection srcConn) throws DBException {
-		List<EtlStageAreaInfo> stageObjectInfoList = utilities.parseToList(stageObjectInfo);
+	public static void saveSrcInfo(EtlStageObjectInfo stageObjectInfo, Connection srcConn) throws DBException {
+		List<EtlStageObjectInfo> stageObjectInfoList = utilities.parseToList(stageObjectInfo);
 		
 		saveAllSrc(stageObjectInfoList, srcConn);
 	}
 	
-	public static void saveAll(List<EtlStageAreaInfo> stageObjectInfo, Connection srcConn) throws DBException {
+	public static void saveAll(List<EtlStageObjectInfo> stageObjectInfo, Connection srcConn) throws DBException {
 		if (!utilities.listHasElement(stageObjectInfo))
 			return;
 		
 		saveAllSrc(stageObjectInfo, srcConn);
 		
-		insert(EtlStageAreaInfo.collectAllDstStageAreaObjectAsEtlDatabaseObject(stageObjectInfo), srcConn);
+		doInsert(EtlStageObjectInfo.collectNotExistingDstObjects(stageObjectInfo), srcConn);
 		
-		EtlStageAreaInfo.loadDstStageObjectIdToDstKeyInfoObject(stageObjectInfo);
+		EtlStageObjectInfo.loadDstStageObjectIdToDstKeyInfoObject(stageObjectInfo);
 		
-		insert(EtlStageAreaInfo.collectAllDstKeyInfo(stageObjectInfo), srcConn);
+		insert(EtlStageObjectInfo.collectDstKeyInfo(stageObjectInfo), srcConn);
 	}
 	
-	public static void saveAllSrc(List<EtlStageAreaInfo> stageObjectInfo, Connection srcConn) throws DBException {
+	public static void saveAllSrc(List<EtlStageObjectInfo> stageObjectInfo, Connection srcConn) throws DBException {
 		if (!utilities.listHasElement(stageObjectInfo))
 			return;
 		
-		insert(EtlStageAreaInfo.collectAllSrcStageAreaObjectAsEtlDatabaseObject(stageObjectInfo), srcConn);
+		doInsert(EtlStageObjectInfo.collectNotExistingSrcObjects(stageObjectInfo), srcConn);
 		
-		EtlStageAreaInfo.loadSrcStageIdToSrcKeyInfo(stageObjectInfo);
+		EtlStageObjectInfo.loadSrcStageIdToSrcKeyInfo(stageObjectInfo);
 		
-		insert(EtlStageAreaInfo.collectAllSrcKeyInfo(stageObjectInfo), srcConn);
+		insert(EtlStageObjectInfo.collectSrcKeyInfoForNotExistingObjects(stageObjectInfo), srcConn);
 		
-		EtlStageAreaInfo.loadSrcStageObjectIdToDstStageObjectId(stageObjectInfo);
+		EtlStageObjectInfo.loadSrcStageObjectIdToDstStageObjectId(stageObjectInfo);
 		
+	}
+	
+	private static void doInsert(List<EtlStageAreaObject> records, Connection srcConn) throws DBException {
+		DatabaseObjectDAO.insert(utilities.parseList(records, EtlDatabaseObject.class), srcConn);
 	}
 	
 	public static EtlStageAreaObject getByKey(EtlConfigurationTableConf conf, String compactedObjectUk,
@@ -58,5 +63,16 @@ public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 		String query = conf.generateSelectFromQuery() + " WHERE " + condition;
 		
 		return (EtlStageAreaObject) BaseDAO.find(conf.getLoadHealper(), conf.getSyncRecordClass(), query, params, conn);
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static List<EtlDatabaseObject> getAll(EtlConfigurationTableConf conf, String condition, Object[] params,
+	        Connection conn) throws DBException {
+		
+		String query = conf.generateSelectFromQuery() + " WHERE " + condition;
+		
+		return (List<EtlDatabaseObject>) BaseDAO.search(conf.getLoadHealper(), conf.getSyncRecordClass(), query, params,
+		    conn);
 	}
 }

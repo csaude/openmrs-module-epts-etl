@@ -12,7 +12,7 @@ import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaInfo;
+import org.openmrs.module.epts.etl.etl.model.stage.EtlStageObjectInfo;
 import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaObjectDAO;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
@@ -43,6 +43,7 @@ public class EtlLoadHelper {
 	
 	public EtlLoadHelper(EtlProcessor processor, List<EtlDatabaseObject> srcObjects, LoadingType loadingType) {
 		this.processor = processor;
+		this.srcObjects = srcObjects;
 		this.loadingType = loadingType;
 		
 		this.dstConf = new ArrayList<>();
@@ -87,12 +88,12 @@ public class EtlLoadHelper {
 		return srcObjects;
 	}
 	
-	public List<EtlStageAreaInfo> generateStageInfoForAll(Connection srcConn, Connection dstConn) throws DBException {
+	public List<EtlStageObjectInfo> generateStageInfoForAll(Connection srcConn, Connection dstConn) throws DBException {
 		
-		List<EtlStageAreaInfo> info = new ArrayList<>(this.getSrcObjects().size());
+		List<EtlStageObjectInfo> info = new ArrayList<>(this.getSrcObjects().size());
 		
 		for (EtlDatabaseObject rec : this.getSrcObjects()) {
-			info.add(EtlStageAreaInfo.generate(rec, srcConn, dstConn));
+			info.add(EtlStageObjectInfo.generate(rec, srcConn, dstConn));
 		}
 		
 		return info;
@@ -108,6 +109,16 @@ public class EtlLoadHelper {
 				logError("Aborting operation");
 				
 				return;
+			}
+		}
+		
+		for (EtlDatabaseObject obj : getAllTransformedObjects()) {
+			EtlInfo info = obj.getEtlInfo();
+			
+			if (info.hasExceptionOnEtl()) {
+				info.markAsFailed();
+			} else {
+				info.markAsSuccess();
 			}
 		}
 		
@@ -249,6 +260,19 @@ public class EtlLoadHelper {
 	
 	public List<EtlDatabaseObject> getAllTransformedObjects(DstConf dstConf) {
 		return getAllTransformedObjects(dstConf, null);
+	}
+	
+	public List<EtlDatabaseObject> getAllTransformedObjects() {
+		List<EtlDatabaseObject> allOfDst = new ArrayList<>();
+		
+		for (EtlDatabaseObject obj : this.getSrcObjects()) {
+			if (!obj.hasDestinationRecords())
+				continue;
+			
+			allOfDst.addAll(obj.getDestinationObjects());
+		}
+		
+		return allOfDst;
 	}
 	
 	public List<EtlDatabaseObject> getAllTransformedObjects(DstConf dstConf, EtlStatus status) {

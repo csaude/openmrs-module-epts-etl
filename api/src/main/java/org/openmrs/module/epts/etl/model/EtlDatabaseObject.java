@@ -193,6 +193,10 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	Date getDateCreated();
 	
+	default boolean hasValuedObjectId() {
+		return this.getObjectId() != null && this.getObjectId().hasFildsFilled();
+	}
+	
 	/**
 	 * Check if this dstRecord has exactily the same values in all fields with a given object
 	 * 
