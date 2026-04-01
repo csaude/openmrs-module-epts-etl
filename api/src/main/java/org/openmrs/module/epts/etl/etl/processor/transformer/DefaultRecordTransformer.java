@@ -19,6 +19,7 @@ import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.MissingRequiredTransformationObject;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.EtlInfo;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -59,7 +60,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		}
 		
 		EtlDatabaseObject transformedRec = dstConf.createRecordInstance();
-		transformedRec.setSrcRelatedObject(srcObject);
+		
+		transformedRec.setEtlInfo(EtlInfo.initEtlRecord(processor, srcObject, transformedRec));
 		
 		applyFieldTransformations(processor, transformedRec, srcObjects, srcConn, dstConn);
 		
@@ -69,7 +71,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			transformedRec.setUuid(UUID.randomUUID().toString());
 		}
 		
-		transformedRec.setTransformationSrcObject(srcObjects);
+		transformedRec.getEtlInfo().setTransformationSrcObject(srcObjects);
 		
 		processor.logTrace("Record " + srcObject + " transformed to " + transformedRec);
 		
@@ -173,12 +175,12 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			srcObjects.add(migratedDstParent);
 		}
 		
-		if (utilities.listHasElement(srcObject.getTransformationSrcObject())) {
-			srcObjects.addAll(srcObject.getTransformationSrcObject());
+		if (srcObject.isInEtlProcess()) {
+			srcObjects.addAll(srcObject.getEtlInfo().getTransformationSrcObject());
 		}
 		
-		if (migratedDstParent != null && utilities.listHasElement(migratedDstParent.getTransformationSrcObject())) {
-			srcObjects.addAll(migratedDstParent.getTransformationSrcObject());
+		if (migratedDstParent != null) {
+			srcObjects.addAll(migratedDstParent.getEtlInfo().getTransformationSrcObject());
 		}
 	}
 	

@@ -150,7 +150,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 	}
 	
-	public void addAllFromOtherResult_(EtlOperationResultHeader<T> otherResult) {
+	public void addAllFromOtherResult(EtlOperationResultHeader<T> otherResult) {
 		if (otherResult != null) {
 			if (otherResult.hasRecordsWithNoError()) {
 				addAllToRecordsWithNoError(otherResult.getRecordsWithNoError());

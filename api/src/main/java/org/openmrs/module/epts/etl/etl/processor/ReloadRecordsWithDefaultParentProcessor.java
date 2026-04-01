@@ -15,7 +15,6 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtre
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
-import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -148,12 +147,10 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 				    srcConn, dstConn);
 				
 				if (dstParent != null) {
-					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, this.getRelatedEtlProcessor());
-					
 					DBException exception = null;
 					
 					try {
-						EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
+						EtlLoadHelper.performeParentLoading(recordAsSrc, srcConn, dstConn);
 						
 						dstObject.changeParentValue(recWithDefaultParentInfo.getParentRefInfo(), dstParent);
 					}
@@ -162,7 +159,7 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 					}
 					finally {
 						
-						if (parentData.getResultItem().hasInconsistences()
+						if (dstParent.getEtlInfo().getResultItem().hasInconsistences()
 						        || exception != null && exception.isIntegrityConstraintViolationException()) {
 							
 							String msg = "The parent for default for parent ["

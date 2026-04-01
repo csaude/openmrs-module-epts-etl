@@ -601,13 +601,16 @@ public class DatabaseObjectDAO extends BaseDAO {
 							record.save(tabConf, conn);
 							
 							if (generateOperationResult) {
-								result.addToRecordsWithNoError(record.getSrcRelatedObject());
+								result.addToRecordsWithNoError(record.getEtlInfo().getRelatedSrcObject());
 							}
 						}
 						catch (DBException e1) {
 							if (tabConf.getRelatedEtlConf().getGeneralBehaviourOnEtlException().log()
 							        && generateOperationResult) {
-								result.addToRecordsWithUnresolvedErrors(record.getSrcRelatedObject(), e1);
+								
+								record.getEtlInfo().setExceptionOnEtl(e);
+								
+								result.addToRecordsWithUnresolvedErrors(record.getEtlInfo().getRelatedSrcObject(), e1);
 							} else {
 								tryToLoadObjToException(e, objects.get(0));
 								
@@ -628,7 +631,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	}
 	
 	static void tryToLoadObjToException(DBException e, EtlDatabaseObject obj) {
-		obj = obj.getSrcRelatedObject() != null ? obj.getSrcRelatedObject() : obj;
+		obj = obj.isInEtlProcess() ? obj.getEtlInfo().getRelatedSrcObject() : obj;
 		
 		e.setEtlObject(obj);
 	}
@@ -880,7 +883,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		for (EtlDatabaseObject record : objects) {
 			record.update(config, conn);
 			
-			result.addToRecordsWithNoError(record.getSrcRelatedObject());
+			result.addToRecordsWithNoError(record.getEtlInfo().getRelatedSrcObject());
 		}
 		
 		return result;
@@ -894,7 +897,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		for (EtlDatabaseObject record : objects) {
 			record.delete(conn);
 			
-			result.addToRecordsWithNoError(record.getSrcRelatedObject());
+			result.addToRecordsWithNoError(record.getEtlInfo().getRelatedSrcObject());
 		}
 		
 		return result;

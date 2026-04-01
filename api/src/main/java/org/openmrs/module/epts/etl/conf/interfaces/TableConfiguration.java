@@ -2664,6 +2664,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	default void createRelatedDstSyncStage(Connection conn) throws DBException {
 		String sql = "";
 		String notNullConstraint = "NOT NULL";
+		String nullConstraint = "NULL";
 		String endLineMarker = ",\n";
 		
 		String tableName = this.generateRelatedDstStageTableName();
@@ -2676,13 +2677,22 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 		sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("dst_compacted_object_uk", 190, notNullConstraint, conn)
-		        + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("dst_compacted_object_uk", 190, nullConstraint, conn) + endLineMarker;
 		
 		sql += DBUtilities.generateTableVarcharField("conflict_resolution_type", 30, notNullConstraint, conn)
 		        + endLineMarker;
 		
+		sql += DBUtilities.generateTableDateTimeField("last_sync_date", nullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 500, nullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableNumericField("consistent", 1, nullConstraint, -1, conn) + endLineMarker;
+		sql += DBUtilities.generateTableNumericField("migration_status", 1, nullConstraint, 1, conn) + endLineMarker;
+		
 		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		
+		String checkCondition = "migration_status IN (-1,0,1,2)";
+		String keyName = "CHK_" + tableName + "_MIG_STATUS";
+		
+		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
 		
 		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_dst".toLowerCase(),
 		    "stage_record_id, dst_table_name", conn) + endLineMarker;

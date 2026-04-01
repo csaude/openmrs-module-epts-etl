@@ -20,6 +20,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObjectUniqueKeyInfo;
+import org.openmrs.module.epts.etl.model.EtlInfo;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
@@ -463,64 +464,52 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
-	
+
 	@Override
-	public EtlDatabaseObject getSrcRelatedObject() {
+	public List<EtlDatabaseObject> getDestinationObjects() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	@Override
-	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
+	public void setDestinationObjects(List<EtlDatabaseObject> destinationObjects) {
 		// TODO Auto-generated method stub
 		
 	}
-	
+
 	@Override
-	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public ConflictResolutionType getConflictResolutionType() {
+	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
-	@Override
-	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
-		// TODO Auto-generated method stub
-		
-	}
-	
+
 	@Override
 	public void save(TableConfiguration syncTableInfo, ConflictResolutionType onConflict, Connection conn)
 	        throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
-	
+
 	@Override
-	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	public void tryToReplaceFieldWithKey(Key k) {
+	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
 		// TODO Auto-generated method stub
 		
 	}
-	
+
 	@Override
-	public List<EtlDatabaseObject> getTransformationSrcObject() {
+	public EtlInfo getEtlInfo() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	@Override
-	public void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects) {
+	public void setEtlInfo(EtlInfo info) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void tryToReplaceFieldWithKey(Key k) {
 		// TODO Auto-generated method stub
 		
 	}

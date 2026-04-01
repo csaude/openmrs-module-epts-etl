@@ -25,7 +25,6 @@ import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
-import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -323,7 +322,7 @@ public class QuickTest {
 		
 		OpenConnection dstConn = dstApp.openConnection();
 		
-		Map<String, List<LoadRecord>> mergingRecs = new HashMap<>();
+		Map<String, List<EtlDatabaseObject>> mergingRecs = new HashMap<>();
 		
 		try {
 			
@@ -339,13 +338,13 @@ public class QuickTest {
 						
 						destObject.loadObjectIdData(mappingInfo);
 						
-						LoadRecord mr = new LoadRecord(rec, destObject, etlConf.getSrcConf(), mappingInfo, null);
+						//LoadRecord mr = new LoadRecord(rec, destObject, etlConf.getSrcConf(), mappingInfo, null);
 						
 						if (mergingRecs.get(mappingInfo.getTableName()) == null) {
 							mergingRecs.put(mappingInfo.getTableName(), new ArrayList<>(syncRecords.size()));
 						}
 						
-						mergingRecs.get(mappingInfo.getTableName()).add(mr);
+						//mergingRecs.get(mappingInfo.getTableName()).add(mr);
 					}
 				}
 			}

@@ -19,6 +19,8 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 	
 	private EtlDatabaseObject dstRelatedObject;
 	
+	private EtlDatabaseObject srcRelatedObject;
+	
 	private EtlDatabaseObject parentRecordInOrigin;
 	
 	private ParentTable parentRefInfo;
@@ -55,6 +57,14 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		
 		return rec;
 		
+	}
+	
+	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
+		this.srcRelatedObject = srcRelatedObject;
+	}
+	
+	public EtlDatabaseObject getSrcRelatedObject() {
+		return srcRelatedObject;
 	}
 	
 	public String getRecordOriginLocationCode() {

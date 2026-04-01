@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
@@ -18,6 +19,8 @@ import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
+import org.openmrs.module.epts.etl.etl.model.EtlLoadStatus;
+import org.openmrs.module.epts.etl.etl.model.EtlStatus;
 import org.openmrs.module.epts.etl.exceptions.ConflictWithRecordNotYetAvaliableException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -42,29 +45,15 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	public static final int INCONSISTENCE_STATUS = -1;
 	
-	ConflictResolutionType getConflictResolutionType();
-	
-	void setConflictResolutionType(ConflictResolutionType conflictResolutionType);
-	
 	void refreshLastSyncDateOnOrigin(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn);
 	
 	void refreshLastSyncDateOnDestination(TableConfiguration tableConfiguration, String recordOriginLocationCode,
 	        Connection conn);
 	
-	/**
-	 * @return the main transformed src object for this object
-	 */
-	EtlDatabaseObject getSrcRelatedObject();
+	List<EtlDatabaseObject> getDestinationObjects();
 	
-	void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject);
-	
-	/**
-	 * @return all src objects loaded during the transformation process to this object
-	 */
-	List<EtlDatabaseObject> getTransformationSrcObject();
-	
-	void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects);
+	void setDestinationObjects(List<EtlDatabaseObject> destinationObjects);
 	
 	Oid getObjectId();
 	
@@ -114,8 +103,6 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	String getInsertSQLQuestionMarksWithoutObjectId();
 	
-	boolean hasIgnoredParent();
-	
 	void save(TableConfiguration syncTableInfo, ConflictResolutionType onConflict, Connection conn) throws DBException;
 	
 	void save(TableConfiguration syncTableInfo, Connection conn) throws DBException;
@@ -137,6 +124,10 @@ public interface EtlDatabaseObject extends EtlObject {
 	EtlDatabaseObject getSharedPkObj();
 	
 	void setSharedPkObj(EtlDatabaseObject sharedPkObj);
+	
+	EtlInfo getEtlInfo();
+	
+	void setEtlInfo(EtlInfo info);
 	
 	/**
 	 * Consolidate data for database consistency
@@ -362,16 +353,16 @@ public interface EtlDatabaseObject extends EtlObject {
 		for (EtlDatabaseObject o : objs) {
 			
 			if (!o.hasSrcRelatedObject())
-				throw new ForbiddenOperationException("The object " + o + " has no srcRelatedObject");
+				throw new ForbiddenOperationException("The object " + o + " is not in an etl process");
 			
-			list.add((T) o.getSrcRelatedObject());
+			list.add((T) o.getEtlInfo().getRelatedSrcObject());
 		}
 		
 		return list;
 	}
 	
 	default boolean hasSrcRelatedObject() {
-		return this.getSrcRelatedObject() != null;
+		return this.getEtlInfo() != null;
 	}
 	
 	void copyFrom(EtlDatabaseObject parentRecordInOrigin);
@@ -557,20 +548,6 @@ public interface EtlDatabaseObject extends EtlObject {
 		}
 		
 		return child;
-		
-		/*
-		if (sharedKeyChildInOrigin != null) {
-			EtlDatabaseObject sharedKeyChild = childTabConf.createRecordInstance();
-			sharedKeyChild.setRelatedConfiguration(childTabConf);
-			sharedKeyChild.copyFrom(sharedKeyChildInOrigin);
-			sharedKeyChild.loadUniqueKeyValues(childTabConf);
-			sharedKeyChild.loadObjectIdData(childTabConf);
-			
-			return DatabaseObjectDAO.getByOid(childTabConf, sharedKeyChild.getObjectId(), conn);
-		}
-		
-		return null;*/
-		
 	}
 	
 	default EtlDatabaseObject retrieveParentInSrcUsingDstParentInfo(ParentTable refInfo, SrcConf src, Connection srcConn)
@@ -630,7 +607,10 @@ public interface EtlDatabaseObject extends EtlObject {
 	}
 	
 	default boolean hasResolvedConflict() {
-		return this.getConflictResolutionType() != null;
+		if (isInEtlProcess())
+			throw new ForbiddenOperationException("The object " + this + " is not in an etl process");
+		
+		return this.getEtlInfo().getConflictResolutionType() != null;
 	}
 	
 	default void resolveConflictWithExistingRecord(TableConfiguration tableConfiguration, DBException exception,
@@ -741,12 +721,13 @@ public interface EtlDatabaseObject extends EtlObject {
 			}
 			
 			if (existingRecordIsOutdated) {
-				this.setConflictResolutionType(ConflictResolutionType.UPDATED_EXISTING);
+				
+				this.getEtlInfo().setConflictResolutionType(ConflictResolutionType.UPDATED_EXISTING);
 				
 				this.setObjectId(recordOnDB.getObjectId());
 				this.update(tableConfiguration, conn);
 			} else {
-				this.setConflictResolutionType(ConflictResolutionType.KEPT_EXISTING);
+				this.getEtlInfo().setConflictResolutionType(ConflictResolutionType.KEPT_EXISTING);
 				
 				this.setObjectId(recordOnDB.getObjectId());
 			}
@@ -788,5 +769,72 @@ public interface EtlDatabaseObject extends EtlObject {
 	
 	default Field getField(ParentTable refInfo) {
 		return refInfo.getChildInstanceField(this);
+	}
+	
+	default void addDestinationRecord(EtlDatabaseObject dstObject) {
+		if (this.getDestinationObjects() == null) {
+			setDestinationObjects(new ArrayList<>());
+		}
+		
+		this.getDestinationObjects().add(dstObject);
+	}
+	
+	default EtlDatabaseObject retriveDestinationRecord(DstConf dstConf) {
+		if (hasDestinationRecords()) {
+			for (EtlDatabaseObject obj : this.getDestinationObjects()) {
+				if (obj.getRelatedConfiguration() == dstConf) {
+					return obj;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	default boolean hasDestinationRecords() {
+		return utils.listHasElement(this.getDestinationObjects());
+	}
+	
+	default boolean isInEtlProcess() {
+		return this.getEtlInfo() != null;
+	}
+	
+	default EtlLoadStatus getLoadStatus() {
+		if (!hasDestinationRecords()) {
+			throw new EtlExceptionImpl("No destination found for this object " + this);
+		}
+		
+		List<EtlDatabaseObject> succed = filterDestinationRecords(EtlStatus.SUCCESS);
+		List<EtlDatabaseObject> faild = filterDestinationRecords(EtlStatus.SUCCESS);
+		
+		if (succed.size() == this.getDestinationObjects().size()) {
+			return EtlLoadStatus.FULL_LOADED;
+		}
+		
+		if (faild.size() == this.getDestinationObjects().size()) {
+			return EtlLoadStatus.NOT_LOADED_DUE_ERRORS;
+		}
+		
+		return EtlLoadStatus.PARTIALY_LOADED;
+	}
+	
+	default boolean hasLoadStatus() {
+		return this.getLoadStatus() != null;
+	}
+	
+	default List<EtlDatabaseObject> filterDestinationRecords(EtlStatus status) {
+		
+		if (!hasDestinationRecords())
+			throw new EtlExceptionImpl("No destination found for this object " + this);
+		
+		List<EtlDatabaseObject> succed = new ArrayList<>();
+		
+		for (EtlDatabaseObject obj : this.getDestinationObjects()) {
+			if (obj.getEtlInfo().getStatus().equals(status)) {
+				succed.add(obj);
+			}
+		}
+		
+		return succed;
 	}
 }

@@ -65,7 +65,7 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 		
 		syncMessage.setFieldValue("id", (id + syncMsgMaxId));
 		
-		syncMessage.setSrcRelatedObject(srcObject);
+		//syncMessage.setSrcRelatedObject(srcObject);
 		
 		return syncMessage;
 	}

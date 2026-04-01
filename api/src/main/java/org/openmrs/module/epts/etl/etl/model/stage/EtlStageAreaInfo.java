@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.etl.model.EtlLoadHelperRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -17,20 +16,18 @@ public class EtlStageAreaInfo {
 	
 	private List<EtlStageAreaObject> dstStageInfoObject;
 	
-	private EtlLoadHelperRecord etlInfo;
-	
-	private EtlStageAreaInfo(EtlLoadHelperRecord etlInfo, Connection srcConn, Connection dstConn) throws DBException {
-		this.etlInfo = etlInfo;
+	private EtlStageAreaInfo(EtlDatabaseObject srcObj, Connection srcConn, Connection dstConn) throws DBException {
 		
-		this.setSrcStageInfoObject(EtlStageAreaObject.generateSrc(etlInfo.getSrcObject(), etlInfo.getActiveException(), srcConn));
+		this.setSrcStageInfoObject(EtlStageAreaObject.generateSrc(srcObj, srcConn));
 		
-		if (utilities.listHasElement(etlInfo.getDstRecords())) {
-			this.setDstStageInfoObject(EtlStageAreaObject.generateDst(etlInfo.getDstRecords(), dstConn));
+		if (srcObj.hasDestinationRecords()) {
+			this.setDstStageInfoObject(EtlStageAreaObject.generateDst(srcStageInfoObject, srcObj.getDestinationObjects(), dstConn));
 		}
 	}
 	
-	public static EtlStageAreaInfo generate(EtlLoadHelperRecord rec, Connection srcConn, Connection dstConn)
+	public static EtlStageAreaInfo generate(EtlDatabaseObject rec, Connection srcConn, Connection dstConn)
 	        throws DBException {
+		
 		EtlStageAreaInfo recInfo = new EtlStageAreaInfo(rec, srcConn, dstConn);
 		
 		return recInfo;
@@ -50,10 +47,6 @@ public class EtlStageAreaInfo {
 	
 	private void setDstStageInfoObject(List<EtlStageAreaObject> dstStageInfoObject) {
 		this.dstStageInfoObject = dstStageInfoObject;
-	}
-	
-	public EtlLoadHelperRecord getEtlInfo() {
-		return etlInfo;
 	}
 	
 	private void loadDstStageObjectIdToDstKeyInfoObject() {

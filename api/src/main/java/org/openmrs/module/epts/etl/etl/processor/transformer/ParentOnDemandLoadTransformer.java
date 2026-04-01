@@ -19,8 +19,6 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
-import org.openmrs.module.epts.etl.etl.model.LoadRecord;
-import org.openmrs.module.epts.etl.etl.model.LoadStatus;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
@@ -318,11 +316,9 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		}
 		catch (InconsistentStateException e) {
 			
-			InconsistenceInfo i = InconsistenceInfo.generate(srcObject.generateTableName(),
-				srcObject.getObjectId(),
-	            parentTableName,
-	            srcObject.getFieldValue(parentSourceField), null,
-	            processor.getRelatedEtlConfiguration().getOriginAppLocationCode());
+			InconsistenceInfo i = InconsistenceInfo.generate(srcObject.generateTableName(), srcObject.getObjectId(),
+			    parentTableName, srcObject.getFieldValue(parentSourceField), null,
+			    processor.getRelatedEtlConfiguration().getOriginAppLocationCode());
 			
 			srcObject.setFieldValue(this.parentSourceField, null);
 			
@@ -426,15 +422,13 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 			transformationType = TransformationType.ON_DEMAND;
 		}
 		
-		srcParent.setTransformationSrcObject(additionalSrcObjects);
-		
 		EtlLoadHelper loadHelper = EtlLoadHelper.fastLoadRecord(processor, srcParent, dstConf, transformationType, srcConn,
 		    dstConn);
 		
-		List<LoadRecord> migratedRecs = loadHelper.getAllRecordsAsLoadRecord(dstConf, LoadStatus.SUCCESS);
+		List<EtlDatabaseObject> migratedRecs = loadHelper.getAllSuccedTransformedObjects(dstConf);
 		
 		if (utilities.listHasElement(migratedRecs)) {
-			return migratedRecs.get(0).getDstRecord();
+			return migratedRecs.get(0);
 		}
 		
 		return null;

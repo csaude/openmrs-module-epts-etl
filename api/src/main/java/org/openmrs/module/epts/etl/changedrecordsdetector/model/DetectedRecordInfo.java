@@ -14,6 +14,7 @@ import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObjectUniqueKeyInfo;
+import org.openmrs.module.epts.etl.model.EtlInfo;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -380,15 +381,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public EtlDatabaseObject getSrcRelatedObject() {
-		return null;
-	}
-	
-	@Override
-	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
-	}
-	
-	@Override
 	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
 	}
 	
@@ -423,15 +415,27 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	@Override
 	public void tryToReplaceFieldWithKey(Key k) {
 	}
+	
+	@Override
+	public List<EtlDatabaseObject> getDestinationObjects() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public void setDestinationObjects(List<EtlDatabaseObject> destinationObjects) {
+		// TODO Auto-generated method stub
+		
+	}
 
 	@Override
-	public List<EtlDatabaseObject> getTransformationSrcObject() {
+	public EtlInfo getEtlInfo() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects) {
+	public void setEtlInfo(EtlInfo info) {
 		// TODO Auto-generated method stub
 		
 	}

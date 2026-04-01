@@ -9,9 +9,11 @@ import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.etl.model.EtlLoadStatus;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
@@ -19,16 +21,19 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 	
 	private List<EtlDatabaseObject> keyInfo;
 	
+	private EtlDatabaseObject relatedEtlObject;
+	
 	public EtlStageAreaObject() {
 	}
 	
-	private EtlStageAreaObject(EtlStageTableType type, EtlDatabaseObject relatedEtlObject, EtlException relatedException,
+	private EtlStageAreaObject(EtlStageAreaObject srcStageInfoObject, EtlDatabaseObject obj, EtlStageTableType type,
 	    Connection conn) throws DBException {
-		TableConfiguration etlTable = (TableConfiguration) relatedEtlObject.getRelatedConfiguration();
+		
+		this.relatedEtlObject = obj;
+		
+		TableConfiguration etlTable = (TableConfiguration) obj.getRelatedConfiguration();
 		
 		EtlConfigurationTableConf keyInfoTabConf = null;
-		
-		setSrcRelatedObject(relatedEtlObject);
 		
 		if (type.isSrc()) {
 			this.setRelatedConfiguration(etlTable.generateRelatedSrcStageTableConf(conn));
@@ -36,28 +41,66 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			this.setFieldValue("record_origin_location_code", etlTable.getOriginAppLocationCode());
 			this.setFieldValue("compacted_object_uk", UniqueKeyInfo.compactAll(this.getAllKeys()));
 			
-			if (relatedException != null) {
-				this.setFieldValue("last_sync_try_err", relatedException.getLocalizedMessage());
-				this.setFieldValue("migration_status", 0);
-			} else {
-				this.setFieldValue("migration_status", 1);
+			EtlLoadStatus status = EtlLoadStatus.NOT_LOADED;
+			
+			if (obj.hasDestinationRecords()) {
+				status = obj.getLoadStatus();
 			}
+			
+			this.setFieldValue("migration_status", status.toInt());
 			
 			keyInfoTabConf = etlTable.generateRelatedStageSrcUniqueKeysTableConf(conn);
 			
+			EtlStageAreaObject existing = EtlStageAreaObjectDAO.getByKey(etlTable.generateRelatedSrcStageTableConf(conn),
+			    this.getFieldValue("compacted_object_uk").toString(),
+			    this.getFieldValue("record_origin_location_code").toString(), conn);
+			
+			if (existing != null) {
+				this.setFieldValue("id", existing.getFieldValue("id"));
+			}
 		} else {
-			OpenConnection srcConn = relatedEtlObject.getRelatedConfiguration().getRelatedEtlConf().openSrcConn();
+			if (!obj.isInEtlProcess())
+				throw new EtlExceptionImpl("The destination object " + obj + ". Is not in etl process");
+			
+			if (srcStageInfoObject == null)
+				throw new EtlExceptionImpl("The related srcStageInfoObject cannot be null");
+			
+			OpenConnection srcConn = obj.getRelatedConfiguration().getRelatedEtlConf().openSrcConn();
 			
 			try {
 				this.setRelatedConfiguration(((DstConf) etlTable).getSrcConf().generateRelatedDstStageTableConf(srcConn));
 				
+				EtlStageAreaObject existing = null;
+				
+				if (srcStageInfoObject.getObjectId() != null) {
+					String condition = "stage_record_id = ? and table_name = ? ";
+					Object[] params = { srcStageInfoObject.getObjectId().asSimpleValue(), etlTable.getTableName() };
+					
+					existing = EtlStageAreaObjectDAO.get(etlTable.generateRelatedSrcStageTableConf(conn), condition, params,
+					    conn);
+					
+					if (existing != null) {
+						this.setFieldValue("id", existing.getFieldValue("id"));
+					}
+				}
+				
+				EtlLoadStatus status = obj.getEtlInfo().hasExceptionOnEtl() ? EtlLoadStatus.NOT_LOADED_DUE_ERRORS
+				        : EtlLoadStatus.FULL_LOADED;
+				
+				this.setFieldValue("last_sync_try_err",
+				    status.isFullLoaded() ? obj.getEtlInfo().getExceptionOnEtl().getLocalizedMessage() : null);
+				
+				this.setFieldValue("migration_status", status.toInt());
+				this.setFieldValue("last_sync_date", DateAndTimeUtilities.getCurrentSystemDate(conn));
 				this.setFieldValue("dst_table_name", etlTable.getTableName());
-				this.setFieldValue("dst_compacted_object_uk", UniqueKeyInfo.compactAll(this.getAllKeys()));
-				this.setFieldValue("conflict_resolution_type",
-				    this.getRelatedEtlObject().getConflictResolutionType().toString());
 				
-				keyInfoTabConf = ((DstConf) etlTable).getSrcConf().generateRelatedStageDstUniqueKeysTableConf(srcConn);
-				
+				if (status.isFullLoaded()) {
+					this.setFieldValue("dst_compacted_object_uk", UniqueKeyInfo.compactAll(this.getAllKeys()));
+					this.setFieldValue("conflict_resolution_type",
+					    this.getRelatedEtlObject().getEtlInfo().getConflictResolutionType().toString());
+					
+					keyInfoTabConf = ((DstConf) etlTable).getSrcConf().generateRelatedStageDstUniqueKeysTableConf(srcConn);
+				}
 			}
 			finally {
 				srcConn.finalizeConnection();
@@ -67,25 +110,25 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		this.generateUniqueKeyInfoRecord(keyInfoTabConf);
 	}
 	
-	private static EtlStageAreaObject generate(EtlStageTableType type, EtlDatabaseObject relatedEtlObject,
-	        EtlException relatedException, Connection conn) throws DBException {
-		return new EtlStageAreaObject(type, relatedEtlObject, relatedException, conn);
+	private static EtlStageAreaObject generate(EtlStageAreaObject srcStageInfoObject, EtlDatabaseObject relatedEtlObject,
+	        EtlStageTableType type, Connection conn) throws DBException {
+		
+		return new EtlStageAreaObject(srcStageInfoObject, relatedEtlObject, type, conn);
 	}
 	
-	public static EtlStageAreaObject generateSrc(EtlDatabaseObject relatedEtlObject, EtlException relatedException,
-	        Connection conn) throws DBException {
+	public static EtlStageAreaObject generateSrc(EtlDatabaseObject relatedEtlObject, Connection conn) throws DBException {
 		
 		TableConfiguration tabConf = (TableConfiguration) relatedEtlObject.getRelatedConfiguration();
 		
 		if (tabConf.hasPK()) {
-			return generate(EtlStageTableType.SRC, relatedEtlObject, relatedException, conn);
+			return generate(null, relatedEtlObject, EtlStageTableType.SRC, conn);
 		} else {
 			return null;
 		}
 	}
 	
-	public static List<EtlStageAreaObject> generateDst(List<EtlDatabaseObject> relatedEtlObject, Connection conn)
-	        throws DBException {
+	public static List<EtlStageAreaObject> generateDst(EtlStageAreaObject srcStageInfoObject,
+	        List<EtlDatabaseObject> relatedEtlObject, Connection conn) throws DBException {
 		
 		List<EtlStageAreaObject> recs = new ArrayList<>();
 		
@@ -95,7 +138,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 				TableConfiguration tabConf = (TableConfiguration) etlObject.getRelatedConfiguration();
 				
 				if (tabConf.hasPK()) {
-					recs.add(generate(EtlStageTableType.DST, etlObject, null, conn));
+					recs.add(generate(srcStageInfoObject, etlObject, EtlStageTableType.DST, conn));
 				}
 			}
 		}
@@ -125,7 +168,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 	}
 	
 	private List<UniqueKeyInfo> getAllKeys() {
-		EtlDatabaseObject etlObject = getSrcRelatedObject();
+		EtlDatabaseObject etlObject = this.relatedEtlObject;
 		
 		List<UniqueKeyInfo> allKeys = new ArrayList<>();
 		
@@ -154,7 +197,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 	}
 	
 	public EtlDatabaseObject getRelatedEtlObject() {
-		return super.getSrcRelatedObject();
+		return this.relatedEtlObject;
 	}
 	
 	public TableConfiguration getRelatedEtlTableConf() {
@@ -185,8 +228,6 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 					obj.setFieldValue("key_name", uKey.getKeyName());
 					obj.setFieldValue("column_name", key.getName());
 					obj.setFieldValue("key_value", key.getValue());
-					
-					obj.setSrcRelatedObject(this);
 					
 					this.addKeyInfo(obj);
 				}
