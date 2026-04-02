@@ -22,12 +22,7 @@ public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 			return;
 		
 		saveAllSrc(stageObjectInfo, srcConn);
-		
-		doInsert(EtlStageObjectInfo.collectNotExistingDstObjects(stageObjectInfo), srcConn);
-		
-		EtlStageObjectInfo.loadDstStageObjectIdToDstKeyInfoObject(stageObjectInfo);
-		
-		insert(EtlStageObjectInfo.collectDstKeyInfo(stageObjectInfo), srcConn);
+		saveAllDst(stageObjectInfo, srcConn);
 	}
 	
 	public static void saveAllSrc(List<EtlStageObjectInfo> stageObjectInfo, Connection srcConn) throws DBException {
@@ -40,10 +35,18 @@ public class EtlStageAreaObjectDAO extends DatabaseObjectDAO {
 		
 		insert(EtlStageObjectInfo.collectSrcKeyInfoForNotExistingObjects(stageObjectInfo), srcConn);
 		
-		EtlStageObjectInfo.loadSrcStageObjectIdToDstStageObjectId(stageObjectInfo);
-		
+		EtlStageObjectInfo.loadSrcStageObjectIdToDstStageObjectId(stageObjectInfo);		
 	}
 	
+	public static void saveAllDst(List<EtlStageObjectInfo> stageObjectInfo, Connection srcConn) throws DBException {
+		doInsert(EtlStageObjectInfo.collectNotExistingDstObjects(stageObjectInfo), srcConn);
+		
+		EtlStageObjectInfo.loadDstStageObjectIdToDstKeyInfoObject(stageObjectInfo);
+		
+		insert(EtlStageObjectInfo.collectDstKeyInfo(stageObjectInfo), srcConn);
+	}
+	
+
 	private static void doInsert(List<EtlStageAreaObject> records, Connection srcConn) throws DBException {
 		DatabaseObjectDAO.insert(utilities.parseList(records, EtlDatabaseObject.class), srcConn);
 	}

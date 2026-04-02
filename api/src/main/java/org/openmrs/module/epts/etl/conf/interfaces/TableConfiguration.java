@@ -2678,7 +2678,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("dst_compacted_object_uk", 190, nullConstraint, conn) + endLineMarker;
-		
+		sql += DBUtilities.generateTableVarcharField("etl_operation_id", 190, nullConstraint, conn) + endLineMarker;
 		sql += DBUtilities.generateTableVarcharField("conflict_resolution_type", 30, notNullConstraint, conn)
 		        + endLineMarker;
 		
@@ -2694,8 +2694,11 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		
 		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
 		
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unique_key_dst".toLowerCase(),
+		    "dst_compacted_object_uk", conn) + endLineMarker;
+		
 		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_dst".toLowerCase(),
-		    "stage_record_id, dst_table_name", conn) + endLineMarker;
+		    "stage_record_id, etl_operation_id, dst_table_name", conn) + endLineMarker;
 		
 		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
 		    parentTableName, "id", conn) + endLineMarker;

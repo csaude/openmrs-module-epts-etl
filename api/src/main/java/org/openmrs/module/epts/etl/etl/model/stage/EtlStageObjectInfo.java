@@ -16,8 +16,7 @@ public class EtlStageObjectInfo {
 	
 	private List<EtlStageAreaObject> dstStageInfoObject;
 	
-	private EtlStageObjectInfo(EtlDatabaseObject srcObj, Connection srcConn, Connection dstConn)
-	        throws DBException {
+	private EtlStageObjectInfo(EtlDatabaseObject srcObj, Connection srcConn, Connection dstConn) throws DBException {
 		
 		this.setSrcStageInfoObject(EtlStageAreaObject.generateSrc(srcObj, srcConn, dstConn));
 		
@@ -27,11 +26,10 @@ public class EtlStageObjectInfo {
 		}
 	}
 	
-	public static EtlStageObjectInfo generate(EtlDatabaseObject rec, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public static EtlStageObjectInfo generate(EtlDatabaseObject rec, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		
-		EtlStageObjectInfo recInfo = new EtlStageObjectInfo(rec, srcConn,
-		        dstConn);
+		EtlStageObjectInfo recInfo = new EtlStageObjectInfo(rec, srcConn, dstConn);
 		
 		return recInfo;
 	}
@@ -99,8 +97,7 @@ public class EtlStageObjectInfo {
 		return utilities.listHasElement(this.getDstStageInfoObject());
 	}
 	
-	public static void loadSrcStageObjectIdToDstStageObjectId(
-	        List<EtlStageObjectInfo> stageObjectInfo) {
+	public static void loadSrcStageObjectIdToDstStageObjectId(List<EtlStageObjectInfo> stageObjectInfo) {
 		if (utilities.listHasNoElement(stageObjectInfo))
 			return;
 		
@@ -115,14 +112,11 @@ public class EtlStageObjectInfo {
 			return;
 		
 		for (EtlStageObjectInfo sti : stageInfo) {
-			if (!sti.getSrcStageInfoObject().hasValuedObjectId()) {
-				sti.loadSrcStageObjectIdToSrcKeyInfoObject();
-			}
+			sti.loadSrcStageObjectIdToSrcKeyInfoObject();
 		}
 	}
 	
-	public static void loadDstStageObjectIdToDstKeyInfoObject(
-	        List<EtlStageObjectInfo> stageObjectInfo) {
+	public static void loadDstStageObjectIdToDstKeyInfoObject(List<EtlStageObjectInfo> stageObjectInfo) {
 		if (utilities.listHasNoElement(stageObjectInfo))
 			return;
 		
@@ -162,8 +156,7 @@ public class EtlStageObjectInfo {
 		this.getSrcStageInfoObject().setKeyInfo(newSrcStageInfo);
 	}
 	
-	private static List<EtlStageAreaObject> collectSrcObjects(List<EtlStageObjectInfo> stageInfo,
-	        Boolean existing) {
+	private static List<EtlStageAreaObject> collectSrcObjects(List<EtlStageObjectInfo> stageInfo, Boolean existing) {
 		if (utilities.listHasNoElement(stageInfo))
 			return null;
 		
@@ -178,9 +171,9 @@ public class EtlStageObjectInfo {
 			
 			if (collectAll) {
 				collected.add(obj);
-			} else if (collectNotExisting && !obj.hasValuedObjectId()) {
+			} else if (collectNotExisting && !obj.alreadyExistOnDB()) {
 				collected.add(obj);
-			} else if (collectExisting && obj.hasValuedObjectId()) {
+			} else if (collectExisting && obj.alreadyExistOnDB()) {
 				collected.add(obj);
 			}
 		}
@@ -192,18 +185,15 @@ public class EtlStageObjectInfo {
 		return collectSrcObjects(stageInfo, null);
 	}
 	
-	public static List<EtlStageAreaObject> collectNotExistingSrcObjects(
-	        List<EtlStageObjectInfo> stageInfo) {
+	public static List<EtlStageAreaObject> collectNotExistingSrcObjects(List<EtlStageObjectInfo> stageInfo) {
 		return collectSrcObjects(stageInfo, false);
 	}
 	
-	public static List<EtlStageAreaObject> collectExistingSrcObjects(
-	        List<EtlStageObjectInfo> stageInfo) {
+	public static List<EtlStageAreaObject> collectExistingSrcObjects(List<EtlStageObjectInfo> stageInfo) {
 		return collectSrcObjects(stageInfo, true);
 	}
 	
-	private static List<EtlStageAreaObject> collectDstObjects(List<EtlStageObjectInfo> stageInfo,
-	        Boolean existing) {
+	private static List<EtlStageAreaObject> collectDstObjects(List<EtlStageObjectInfo> stageInfo, Boolean existing) {
 		if (utilities.listHasNoElement(stageInfo))
 			return null;
 		
@@ -219,9 +209,9 @@ public class EtlStageObjectInfo {
 					
 					if (collectAll) {
 						collected.add(obj);
-					} else if (collectNotExisting && !obj.hasValuedObjectId()) {
+					} else if (collectNotExisting && !obj.alreadyExistOnDB()) {
 						collected.add(obj);
-					} else if (collectExisting && obj.hasValuedObjectId()) {
+					} else if (collectExisting && obj.alreadyExistOnDB()) {
 						collected.add(obj);
 					}
 				}
@@ -235,13 +225,11 @@ public class EtlStageObjectInfo {
 		return collectDstObjects(stageInfo, null);
 	}
 	
-	public static List<EtlStageAreaObject> collectNotExistingDstObjects(
-	        List<EtlStageObjectInfo> stageInfo) {
+	public static List<EtlStageAreaObject> collectNotExistingDstObjects(List<EtlStageObjectInfo> stageInfo) {
 		return collectDstObjects(stageInfo, false);
 	}
 	
-	public static List<EtlStageAreaObject> collectExistingDstObjects(
-	        List<EtlStageObjectInfo> stageInfo) {
+	public static List<EtlStageAreaObject> collectExistingDstObjects(List<EtlStageObjectInfo> stageInfo) {
 		return collectDstObjects(stageInfo, true);
 	}
 	

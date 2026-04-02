@@ -86,12 +86,14 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			this.setRelatedConfiguration(((DstConf) etlTable).getSrcConf().generateRelatedDstStageTableConf(srcConn));
 			
 			keyInfoTabConf = ((DstConf) etlTable).getSrcConf().generateRelatedStageDstUniqueKeysTableConf(srcConn);
+			String operation_id = obj.getEtlInfo().getProcessor().getEngine().getEngineId();
 			
 			EtlStageAreaObject existing = null;
 			
 			if (srcStageInfoObject.hasValuedObjectId()) {
-				String condition = "stage_record_id = ? and table_name = ? ";
-				Object[] params = { srcStageInfoObject.getObjectId().asSimpleValue(), etlTable.getTableName() };
+				String condition = "etl_operation_id = ? and stage_record_id = ? and table_name = ? ";
+				Object[] params = { operation_id, srcStageInfoObject.getObjectId().asSimpleValue(),
+				        etlTable.getTableName() };
 				
 				existing = EtlStageAreaObjectDAO.get(etlTable.generateRelatedSrcStageTableConf(srcConn), condition, params,
 				    srcConn);
@@ -105,6 +107,8 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 				} else {
 					setAlreadyExistOnDB(false);
 				}
+			} else {
+				setAlreadyExistOnDB(false);
 			}
 			
 			this.status = obj.getEtlInfo().hasExceptionOnEtl() ? EtlLoadStatus.NOT_LOADED_DUE_ERRORS
@@ -113,6 +117,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			this.setFieldValue("last_sync_try_err",
 			    !status.isFullLoaded() ? obj.getEtlInfo().getExceptionOnEtl().getLocalizedMessage() : null);
 			
+			this.setFieldValue("etl_operation_id", operation_id);
 			this.setFieldValue("migration_status", status.toInt());
 			this.setFieldValue("last_sync_date", DateAndTimeUtilities.getCurrentSystemDate(srcConn));
 			this.setFieldValue("dst_table_name", etlTable.getTableName());
@@ -138,6 +143,10 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		
 		if (loadKey) {
 			this.generateUniqueKeyInfoRecord(keyInfoTabConf);
+		} else {
+			
+			//We intencionaly null the keyInfo as we do want them to be stored again
+			this.keyInfo = null;
 		}
 	}
 	
