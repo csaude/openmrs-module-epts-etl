@@ -51,7 +51,7 @@ public class EtlLoadHelper {
 		for (EtlDatabaseObject obj : srcObjects) {
 			if (obj.hasDestinationRecords()) {
 				for (EtlDatabaseObject dst : obj.getDestinationObjects()) {
-					if (this.dstConf.contains(dst.getRelatedConfiguration())) {
+					if (!this.dstConf.contains(dst.getRelatedConfiguration())) {
 						this.dstConf.add((DstConf) dst.getRelatedConfiguration());
 					}
 				}

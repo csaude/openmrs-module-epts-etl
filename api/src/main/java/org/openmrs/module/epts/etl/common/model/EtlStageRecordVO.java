@@ -514,11 +514,6 @@ public class EtlStageRecordVO extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public boolean hasIgnoredParent() {
-		return false;
-	}
-	
-	@Override
 	public void update(TableConfiguration syncTableInfo, Connection conn) throws DBException {
 	}
 	
@@ -654,15 +649,6 @@ public class EtlStageRecordVO extends BaseVO implements EtlDatabaseObject {
 	
 	@Override
 	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
-	}
-	
-	@Override
-	public ConflictResolutionType getConflictResolutionType() {
-		return null;
-	}
-	
-	@Override
-	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
 	}
 	
 	@Override

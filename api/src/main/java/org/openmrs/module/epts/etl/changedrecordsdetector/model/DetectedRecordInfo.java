@@ -215,11 +215,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public boolean hasIgnoredParent() {
-		return false;
-	}
-	
-	@Override
 	public boolean hasParents() {
 		return false;
 	}
@@ -385,15 +380,6 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public ConflictResolutionType getConflictResolutionType() {
-		return null;
-	}
-	
-	@Override
-	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
-	}
-	
-	@Override
 	public List<EtlDatabaseObjectUniqueKeyInfo> getUniqueKeysInfo() {
 		return null;
 	}
@@ -427,13 +413,13 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public EtlInfo getEtlInfo() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public void setEtlInfo(EtlInfo info) {
 		// TODO Auto-generated method stub

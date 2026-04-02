@@ -46,6 +46,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	public static final String[] REMOVABLE_METADATA = {};
 	
+	public static final Object lock = new Object();
+	
 	void setTableName(String tableName);
 	
 	AutoIncrementHandlingType getAutoIncrementHandlingType();
@@ -216,72 +218,78 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	default void createTable(Connection conn) throws DBException {
-		if (!this.hasFields()) {
-			throw new ForbiddenOperationException("There is no field for creation table!!");
-		}
 		
-		if (!this.hasTableName()) {
-			throw new ForbiddenOperationException("The table has no table name!!");
-		}
-		
-		String notNullConstraint = "NOT NULL";
-		String nullConstraint = "NULL";
-		String endLineMarker = ",\n";
-		
-		String sql = "CREATE table " + getFullTableName() + "(";
-		
-		for (Field f : this.getFields()) {
-			String constraint = f.allowNull() ? nullConstraint : notNullConstraint;
-			
-			if (f.isClob()) {
-				sql += DBUtilities.generateTableClobField(f.getName(), constraint, conn) + endLineMarker;
-			} else if (f.isTextField()) {
-				sql += DBUtilities.generateTableTextField(f.getName(), constraint, conn) + endLineMarker;
-			} else if (f.isString()) {
-				sql += DBUtilities.generateTableVarcharField(f.getName(), f.getPrecision().getLength(), constraint, conn)
-				        + endLineMarker;
-			} else if (f.isLongField()) {
-				sql += DBUtilities.generateTableBigIntField(f.getName(), constraint, conn) + endLineMarker;
-			} else if (f.isIntegerField() || f.isSmallIntType()) {
-				sql += DBUtilities.generateTableIntegerField(f.getName(), f.getPrecision().getLength(), constraint, conn)
-				        + endLineMarker;
-			} else if (f.isDateField()) {
-				sql += DBUtilities.generateTableDateTimeField(f.getName(), constraint, conn) + endLineMarker;
-			} else if (f.isDecimalField()) {
-				sql += DBUtilities.generateTableDecimalField(f.getName(), f.getPrecision().getLength(),
-				    f.getPrecision().getDecimalDigits(), constraint, conn) + endLineMarker;
+		synchronized (lock) {
+			if (!DBUtilities.isTableExists(this.getSyncStageSchema(), this.getTableName(), conn)) {
 				
-			} else {
-				sql += DBUtilities.generateTableVarcharField(f.getName(), f.getPrecision().getLength(), constraint, conn)
-				        + endLineMarker;
+				if (!this.hasFields()) {
+					throw new ForbiddenOperationException("There is no field for creation table!!");
+				}
+				
+				if (!this.hasTableName()) {
+					throw new ForbiddenOperationException("The table has no table name!!");
+				}
+				
+				String notNullConstraint = "NOT NULL";
+				String nullConstraint = "NULL";
+				String endLineMarker = ",\n";
+				
+				String sql = "CREATE table " + getFullTableName() + "(";
+				
+				for (Field f : this.getFields()) {
+					String constraint = f.allowNull() ? nullConstraint : notNullConstraint;
+					
+					if (f.isClob()) {
+						sql += DBUtilities.generateTableClobField(f.getName(), constraint, conn) + endLineMarker;
+					} else if (f.isTextField()) {
+						sql += DBUtilities.generateTableTextField(f.getName(), constraint, conn) + endLineMarker;
+					} else if (f.isString()) {
+						sql += DBUtilities.generateTableVarcharField(f.getName(), f.getPrecision().getLength(), constraint,
+						    conn) + endLineMarker;
+					} else if (f.isLongField()) {
+						sql += DBUtilities.generateTableBigIntField(f.getName(), constraint, conn) + endLineMarker;
+					} else if (f.isIntegerField() || f.isSmallIntType()) {
+						sql += DBUtilities.generateTableIntegerField(f.getName(), f.getPrecision().getLength(), constraint,
+						    conn) + endLineMarker;
+					} else if (f.isDateField()) {
+						sql += DBUtilities.generateTableDateTimeField(f.getName(), constraint, conn) + endLineMarker;
+					} else if (f.isDecimalField()) {
+						sql += DBUtilities.generateTableDecimalField(f.getName(), f.getPrecision().getLength(),
+						    f.getPrecision().getDecimalDigits(), constraint, conn) + endLineMarker;
+						
+					} else {
+						sql += DBUtilities.generateTableVarcharField(f.getName(), f.getPrecision().getLength(), constraint,
+						    conn) + endLineMarker;
+					}
+				}
+				
+				//Remove the last #endLineMarker 
+				sql = utilities.removeLastChar(sql);
+				
+				if (this.hasPK()) {
+					sql += endLineMarker;
+					
+					sql += DBUtilities.generateTablePrimaryKeyDefinition(
+					    getPrimaryKey().parseFieldNamesToCommaSeparatedString(), this.getTableName() + "_pk", conn);
+				}
+				
+				if (this.hasUniqueKeys()) {
+					sql += endLineMarker;
+					
+					for (UniqueKeyInfo uk : this.getUniqueKeys()) {
+						sql += DBUtilities.generateTableUniqueKeyDefinition(uk.getKeyName(),
+						    uk.parseFieldNamesToCommaSeparatedString(), conn) + endLineMarker;
+					}
+				}
+				
+				//Remove the last #endLineMarker 
+				sql = utilities.removeLastChar(sql);
+				
+				sql += ")";
+				
+				BaseDAO.executeBatch(conn, sql);
 			}
 		}
-		
-		//Remove the last #endLineMarker 
-		sql = utilities.removeLastChar(sql);
-		
-		if (this.hasPK()) {
-			sql += endLineMarker;
-			
-			sql += DBUtilities.generateTablePrimaryKeyDefinition(getPrimaryKey().parseFieldNamesToCommaSeparatedString(),
-			    this.getTableName() + "_pk", conn);
-		}
-		
-		if (this.hasUniqueKeys()) {
-			sql += endLineMarker;
-			
-			for (UniqueKeyInfo uk : this.getUniqueKeys()) {
-				sql += DBUtilities.generateTableUniqueKeyDefinition(uk.getKeyName(),
-				    uk.parseFieldNamesToCommaSeparatedString(), conn) + endLineMarker;
-			}
-		}
-		
-		//Remove the last #endLineMarker 
-		sql = utilities.removeLastChar(sql);
-		
-		sql += ")";
-		
-		BaseDAO.executeBatch(conn, sql);
 	}
 	
 	default boolean useManualGeneratedObjectId() {
@@ -2662,55 +2670,63 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	default void createRelatedDstSyncStage(Connection conn) throws DBException {
-		String sql = "";
-		String notNullConstraint = "NOT NULL";
-		String nullConstraint = "NULL";
-		String endLineMarker = ",\n";
 		
-		String tableName = this.generateRelatedDstStageTableName();
-		
-		String fullTableName = this.getSyncStageSchema() + "." + tableName;
-		
-		String parentTableName = this.generateFullStageTableName();
-		
-		sql += "CREATE TABLE " + fullTableName + "(\n";
-		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
-		sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("dst_compacted_object_uk", 190, nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("etl_operation_id", 190, nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("conflict_resolution_type", 30, notNullConstraint, conn)
-		        + endLineMarker;
-		
-		sql += DBUtilities.generateTableDateTimeField("last_sync_date", nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 500, nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableNumericField("consistent", 1, nullConstraint, -1, conn) + endLineMarker;
-		sql += DBUtilities.generateTableNumericField("migration_status", 1, nullConstraint, 1, conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-		
-		String checkCondition = "migration_status IN (-1,0,1,2)";
-		String keyName = "CHK_" + tableName + "_MIG_STATUS".toUpperCase();
-		
-		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unique_key_dst".toLowerCase(),
-		    "dst_compacted_object_uk", conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_dst".toLowerCase(),
-		    "stage_record_id, etl_operation_id, dst_table_name", conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
-		    parentTableName, "id", conn) + endLineMarker;
-		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
-		sql += ")";
-		
-		String indexName = tableName + "_idx";
-		String indexFields = "stage_record_id, dst_table_name";
-		
-		String idxDefinition = DBUtilities.generateIndexDefinition(fullTableName, indexName, indexFields, conn);
-		
-		BaseDAO.executeBatch(conn, sql, idxDefinition);
+		synchronized (lock) {
+			if (!DBUtilities.isTableExists(this.getSyncStageSchema(), this.generateRelatedDstStageTableName(), conn)) {
+				
+				String sql = "";
+				String notNullConstraint = "NOT NULL";
+				String nullConstraint = "NULL";
+				String endLineMarker = ",\n";
+				
+				String tableName = this.generateRelatedDstStageTableName();
+				
+				String fullTableName = this.getSyncStageSchema() + "." + tableName;
+				
+				String parentTableName = this.generateFullStageTableName();
+				
+				sql += "CREATE TABLE " + fullTableName + "(\n";
+				sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+				sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("dst_compacted_object_uk", 190, nullConstraint, conn)
+				        + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("etl_operation_id", 190, nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("conflict_resolution_type", 30, notNullConstraint, conn)
+				        + endLineMarker;
+				
+				sql += DBUtilities.generateTableDateTimeField("last_sync_date", nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 500, nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableNumericField("consistent", 1, nullConstraint, -1, conn) + endLineMarker;
+				sql += DBUtilities.generateTableNumericField("migration_status", 1, nullConstraint, 1, conn) + endLineMarker;
+				
+				sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+				
+				String checkCondition = "migration_status IN (-1,0,1,2)";
+				String keyName = "CHK_" + tableName + "_MIG_STATUS".toUpperCase();
+				
+				sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
+				
+				sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unique_key_dst".toLowerCase(),
+				    "dst_compacted_object_uk", conn) + endLineMarker;
+				
+				sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_dst".toLowerCase(),
+				    "stage_record_id, etl_operation_id, dst_table_name", conn) + endLineMarker;
+				
+				sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
+				    parentTableName, "id", conn) + endLineMarker;
+				sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+				sql += ")";
+				
+				String indexName = tableName + "_idx";
+				String indexFields = "stage_record_id, dst_table_name";
+				
+				String idxDefinition = DBUtilities.generateIndexDefinition(fullTableName, indexName, indexFields, conn);
+				
+				BaseDAO.executeBatch(conn, sql, idxDefinition);
+			}
+			
+		}
 	}
 	
 	default void createRelatedStageAreaSrcUniqueKeysTable(Connection conn) throws DBException {
@@ -2725,81 +2741,94 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	default void createRelatedSyncStageAreaUniqueKeysTable(String tableName, String parentTableName, Connection conn)
 	        throws DBException {
-		String sql = "";
-		String notNullConstraint = "NOT NULL";
-		String nullConstraint = "NULL";
-		String endLineMarker = ",\n";
 		
-		String fullTableName = this.getSyncStageSchema() + "." + tableName;
-		
-		sql += "CREATE TABLE " + fullTableName + "(\n";
-		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
-		sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("key_value", 100, nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
-		    "stage_record_id, key_name, column_name", conn) + endLineMarker;
-		sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
-		    parentTableName, "id", conn) + endLineMarker;
-		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
-		sql += ")";
-		
-		String indexName = tableName + "_idx";
-		String indexFields = "key_name, column_name, key_value";
-		
-		String idxDefinition = DBUtilities.generateIndexDefinition(fullTableName, indexName, indexFields, conn);
-		
-		BaseDAO.executeBatch(conn, sql, idxDefinition);
+		synchronized (lock) {
+			if (!DBUtilities.isTableExists(this.getSyncStageSchema(), tableName, conn)) {
+				
+				String sql = "";
+				String notNullConstraint = "NOT NULL";
+				String nullConstraint = "NULL";
+				String endLineMarker = ",\n";
+				
+				String fullTableName = this.getSyncStageSchema() + "." + tableName;
+				
+				sql += "CREATE TABLE " + fullTableName + "(\n";
+				sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+				sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("key_name", 100, notNullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("key_value", 100, nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+				sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+				    "stage_record_id, key_name, column_name", conn) + endLineMarker;
+				sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
+				    parentTableName, "id", conn) + endLineMarker;
+				sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+				sql += ")";
+				
+				String indexName = tableName + "_idx";
+				String indexFields = "key_name, column_name, key_value";
+				
+				String idxDefinition = DBUtilities.generateIndexDefinition(fullTableName, indexName, indexFields, conn);
+				
+				BaseDAO.executeBatch(conn, sql, idxDefinition);
+			}
+		}
 	}
 	
 	default void createRelatedSrcStageAreaTable(Connection conn) throws DBException {
-		String tableName = this.generateRelatedStageTableName();
 		
-		String sql = "";
-		String notNullConstraint = "NOT NULL";
-		String nullConstraint = "NULL";
-		String endLineMarker = ",\n";
-		
-		sql += "CREATE TABLE " + this.generateFullStageTableName() + "(\n";
-		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
-		        + endLineMarker;
-		
-		sql += DBUtilities.generateTableVarcharField("compacted_object_uk", 190, notNullConstraint, conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTableTextField("json", nullConstraint, conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTableDateTimeField("last_sync_date", nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 250, nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeField("last_update_date", nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableNumericField("consistent", 1, nullConstraint, -1, conn) + endLineMarker;
-		sql += DBUtilities.generateTableNumericField("migration_status", 1, nullConstraint, 1, conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTableDateTimeField("record_date_created", nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeField("record_date_changed", nullConstraint, conn) + endLineMarker;
-		sql += DBUtilities.generateTableDateTimeField("record_date_voided", nullConstraint, conn) + endLineMarker;
-		
-		String checkCondition = "migration_status in (-1,0,1,2)";
-		String keyName = "CHK_" + this.generateRelatedStageTableName() + "_MIG_STATUS".toUpperCase();
-		
-		sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
-		    "compacted_object_uk, record_origin_location_code", conn) + endLineMarker;
-		
-		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
-		sql += ")";
-		
-		String indexName = tableName + "location_idx";
-		String indexFields = "record_origin_location_code";
-		
-		String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullStageTableName(), indexName, indexFields,
-		    conn);
-		
-		BaseDAO.executeBatch(conn, sql, idxDefinition);
+		synchronized (lock) {
+			if (!DBUtilities.isTableExists(this.getSyncStageSchema(), this.generateRelatedStageTableName(), conn)) {
+				
+				String tableName = this.generateRelatedStageTableName();
+				
+				String sql = "";
+				String notNullConstraint = "NOT NULL";
+				String nullConstraint = "NULL";
+				String endLineMarker = ",\n";
+				
+				sql += "CREATE TABLE " + this.generateFullStageTableName() + "(\n";
+				sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
+				        + endLineMarker;
+				
+				sql += DBUtilities.generateTableVarcharField("compacted_object_uk", 190, notNullConstraint, conn)
+				        + endLineMarker;
+				
+				sql += DBUtilities.generateTableTextField("json", nullConstraint, conn) + endLineMarker;
+				
+				sql += DBUtilities.generateTableDateTimeField("last_sync_date", nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("last_sync_try_err", 250, nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableDateTimeField("last_update_date", nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableNumericField("consistent", 1, nullConstraint, -1, conn) + endLineMarker;
+				sql += DBUtilities.generateTableNumericField("migration_status", 1, nullConstraint, 1, conn) + endLineMarker;
+				sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+				
+				sql += DBUtilities.generateTableDateTimeField("record_date_created", nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableDateTimeField("record_date_changed", nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableDateTimeField("record_date_voided", nullConstraint, conn) + endLineMarker;
+				
+				String checkCondition = "migration_status in (-1,0,1,2)";
+				String keyName = "CHK_" + this.generateRelatedStageTableName() + "_MIG_STATUS".toUpperCase();
+				
+				sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
+				
+				sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+				    "compacted_object_uk, record_origin_location_code", conn) + endLineMarker;
+				
+				sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
+				sql += ")";
+				
+				String indexName = tableName + "location_idx";
+				String indexFields = "record_origin_location_code";
+				
+				String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullStageTableName(), indexName,
+				    indexFields, conn);
+				
+				BaseDAO.executeBatch(conn, sql, idxDefinition);
+			}
+		}
 	}
 	
 	default String generateLastUpdateDateInsertTriggerMonitor() {

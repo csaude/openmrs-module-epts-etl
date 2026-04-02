@@ -276,13 +276,7 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
-	@Override
-	public boolean hasIgnoredParent() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	
+
 	@Override
 	public void save(TableConfiguration syncTableInfo, Connection conn) throws DBException {
 		// TODO Auto-generated method stub

@@ -32,7 +32,19 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	private FieldsMapping auxFieldMapping;
 	
+	private boolean ignoreRelationshipResolution;
+	
 	public DataSourceField() {
+	}
+	
+	@Override
+	public boolean isIgnoreRelationshipResolution() {
+		return ignoreRelationshipResolution;
+	}
+	
+	@Override
+	public void setIgnoreRelationshipResolution(boolean ignoreRelationshipResolution) {
+		this.ignoreRelationshipResolution = ignoreRelationshipResolution;
 	}
 	
 	public void setDataSource(EtlDataSource dataSource) {
@@ -124,6 +136,7 @@ public class DataSourceField extends Field implements TransformableField {
 			this.setDataTypeLoaded(fDs.isDataTypeLoaded());
 			this.setSrcField(fDs.getSrcField());
 			this.setAuxFieldMapping(fDs.getAuxFieldMapping());
+			this.setIgnoreRelationshipResolution(fDs.isIgnoreRelationshipResolution());
 		}
 	}
 	

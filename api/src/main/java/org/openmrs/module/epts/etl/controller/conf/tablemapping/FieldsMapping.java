@@ -59,6 +59,8 @@ public class FieldsMapping extends Field implements TransformableField {
 	
 	private String originalSrcFieldDefinition;
 	
+	private boolean ignoreRelationshipResolution;
+	
 	public FieldsMapping() {
 		this.possibleSrc = new ArrayList<>(5);
 	}
@@ -89,6 +91,16 @@ public class FieldsMapping extends Field implements TransformableField {
 		
 		if (tryToLoadTransformer)
 			tryToLoadTransformer(null);
+	}
+	
+	@Override
+	public boolean isIgnoreRelationshipResolution() {
+		return ignoreRelationshipResolution;
+	}
+	
+	@Override
+	public void setIgnoreRelationshipResolution(boolean ignoreRelationshipResolution) {
+		this.ignoreRelationshipResolution = ignoreRelationshipResolution;
 	}
 	
 	public String getOriginalSrcFieldDefinition() {
@@ -503,6 +515,7 @@ public class FieldsMapping extends Field implements TransformableField {
 			this.possibleSrc = toCopyFormAsFieldsMapping.possibleSrc;
 			this.defaultValue = toCopyFormAsFieldsMapping.defaultValue;
 			this.overrideTriggerValue = toCopyFormAsFieldsMapping.overrideTriggerValue;
+			this.ignoreRelationshipResolution = toCopyFormAsFieldsMapping.ignoreRelationshipResolution;
 		}
 	}
 	

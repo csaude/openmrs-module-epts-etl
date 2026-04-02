@@ -172,12 +172,6 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public boolean hasIgnoredParent() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-	
-	@Override
 	public void save(TableConfiguration syncTableInfo, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
 		

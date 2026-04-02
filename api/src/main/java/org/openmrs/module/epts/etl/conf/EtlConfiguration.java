@@ -888,7 +888,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			
 			if (scriptsDir.listFiles() != null) {
 				for (File script : scriptsDir.listFiles()) {
-					DBUtilities.runScriptOnDbServer(connInfo, script.getAbsolutePath());
+					try {
+						DBUtilities.runScriptOnDbServer(connInfo, script.getAbsolutePath());
+					}
+					catch (Exception e) {
+					}
 				}
 			}
 		}

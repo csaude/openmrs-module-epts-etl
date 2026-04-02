@@ -86,6 +86,10 @@ public class FieldTransformingInfo {
 		        || this.getTransformationDatasource() instanceof DstConf;
 	}
 	
+	public boolean ignoreRelationshipResolution() {
+		return isLoadedWithDefaultValue() || isLoadedWithDstValue() || srcField.ignoreRelationshipResolution();
+	}
+	
 	@Override
 	public String toString() {
 		return this.srcField.getSrcField() + " = " + this.getTransformedValue() + ". Ds: " + this.transformationDatasource;

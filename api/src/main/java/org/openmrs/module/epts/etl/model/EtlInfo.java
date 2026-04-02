@@ -19,6 +19,7 @@ import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
 import org.openmrs.module.epts.etl.etl.model.EtlStatus;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -51,8 +52,6 @@ public class EtlInfo {
 	protected EtlException exceptionOnEtl;
 	
 	protected ConflictResolutionType conflictResolutionType;
-	
-	protected EtlDatabaseObject srcRelatedObject;
 	
 	protected List<ParentInfo> parentsWithDefaultValues;
 	
@@ -156,7 +155,7 @@ public class EtlInfo {
 	}
 	
 	public SrcConf getSrcConf() {
-		return (SrcConf) this.srcRelatedObject.getRelatedConfiguration();
+		return (SrcConf) this.relatedSrcObject.getRelatedConfiguration();
 	}
 	
 	public EtlConfiguration getEtlConfiguration() {
@@ -268,15 +267,22 @@ public class EtlInfo {
 		
 		for (ParentTable refInfo : getDstConf().getParentRefInfo()) {
 			
-			boolean loadedWithDstValue = this.getTransformedObject().getField(refInfo).getTransformingInfo()
-			        .isLoadedWithDstValue();
+			FieldTransformingInfo tinfo = this.getTransformedObject().getField(refInfo).getTransformingInfo();
 			
 			//We check if this parent is same to the parent dstConf
 			//The FK for parent dstConf is already loaded with the dst PK
 			boolean parentIsDstParentConf = this.getDstConf().hasParentDstConf()
 			        && this.getDstConf().getTableName().equals(refInfo.getTableName());
 			
-			boolean skipDstParentLoad = loadedWithDstValue || parentIsDstParentConf;
+			boolean skipDstParentLoad = false;
+			
+			try {
+				skipDstParentLoad = tinfo.ignoreRelationshipResolution() || parentIsDstParentConf;
+			}
+			catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			if (!skipDstParentLoad) {
 				performeParentInfoInitialization(srcConn, refInfo);

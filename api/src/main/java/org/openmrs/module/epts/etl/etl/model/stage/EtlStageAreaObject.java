@@ -65,8 +65,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			
 			if (existing != null) {
 				this.setFieldValue("id", existing.getFieldValue("id"));
-				
-				existing.loadObjectIdData();
+				this.loadObjectIdData();
 				
 				setAlreadyExistOnDB(true);
 				setKeyInfoAlreadyExistsOnDb(true);
@@ -133,8 +132,8 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		}
 		
 		if (alreadyExistOnDB()) {
-			String condition = "stage_record_id = ? and table_name = ? ";
-			Object[] params = { srcStageInfoObject.getObjectId().asSimpleValue(), etlTable.getTableName() };
+			String condition = "stage_record_id = ?";
+			Object[] params = { this.getObjectId().asSimpleValue()};
 			
 			this.keyInfo = EtlStageAreaObjectDAO.getAll(keyInfoTabConf, condition, params, srcConn);
 		}

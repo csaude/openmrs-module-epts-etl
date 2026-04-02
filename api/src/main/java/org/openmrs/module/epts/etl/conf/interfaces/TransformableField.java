@@ -41,6 +41,14 @@ public interface TransformableField {
 	
 	Object getDefaultValue();
 	
+	boolean isIgnoreRelationshipResolution();
+	
+	void setIgnoreRelationshipResolution(boolean ignoreRelationshipResolution);
+	
+	default boolean ignoreRelationshipResolution() {
+		return this.isIgnoreRelationshipResolution();
+	}
+	
 	default boolean hasTypeClass() {
 		return this.getTypeClass() != null;
 	}
