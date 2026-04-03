@@ -511,6 +511,7 @@ If the "dstConf '' has more than one element or if the mapping cannot be automat
                "dataType": "",
                "overrideTriggerValue": "",
  			   "nullValueBehavior":"",
+               "skipRelationshipResolution":"",
                "transformer": "",	
             }
          ],
@@ -552,7 +553,17 @@ Bellow is the explanation for each field:
      - *ALLOW* – The null value is accepted and assigned to the destination field. No action is taken.
      - *MARK_RECORD_AS_FAILED* – The record is marked as failed during the ETL process, but processing continues.
      - *ABORT_PROCESS* – An exception is thrown and the ETL process is interrupted according to the configured error handling strategy.
-   - (9) **transformer**: defines a transformation applied to the evaluated field value. Transformers allow complex processing such as expression evaluation, string manipulation, database lookups, or value mapping. Refere to [field transformers](#field-transformers) for more details,
+   - (9) **skipRelationshipResolution** defines whether the ETL engine should skip the resolution of relationships (foreign keys) for a given field.
+     By default, when a field represents a relationship, the ETL process attempts to resolve the corresponding parent record in the destination database. This typically involves looking up the destination record based on the transformed value.
+     When this attribute is set to *true* , the relationship resolution step is skipped, and the value is written directly to the destination field without performing any lookup or validation in the destination database.
+     This can improve performance and is useful in scenarios where:
+       - the value is already a valid destination identifier referential
+       - integrity is guaranteed externally
+       - relationship resolution is not required during the ETL process
+         
+     ⚠️ Warning:
+         Disabling relationship resolution may result in invalid foreign key references if the value does not correspond to an existing record in the destination database.      
+   - (10) **transformer**: defines a transformation applied to the evaluated field value. Transformers allow complex processing such as expression evaluation, string manipulation, database lookups, or value mapping. Refere to [field transformers](#field-transformers) for more details,
    -  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst use the same unique keys. The joining fields are important when it comes to determining if all the src records were processed. If the joining fields are not present then the final verification of the process will be skipped for that specific table. (See [The Joining Fields](#joinFields)) 
 - **autoIncrementHandlingType**: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values.
 - *primaryKeyInitialIncrementValue*: this override the same property defined on Etl Item Configuration.
