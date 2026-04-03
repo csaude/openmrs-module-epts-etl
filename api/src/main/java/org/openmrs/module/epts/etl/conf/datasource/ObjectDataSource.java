@@ -138,17 +138,15 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		
 		if (hasObjectFields()) {
 			for (DataSourceField f : this.getObjectFields()) {
+				f.setParent(this);
+				
 				f.loadType(null, this);
 				
 				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(f);
 				
 				if (auxFieldMapping.hasDataSourceName()) {
 					f.setValue(null);
-					
-					f.setSrcField(auxFieldMapping.getSrcField());
-					
-					f.setDataSource(this.getRelatedSrcConf()
-					        .findDataSourceOnAllAvaliabeDatasources(auxFieldMapping.getDataSourceName()));
+					f.setSrcField(null);
 					
 					f.setAuxFieldMapping(auxFieldMapping);
 				}
@@ -290,10 +288,10 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException {
+	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException {
 		
 		Map<String, FieldTransformingInfo> values = this.getFieldsValuesGeneratorInstance().generateObjectFields(processor,
-		    srcObject, this, avaliableSrcObjects, conn, conn);
+		    srcObject, dstObject, this, avaliableSrcObjects, conn, conn);
 		
 		EtlDatabaseObject obj = this.newInstance();
 		

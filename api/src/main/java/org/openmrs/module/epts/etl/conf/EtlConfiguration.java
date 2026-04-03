@@ -5,9 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
@@ -30,6 +27,7 @@ import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessType;
 import org.openmrs.module.epts.etl.conf.types.EtlTotalRecordsCountStrategy;
+import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
 import org.openmrs.module.epts.etl.controller.ProcessController;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
@@ -156,14 +154,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 */
 	private int waitTimeToCheckStatus;
 	
-	/**
-	 * If true, the relationship information will be ignored, meaning that the parent info in the
-	 * src will be the very same in destination. This will make the process fail in some DBMS which
-	 * do not tolerate inconsistency in case a consistency is found NOTE that, currently this is
-	 * only supported on mysql dbms
-	 */
-	private boolean doNotResolveRelationship;
-	
 	private EtlConfiguration parentEtlConf;
 	
 	private AutoIncrementHandlingType autoIncrementHandlingType;
@@ -192,6 +182,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 */
 	private List<String> relatedEtlSrcTables;
 	
+	private RelationshipResolutionStrategy relationshipResolutionStrategy;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -206,6 +198,15 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.waitTimeToCheckStatus = 5;
 		
 		this.generalBehaviourOnEtlException = ActionOnEtlException.ABORT;
+		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
+	}
+	
+	public RelationshipResolutionStrategy getRelationshipResolutionStrategy() {
+		return relationshipResolutionStrategy;
+	}
+	
+	public void setRelationshipResolutionStrategy(RelationshipResolutionStrategy relationshipResolutionStrategy) {
+		this.relationshipResolutionStrategy = relationshipResolutionStrategy;
 	}
 	
 	public List<String> getRelatedEtlSrcTables() {
@@ -270,18 +271,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	public EtlItemConfiguration getTestingEtlItemConfiguration() {
 		return testingEtlItemConfiguration;
-	}
-	
-	public boolean isDoNotResolveRelationship() {
-		return doNotResolveRelationship;
-	}
-	
-	public void setDoNotResolveRelationship(boolean doNotResolveRelationship) {
-		this.doNotResolveRelationship = doNotResolveRelationship;
-	}
-	
-	public boolean doNotResolveRelationship() {
-		return isDoNotResolveRelationship();
 	}
 	
 	public int getWaitTimeToCheckStatus() {
@@ -891,8 +880,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					try {
 						DBUtilities.runScriptOnDbServer(connInfo, script.getAbsolutePath());
 					}
-					catch (Exception e) {
-					}
+					catch (Exception e) {}
 				}
 			}
 		}
@@ -988,6 +976,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		code = item.getSrcConf().getTableName() + "_to_" + code;
 		
+		code += "_on_" + this.generateProcessId()
+		        + (item.hasParentItemConf() ? "_within_" + item.getParentItemConf().getConfigCode() : "");
+		
 		item.setConfigCode(finalizeItemCodeGeneration(code));
 		
 		tryToLoadChildItemConf(item, testing);
@@ -1059,40 +1050,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-	}
-	
-	public void loadAllTables() {
-		if (UUID.randomUUID() != null)
-			throw new ForbiddenOperationException("Please review this method");
-		
-		OpenConnection conn = null;
-		
-		try {
-			conn = getSrcConnInfo().openConnection();
-			
-			DatabaseMetaData dbmd = conn.getMetaData();
-			String[] types = { "TABLE" };
-			
-			ResultSet rs = dbmd.getTables(conn.getCatalog(), null, "%", types);
-			
-			while (rs.next()) {
-				
-				/*AbstractTableConfiguration tab = AbstractTableConfiguration.init(rs.getString("TABLE_NAME"), this);
-				
-				if (tab.getTableName().startsWith("_"))
-					continue;
-				
-				this.allTables.add(tab);*/
-			}
-		}
-		catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
-		finally {
-			if (conn != null)
-				conn.finalizeConnection();
-		}
-		
 	}
 	
 	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromJSON(String json, File srcFile)
@@ -1473,14 +1430,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return utilities.parseToJSON(this);
 	}
 	
-	public String generateControllerId() {
+	public String generateProcessId() {
 		String controllerId = this.processType.name().toLowerCase();
 		
 		if (isSupposedToRunInOrigin() || isSupposedToHaveOriginAppCode()) {
-			controllerId += "_from_" + getOriginAppLocationCode();
+			controllerId += "_on_" + getOriginAppLocationCode();
 		}
 		
-		return controllerId;
+		return controllerId + "_using_" + this.getConfigFileName();
 	}
 	
 	@JsonIgnore
@@ -1781,6 +1738,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return dstConn;
 	}
 	
+	public boolean doNotResolveRelationship() {
+		return this.getRelationshipResolutionStrategy().skip();
+	}
+	
 	public OpenConnection openMainConn() throws DBException, ForbiddenOperationException {
 		OpenConnection mainConn = null;
 		
@@ -1855,7 +1816,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		clonedEtlConf.setDoNotTransformsPrimaryKeys(this.isDoNotTransformsPrimaryKeys());
 		clonedEtlConf.setManualMapPrimaryKeyOnField(this.getManualMapPrimaryKeyOnField());
 		clonedEtlConf.setWaitTimeToCheckStatus(this.getWaitTimeToCheckStatus());
-		clonedEtlConf.setDoNotResolveRelationship(this.isDoNotResolveRelationship());
+		clonedEtlConf.setRelationshipResolutionStrategy(this.getRelationshipResolutionStrategy());
 		clonedEtlConf.setPrimaryKeyInitialIncrementValue(this.getPrimaryKeyInitialIncrementValue());
 		clonedEtlConf.setAutoIncrementHandlingType(this.getAutoIncrementHandlingType());
 		
@@ -1960,7 +1921,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return null;
 	}
 	
-	public String getConfigName() {
+	public String getConfigFileName() {
 		return FileUtilities.generateFileNameFromRealPathWithoutExtension(this.getConfigFilePath());
 	}
 	

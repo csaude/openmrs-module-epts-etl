@@ -539,7 +539,9 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String values = "";
 		
 		for (int i = 0; i < objects.size(); i++) {
-			if (objects.get(i).isExcluded())
+			EtlDatabaseObject obj = objects.get(i);
+			
+			if (obj.isExcluded() || obj.isInEtlProcess() && obj.getEtlInfo().hasExceptionOnEtl())
 				continue;
 			
 			objects.get(i).loadObjectIdData(tabConf);

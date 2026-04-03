@@ -35,7 +35,7 @@ public class ProcessInfo {
 	
 	public ProcessInfo(EtlConfiguration configuration) {
 		this.configuration = configuration;
-		this.processId = this.configuration.generateControllerId();
+		this.processId = this.configuration.generateProcessId();
 		this.observationDate = this.configuration.getStartDate();
 	}
 	

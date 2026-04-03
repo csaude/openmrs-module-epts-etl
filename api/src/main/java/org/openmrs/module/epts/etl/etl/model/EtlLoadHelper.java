@@ -307,6 +307,9 @@ public class EtlLoadHelper {
 		
 		for (EtlDatabaseObject obj : toLoad) {
 			
+			if (obj.getEtlInfo().hasExceptionOnEtl()) continue;
+			
+			
 			EtlInfo etlInfo = obj.getEtlInfo();
 			
 			this.logTrace("Preparing the load of dstRecord " + etlInfo.getTransformedObject());
@@ -415,7 +418,7 @@ public class EtlLoadHelper {
 	public static void performeParentLoading(EtlDatabaseObject srcObject, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
-		EtlInfo etlInfo = srcObject.getEtlInfo();
+		EtlInfo etlInfo = srcObject.getDestinationObjects().get(0).getEtlInfo();
 		
 		String msg = "Initializing the load of parent record ["
 		        + ((TableConfiguration) srcObject.getRelatedConfiguration()).getFullTableDescription() + srcObject + "]";

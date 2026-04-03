@@ -52,16 +52,16 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		
 		processor.logTrace("Transforming dstRecord " + srcObject);
 		
-		List<EtlDatabaseObject> srcObjects = collectSourceObjects(processor, srcObject, migratedDstParent, dstConf,
-		    transformationType, srcConn);
+		EtlDatabaseObject transformedRec = dstConf.createRecordInstance();
+		
+		transformedRec.setEtlInfo(EtlInfo.initEtlRecord(processor, srcObject, transformedRec));
+		
+		List<EtlDatabaseObject> srcObjects = collectSourceObjects(processor, srcObject, transformedRec, migratedDstParent,
+		    dstConf, transformationType, srcConn);
 		
 		if (srcObjects.isEmpty()) {
 			return null;
 		}
-		
-		EtlDatabaseObject transformedRec = dstConf.createRecordInstance();
-		
-		transformedRec.setEtlInfo(EtlInfo.initEtlRecord(processor, srcObject, transformedRec));
 		
 		applyFieldTransformations(processor, transformedRec, srcObjects, srcConn, dstConn);
 		
@@ -109,8 +109,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	}
 	
 	private List<EtlDatabaseObject> collectSourceObjects(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject migratedDstParent, DstConf dstConf, TransformationType transformationType, Connection srcConn)
-	        throws DBException {
+	        EtlDatabaseObject dstObject, EtlDatabaseObject migratedDstParent, DstConf dstConf,
+	        TransformationType transformationType, Connection srcConn) throws DBException {
 		
 		try {
 			Set<EtlDatabaseObject> result = new LinkedHashSet<>();
@@ -120,7 +120,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			addSharedObjects(result, srcObject);
 			addParentObjects(result, srcObject, migratedDstParent);
 			addAuxObjects(result, srcObject);
-			addExtraDataSources(processor, result, srcObject, transformationType, srcConn);
+			addExtraDataSources(processor, result, srcObject, dstObject, transformationType, srcConn);
 			
 			return new ArrayList<>(result);
 		}
@@ -185,7 +185,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	}
 	
 	private void addExtraDataSources(EtlProcessor processor, Set<EtlDatabaseObject> srcObjects, EtlDatabaseObject srcObject,
-	        TransformationType transformationType, Connection srcConn) throws DBException {
+	        EtlDatabaseObject dstObject, TransformationType transformationType, Connection srcConn) throws DBException {
 		
 		if (srcObject.getRelatedConfiguration() instanceof SrcConf) {
 			SrcConf srcConf = (SrcConf) srcObject.getRelatedConfiguration();
@@ -196,8 +196,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 				        ? srcObjects.stream().toList()
 				        : utilities.parseToList(srcObject);
 				
-				EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(processor, srcObject, avaliableObjects,
-				    srcConn);
+				EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(processor, srcObject, dstObject,
+				    avaliableObjects, srcConn);
 				
 				if (relatedSrcObject == null) {
 					

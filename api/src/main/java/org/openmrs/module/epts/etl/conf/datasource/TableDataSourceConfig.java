@@ -159,7 +159,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
+	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
+	        throws DBException {
 		
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);

@@ -73,7 +73,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		this.controller = controller;
 		this.etlItemConfiguration = etlItemConfiguration;
 		
-		this.engineId = (getController().getControllerId() + "_" + this.getEtlConfigCode()).toLowerCase();
+		this.engineId = getEtlConfigCode();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		this.tableOperationProgressInfo = tableOperationProgressInfo;
@@ -1067,7 +1067,7 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		logDebug("PROGRESS METER REFRESHED");
 		
 		reportProgress();
-	} 
+	}
 	
 	public void reportProgress() {
 		EtlProgressMeter globalProgressMeter = this.getProgressMeter();

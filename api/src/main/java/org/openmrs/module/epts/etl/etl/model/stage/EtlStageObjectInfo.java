@@ -142,6 +142,9 @@ public class EtlStageObjectInfo {
 	}
 	
 	private void loadSrcStageObjectIdToSrcKeyInfoObject() {
+		if (utilities.listHasNoElement(this.getSrcStageInfoObject().getKeyInfo()))
+			return;
+		
 		//The src info
 		List<EtlDatabaseObject> newSrcStageInfo = new ArrayList<>();
 		

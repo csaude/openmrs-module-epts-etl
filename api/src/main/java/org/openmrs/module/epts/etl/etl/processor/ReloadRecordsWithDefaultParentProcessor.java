@@ -148,6 +148,7 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 				
 				if (dstParent != null) {
 					DBException exception = null;
+					recordAsSrc.addDestinationRecord(dstObject);
 					
 					try {
 						EtlLoadHelper.performeParentLoading(recordAsSrc, srcConn, dstConn);

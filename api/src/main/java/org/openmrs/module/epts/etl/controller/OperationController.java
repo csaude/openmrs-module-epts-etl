@@ -81,9 +81,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
-		this.controllerId = (getDstType() + "_" + getOperationType().name().toLowerCase() + "_on_"
-		        + processController.getControllerId()).toLowerCase() + "_using_"
-		        + this.getEtlConfiguration().getConfigName();
+		this.controllerId =   operationConfig.generateOperationId();
 		
 		OpenConnection conn = null;
 		try {

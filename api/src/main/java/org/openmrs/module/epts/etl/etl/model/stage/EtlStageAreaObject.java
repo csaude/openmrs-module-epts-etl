@@ -90,11 +90,11 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			EtlStageAreaObject existing = null;
 			
 			if (srcStageInfoObject.hasValuedObjectId()) {
-				String condition = "etl_operation_id = ? and stage_record_id = ? and table_name = ? ";
+				String condition = "etl_confing_id = ? and stage_record_id = ? and dst_table_name = ? ";
 				Object[] params = { operation_id, srcStageInfoObject.getObjectId().asSimpleValue(),
 				        etlTable.getTableName() };
 				
-				existing = EtlStageAreaObjectDAO.get(etlTable.generateRelatedSrcStageTableConf(srcConn), condition, params,
+				existing = EtlStageAreaObjectDAO.get(etlTable.generateRelatedDstStageTableConf(srcConn), condition, params,
 				    srcConn);
 				
 				if (existing != null) {
@@ -116,7 +116,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			this.setFieldValue("last_sync_try_err",
 			    !status.isFullLoaded() ? obj.getEtlInfo().getExceptionOnEtl().getLocalizedMessage() : null);
 			
-			this.setFieldValue("etl_operation_id", operation_id);
+			this.setFieldValue("etl_confing_id", operation_id);
 			this.setFieldValue("migration_status", status.toInt());
 			this.setFieldValue("last_sync_date", DateAndTimeUtilities.getCurrentSystemDate(srcConn));
 			this.setFieldValue("dst_table_name", etlTable.getTableName());
@@ -133,7 +133,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 		
 		if (alreadyExistOnDB()) {
 			String condition = "stage_record_id = ?";
-			Object[] params = { this.getObjectId().asSimpleValue()};
+			Object[] params = { this.getObjectId().asSimpleValue() };
 			
 			this.keyInfo = EtlStageAreaObjectDAO.getAll(keyInfoTabConf, condition, params, srcConn);
 		}

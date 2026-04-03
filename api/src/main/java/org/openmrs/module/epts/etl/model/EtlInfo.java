@@ -277,7 +277,7 @@ public class EtlInfo {
 			boolean skipDstParentLoad = false;
 			
 			try {
-				skipDstParentLoad = tinfo.ignoreRelationshipResolution() || parentIsDstParentConf;
+				skipDstParentLoad = tinfo.skipRelationshipResolution() || parentIsDstParentConf;
 			}
 			catch (Exception e) {
 				// TODO Auto-generated catch block

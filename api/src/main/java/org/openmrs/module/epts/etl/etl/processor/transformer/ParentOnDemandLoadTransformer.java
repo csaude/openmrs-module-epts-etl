@@ -264,7 +264,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	}
 	
 	public String getTransformerDsc() {
-		String sql = "ParentOnDemandLoadTransformer: (" + parentTableName;
+		String sql = "PARENT_ON_DEMAND_TRANSFORMER: (" + parentTableName;
 		
 		if (utilities.listHasElement(this.rawParameterDefinitions)) {
 			sql += ", " + this.rawParameterDefinitions.toString();

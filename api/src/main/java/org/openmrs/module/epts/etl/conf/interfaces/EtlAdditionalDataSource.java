@@ -47,7 +47,7 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 * @return the related {@link EtlDatabaseObject} instance
 	 * @throws DBException if a database error occurs during execution
 	 */
-	EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
+	EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject dstObject,
 	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException;
 	
 	/**

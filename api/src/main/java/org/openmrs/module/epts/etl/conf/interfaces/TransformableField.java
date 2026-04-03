@@ -1,6 +1,8 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.types.EtlNullBehavior;
+import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
 import org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformerType;
@@ -41,13 +43,32 @@ public interface TransformableField {
 	
 	Object getDefaultValue();
 	
-	boolean isIgnoreRelationshipResolution();
-	
-	void setIgnoreRelationshipResolution(boolean ignoreRelationshipResolution);
-	
-	default boolean ignoreRelationshipResolution() {
-		return this.isIgnoreRelationshipResolution();
+	default FieldTransformerType getTransformerType() {
+		if (this.hasTransformerInstance()) {
+			
+			Class<?> clazz = this.getTransformerInstance().getClass();
+			
+			for (FieldTransformerType type : FieldTransformerType.values()) {
+				if (type.getClassName() != null && type.getClassName().equals(clazz.getCanonicalName())) {
+					return type;
+				}
+			}
+			
+			return FieldTransformerType.CUSTOM_TRANSFORMER;
+		}
+		
+		return null;
 	}
+	
+	default EtlNullBehavior nullValueBehavior() {
+		return EtlNullBehavior.ALLOW;
+	}
+	
+	default RelationshipResolutionStrategy relationshipResolutionStrategy() {
+		return RelationshipResolutionStrategy.RESOLVE;
+	}
+	
+	void setRelationshipResolutionStrategy(RelationshipResolutionStrategy strategy);
 	
 	default boolean hasTypeClass() {
 		return this.getTypeClass() != null;

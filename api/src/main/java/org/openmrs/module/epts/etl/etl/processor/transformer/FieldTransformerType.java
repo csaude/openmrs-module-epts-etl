@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
+import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 
 public enum FieldTransformerType {
@@ -33,6 +34,10 @@ public enum FieldTransformerType {
 	FieldTransformerType(String className, TransformerFactory factory) {
 		this.className = className;
 		this.factory = factory;
+	}
+	
+	public String getClassName() {
+		return className;
 	}
 	
 	public boolean isDefault() {
@@ -171,6 +176,11 @@ public enum FieldTransformerType {
 		List<Object> parameters = tryToLoadTransformerParameters(field.getTransformer());
 		
 		field.setTransformerInstance(type.create(parameters, dstConf, field));
+		
+		if (field.getTransformerType().isMapping()) {
+			field.setRelationshipResolutionStrategy(RelationshipResolutionStrategy.SKIP);
+		}
+		
 	}
 	
 	public static List<Object> tryToLoadTransformerParameters(String def) {

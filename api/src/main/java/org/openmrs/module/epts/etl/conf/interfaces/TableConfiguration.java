@@ -234,7 +234,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				String nullConstraint = "NULL";
 				String endLineMarker = ",\n";
 				
-				String sql = "CREATE table " + getFullTableName() + "(";
+				String sql = "CREATE TABLE" + getFullTableName() + "(";
 				
 				for (Field f : this.getFields()) {
 					String constraint = f.allowNull() ? nullConstraint : notNullConstraint;
@@ -2691,7 +2691,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
 				sql += DBUtilities.generateTableVarcharField("dst_compacted_object_uk", 190, nullConstraint, conn)
 				        + endLineMarker;
-				sql += DBUtilities.generateTableVarcharField("etl_operation_id", 190, nullConstraint, conn) + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("etl_confing_id", 190, nullConstraint, conn) + endLineMarker;
 				sql += DBUtilities.generateTableVarcharField("conflict_resolution_type", 30, notNullConstraint, conn)
 				        + endLineMarker;
 				
@@ -2711,7 +2711,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				    "dst_compacted_object_uk", conn) + endLineMarker;
 				
 				sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_dst".toLowerCase(),
-				    "stage_record_id, etl_operation_id, dst_table_name", conn) + endLineMarker;
+				    "stage_record_id, etl_confing_id, dst_table_name", conn) + endLineMarker;
 				
 				sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
 				    parentTableName, "id", conn) + endLineMarker;

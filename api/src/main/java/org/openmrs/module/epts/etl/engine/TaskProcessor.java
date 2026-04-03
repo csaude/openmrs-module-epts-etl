@@ -151,7 +151,8 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	@SuppressWarnings("unchecked")
 	public void performe(boolean useMultiThreadSearch, Connection srcConn, Connection dstConn) throws DBException {
 		
-		if (getRelatedEtlOperationConfig().isDisableMultithreadingSearch()) {
+		if (getRelatedEtlOperationConfig().isDisableMultithreadingSearch()
+		        || getRelatedEtlOperationConfig().getThreadingMode().isMultiThread()) {
 			useMultiThreadSearch = false;
 		}
 		

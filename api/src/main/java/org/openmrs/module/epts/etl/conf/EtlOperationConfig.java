@@ -118,6 +118,10 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 		this.totalCountStrategy = EtlTotalRecordsCountStrategy.COUNT_ONCE;
 	}
 	
+	public String generateOperationId() {
+		return getOperationType().name().toLowerCase() + "_on_" + this.getRelatedEtlConfig().generateProcessId();
+	}
+	
 	public Integer getTotalAvaliableRecordsToProcess() {
 		return totalAvaliableRecordsToProcess;
 	}
@@ -891,12 +895,6 @@ public class EtlOperationConfig extends AbstractBaseConfiguration {
 	@JsonIgnore
 	public String toString() {
 		return (getRelatedEtlConfig().getDesignation() + "_" + this.operationType).toLowerCase();
-	}
-	
-	public String generateControllerId() {
-		String controllerId = relatedEtlConfig.generateControllerId() + "_" + getOperationType();
-		
-		return controllerId.toLowerCase();
 	}
 	
 	public boolean isSupposedToHaveOriginAppCode() {

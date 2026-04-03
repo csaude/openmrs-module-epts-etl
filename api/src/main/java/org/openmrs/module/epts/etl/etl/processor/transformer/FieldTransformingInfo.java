@@ -86,8 +86,8 @@ public class FieldTransformingInfo {
 		        || this.getTransformationDatasource() instanceof DstConf;
 	}
 	
-	public boolean ignoreRelationshipResolution() {
-		return isLoadedWithDefaultValue() || isLoadedWithDstValue() || srcField.ignoreRelationshipResolution();
+	public boolean skipRelationshipResolution() {
+		return isLoadedWithDefaultValue() || isLoadedWithDstValue() || srcField.relationshipResolutionStrategy().skip();
 	}
 	
 	@Override

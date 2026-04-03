@@ -123,7 +123,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.configuration.setRelatedController(this);
 		this.processInfo = new ProcessInfo(getConfiguration());
 		
-		this.controllerId = configuration.generateControllerId();
+		this.controllerId = configuration.generateProcessId();
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
@@ -730,7 +730,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	public static <T extends EtlDatabaseObject> ProcessController retrieveRunningThread(EtlConfiguration configuration) {
-		String controllerId = configuration.generateControllerId();
+		String controllerId = configuration.generateProcessId();
 		
 		//Thread runningThread = null;
 		

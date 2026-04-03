@@ -112,8 +112,8 @@ public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 			}
 		}
 		
-		EtlDatabaseObject srcObj = dataSourceConfig.loadRelatedSrcObject(processor, srcObject, additionalSrcObjects,
-		    srcConn);
+		EtlDatabaseObject srcObj = dataSourceConfig.loadRelatedSrcObject(processor, srcObject, transformedRecord,
+		    additionalSrcObjects, srcConn);
 		
 		Object dstValue = null;
 		

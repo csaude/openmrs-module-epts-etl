@@ -438,6 +438,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
+	        EtlDatabaseObject dstObject,
 	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);

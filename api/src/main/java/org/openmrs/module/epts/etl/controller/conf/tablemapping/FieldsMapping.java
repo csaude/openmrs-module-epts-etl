@@ -7,8 +7,12 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlField;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.datasource.DataSourceField;
+import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
+import org.openmrs.module.epts.etl.conf.types.EtlNullBehavior;
+import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
@@ -59,9 +63,14 @@ public class FieldsMapping extends Field implements TransformableField {
 	
 	private String originalSrcFieldDefinition;
 	
-	private boolean ignoreRelationshipResolution;
+	private RelationshipResolutionStrategy relationshipResolutionStrategy;
+	
+	private EtlNullBehavior nullValueBehavior;
 	
 	public FieldsMapping() {
+		this.nullValueBehavior = EtlNullBehavior.ALLOW;
+		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
+		
 		this.possibleSrc = new ArrayList<>(5);
 	}
 	
@@ -93,14 +102,30 @@ public class FieldsMapping extends Field implements TransformableField {
 			tryToLoadTransformer(null);
 	}
 	
-	@Override
-	public boolean isIgnoreRelationshipResolution() {
-		return ignoreRelationshipResolution;
+	public EtlNullBehavior getNullValueBehavior() {
+		return nullValueBehavior;
+	}
+	
+	public void setNullValueBehavior(EtlNullBehavior nullValueBehavior) {
+		this.nullValueBehavior = nullValueBehavior;
 	}
 	
 	@Override
-	public void setIgnoreRelationshipResolution(boolean ignoreRelationshipResolution) {
-		this.ignoreRelationshipResolution = ignoreRelationshipResolution;
+	public EtlNullBehavior nullValueBehavior() {
+		return this.nullValueBehavior;
+	}
+	
+	public RelationshipResolutionStrategy getRelationshipResolutionStrategy() {
+		return relationshipResolutionStrategy;
+	}
+	
+	public void setRelationshipResolutionStrategy(RelationshipResolutionStrategy relationshipResolutionStrategy) {
+		this.relationshipResolutionStrategy = relationshipResolutionStrategy;
+	}
+	
+	@Override
+	public RelationshipResolutionStrategy relationshipResolutionStrategy() {
+		return this.relationshipResolutionStrategy;
 	}
 	
 	public String getOriginalSrcFieldDefinition() {
@@ -135,8 +160,28 @@ public class FieldsMapping extends Field implements TransformableField {
 		tryToLoadTransformer(null);
 	}
 	
-	public static FieldsMapping fastCreate(DataSourceField ds) {
-		return FieldsMapping.fastCreate(ds.getValue().toString(), ds.getDstField(), true);
+	public static FieldsMapping fastCreate(DataSourceField dsF) {
+		
+		FieldsMapping f = FieldsMapping.fastCreate(dsF.getValue().toString(), dsF.getDstField(), true);
+		
+		if (dsF.getValue().toString().startsWith("@")) {
+			f.setSrcField(dsF.getValue().toString().substring(1));
+			
+			EtlDataSource ds;
+			
+			if (dsF.getParent() instanceof SrcConf) {
+				ds = dsF.getParent();
+			} else if (dsF.getParent() instanceof EtlAdditionalDataSource) {
+				ds = ((EtlAdditionalDataSource) dsF.getParent()).getRelatedSrcConf();
+			} else {
+				throw new EtlExceptionImpl("Unsupported datasource type " + dsF.getParent());
+			}
+			
+			f.setDataSourceName(ds.getAlias());
+		}
+		
+		return f;
+		
 	}
 	
 	@Override
@@ -515,7 +560,8 @@ public class FieldsMapping extends Field implements TransformableField {
 			this.possibleSrc = toCopyFormAsFieldsMapping.possibleSrc;
 			this.defaultValue = toCopyFormAsFieldsMapping.defaultValue;
 			this.overrideTriggerValue = toCopyFormAsFieldsMapping.overrideTriggerValue;
-			this.ignoreRelationshipResolution = toCopyFormAsFieldsMapping.ignoreRelationshipResolution;
+			this.nullValueBehavior = toCopyFormAsFieldsMapping.nullValueBehavior;
+			this.relationshipResolutionStrategy = toCopyFormAsFieldsMapping.relationshipResolutionStrategy;
 		}
 	}
 	
