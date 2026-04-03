@@ -37,8 +37,12 @@ The process configuration file is the heart of the application. For each process
 - *syncStageSchema*: an optional token indicating the database name where the process data will be stored. If not present, the name "etl_stage_area" will be used.
 - *doNotTransformsPrimaryKeys*: indicates whether the primary keys in this process are transformed. If yes, the transformed records are given a new primary key; if no, the primary key in the source is the same in the destination.
 - *manualMapPrimaryKeyOnField*: if present, the value from this field will be mapped as a primary key for all tables that don't have a primary key but have a field with a name matching this field. This value will be overridden by the corresponding value in the ETL configuration session if present there.
-- *doNotResolveRelationship*: if true, the relationship between tables will not resolved on destination database. This usualy is applyed in situation like database copy were the table keys will not kept unchanged.
-- *autoIncrementHandlingType*: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values. The value for this property can be overridden by the value from the same property from the Etl Item Configuration.
+- **relationshipResolutionStrategy** defines how the ETL engine should handle relationship (foreign key) resolution for a field.
+  By default, when a field represents a relationship, the ETL process attempts to resolve the corresponding parent record in the destination database.
+  Supported values:
+  - *RESOLVE* – Default behavior. The ETL engine looks up and resolves the corresponding record in the destination database.
+  - *SKIP* – Skips relationship resolution. The transformed value is written directly to the destination field without lookup or validation.
+  - *VALIDATE_ONLY* – Validates that the referenced record exists in the destination database without performing resolution. If the record does not exist, the ETL process reacts according to the configured error handling strategy- *autoIncrementHandlingType*: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values. The value for this property can be overridden by the value from the same property from the Etl Item Configuration.
 - *primaryKeyInitialIncrementValue*: A numeric value added to the primary key of the very first destination record for all tables defined in the ETL Item Configuration. This property cannot be used when autoIncrementHandlingType is explicitly set to AS_SCHEMA_DEFINED. If this property is provided and autoIncrementHandlingType is not specified, it will automatically be set to IGNORE_SCHEMA_DEFINITION. The value of this property will be applied to all destination tables defined in the *ETL Item Configuration*. However, you can override this value for specific tables by defining the same property within the *EtlItemConf* or *DstConf*. 
 - *dynamicSrcConf*: This configuration parameter enables the dynamic setup of the EtlConfiguration. In this context, "dynamic" refers to the ability to derive certain parameters from a database table, allowing multiple configurations to be generated from a single configuration file. The configuration file effectively serves as a template, populated with data from table records. This approach is particularly useful when working with multiple database sources and performing specific processes on each of them. For example, you can register the database sources in a table (e.g., src_database) and use this table as a dynamic source for generating configurations.
 - *finalizer*: represents a object which define the additional tasks to be performed after the process if finished.
@@ -430,8 +434,24 @@ Each **extraObjectDataSource** is defined by the following properties:
 		    - STRING_TRANSFORMER(@name).trim().toLowerCase()
         
         If the expression is invalid or a method cannot be resolved/invoked, an exception is raised.
-  
-    - **MAPPING_TRANSFORMER(mapping_table_name,mapping_src_field,mapping_dst_field,extraConditionForExtract)** Performs value transformation using a lookup table stored in the database. The transformer searches for a record in the specified mapping table where the value of mapping_src_field matches the source field value being transformed. If a matching record is found, the value of mapping_dst_field is returned as the transformed value. If no mapping is found, the transformer will either apply the destination field default value (if defined) or raise a mapping exception.
+    - **MAPPING_TRANSFORMER(mapping_table,mapping_src_field,mapping_dst_field,extra_condition:extra_condition_value,on_missing:on_missing_value)** performs value transformation using a lookup table stored in the database.
+      The transformer searches for a record in the specified mapping table where the value of the source field matches the configured mapping_src_field. If a matching record is found, the value of mapping_dst_field is returned as the transformed value.
+
+      Required parameters:
+      - mapping_table – Name of the mapping table
+      - mapping_src_field – Source field in the mapping table used for lookup
+      - mapping_dst_field – Destination field in the mapping table whose value will be returned
+
+      Optional parameters:
+      - extra_condition:extra_condition_value – additional SQL condition used to filter the mapping table;
+      - on_missing:on_missing_value – Defines the behavior when no mapping is found
+        Supported values:
+        - *MARK_RECORD_AS_FAILED* – The record is marked as failed and processing continues
+        - *SET_TO_NULL* – The destination field is assigned null
+        - *ABORT_PROCESS* – The ETL process is aborted with an exception
+
+		“Optional parameters can be provided in any order using the key:value format. The transformer will automatically detect and apply only the parameters that are defined.”
+
     - **FAST_SQL_TRANSFORMER(sqlQuery)** Retrieves the field value by executing a SQL query against the source database. The SQL query must return at least one column; only the first column of the first row 
 of the result set will be used as the destination field value. If the query returns no rows or the resulting value is null, the transformer will:
       - apply the destination field default value if defined, or
@@ -511,6 +531,7 @@ If the "dstConf '' has more than one element or if the mapping cannot be automat
                "dataType": "",
                "overrideTriggerValue": "",
  			   "nullValueBehavior":"",
+               "skipRelationshipResolution":"",
                "transformer": "",	
             }
          ],
@@ -552,7 +573,17 @@ Bellow is the explanation for each field:
      - *ALLOW* – The null value is accepted and assigned to the destination field. No action is taken.
      - *MARK_RECORD_AS_FAILED* – The record is marked as failed during the ETL process, but processing continues.
      - *ABORT_PROCESS* – An exception is thrown and the ETL process is interrupted according to the configured error handling strategy.
-   - (9) **transformer**: defines a transformation applied to the evaluated field value. Transformers allow complex processing such as expression evaluation, string manipulation, database lookups, or value mapping. Refere to [field transformers](#field-transformers) for more details,
+   - (9) **skipRelationshipResolution** defines whether the ETL engine should skip the resolution of relationships (foreign keys) for a given field.
+     By default, when a field represents a relationship, the ETL process attempts to resolve the corresponding parent record in the destination database. This typically involves looking up the destination record based on the transformed value.
+     When this attribute is set to *true* , the relationship resolution step is skipped, and the value is written directly to the destination field without performing any lookup or validation in the destination database.
+     This can improve performance and is useful in scenarios where:
+       - the value is already a valid destination identifier referential
+       - integrity is guaranteed externally
+       - relationship resolution is not required during the ETL process
+         
+     ⚠️ Warning:
+         Disabling relationship resolution may result in invalid foreign key references if the value does not correspond to an existing record in the destination database.      
+   - (10) **transformer**: defines a transformation applied to the evaluated field value. Transformers allow complex processing such as expression evaluation, string manipulation, database lookups, or value mapping. Refere to [field transformers](#field-transformers) for more details,
    -  **joinFields** allow the specification of the joining fields to the srcConf. Usually the joining fields can be automatically generated if the src and dst use the same unique keys. The joining fields are important when it comes to determining if all the src records were processed. If the joining fields are not present then the final verification of the process will be skipped for that specific table. (See [The Joining Fields](#joinFields)) 
 - **autoIncrementHandlingType**: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values.
 - *primaryKeyInitialIncrementValue*: this override the same property defined on Etl Item Configuration.
