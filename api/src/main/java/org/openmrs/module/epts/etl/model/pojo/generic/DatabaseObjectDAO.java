@@ -607,6 +607,11 @@ public class DatabaseObjectDAO extends BaseDAO {
 							}
 						}
 						catch (DBException e1) {
+							
+							if (!e1.isDuplicatePrimaryOrUniqueKeyException()) {
+								record.save(tabConf, conn);
+							}
+							
 							if (tabConf.getRelatedEtlConf().getGeneralBehaviourOnEtlException().log()
 							        && generateOperationResult) {
 								

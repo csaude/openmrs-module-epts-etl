@@ -40,6 +40,8 @@ public class FieldTransformingInfo {
 			this.transformedValue = utilities.parseValue(transformedValue.toString(), srcField.getTypeClass());
 		} else if (transformedValue != null && utilities.isBooleanType(srcField.getTypeClass())) {
 			this.transformedValue = utilities.parseValue(transformedValue.toString(), srcField.getTypeClass());
+		} else if (transformedValue != null && utilities.isDateType(srcField.getTypeClass())) {
+			this.transformedValue = utilities.parseValue(transformedValue.toString(), srcField.getTypeClass());
 		}
 	}
 	

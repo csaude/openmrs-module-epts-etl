@@ -1290,6 +1290,7 @@ public class CommonUtilities implements Serializable {
 		} else if (destinationType.equals(Float.class) && value instanceof String) {
 			return Float.parseFloat(value);
 		}
+		
 		return value;
 	}
 	
@@ -1403,6 +1404,10 @@ public class CommonUtilities implements Serializable {
 	
 	public boolean isBooleanType(Class<?> fieldType) {
 		return Boolean.class.isAssignableFrom(fieldType) || fieldType == boolean.class;
+	}
+	
+	public boolean isDateType(Class<?> fieldType) {
+		return Date.class.isAssignableFrom(fieldType) || fieldType == Date.class;
 	}
 	
 	public String tryToReplacePlaceholders(String toReplace, EtlDatabaseObject src) {
