@@ -445,11 +445,12 @@ Each **extraObjectDataSource** is defined by the following properties:
       Optional parameters:
       - extra_condition:extra_condition_value – additional SQL condition used to filter the mapping table;
       - on_missing:on_missing_value – Defines the behavior when no mapping is found
-
         Supported values:
         - *MARK_RECORD_AS_FAILED* – The record is marked as failed and processing continues
         - *SET_TO_NULL* – The destination field is assigned null
         - *ABORT_PROCESS* – The ETL process is aborted with an exception
+
+		“Optional parameters can be provided in any order using the key:value format. The transformer will automatically detect and apply only the parameters that are defined.”
 
     - **FAST_SQL_TRANSFORMER(sqlQuery)** Retrieves the field value by executing a SQL query against the source database. The SQL query must return at least one column; only the first column of the first row 
 of the result set will be used as the destination field value. If the query returns no rows or the resulting value is null, the transformer will:
