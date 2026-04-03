@@ -434,8 +434,23 @@ Each **extraObjectDataSource** is defined by the following properties:
 		    - STRING_TRANSFORMER(@name).trim().toLowerCase()
         
         If the expression is invalid or a method cannot be resolved/invoked, an exception is raised.
-  
-    - **MAPPING_TRANSFORMER(mapping_table_name,mapping_src_field,mapping_dst_field,extraConditionForExtract)** Performs value transformation using a lookup table stored in the database. The transformer searches for a record in the specified mapping table where the value of mapping_src_field matches the source field value being transformed. If a matching record is found, the value of mapping_dst_field is returned as the transformed value. If no mapping is found, the transformer will either apply the destination field default value (if defined) or raise a mapping exception.
+    - **MAPPING_TRANSFORMER(mapping_table,mapping_src_field,mapping_dst_field,extra_condition:extra_condition_value,on_missing:on_missing_value)** performs value transformation using a lookup table stored in the database.
+      The transformer searches for a record in the specified mapping table where the value of the source field matches the configured mapping_src_field. If a matching record is found, the value of mapping_dst_field is returned as the transformed value.
+
+      Required parameters:
+      - mapping_table – Name of the mapping table
+      - mapping_src_field – Source field in the mapping table used for lookup
+      - mapping_dst_field – Destination field in the mapping table whose value will be returned
+
+      Optional parameters:
+      - extra_condition:extra_condition_value – additional SQL condition used to filter the mapping table;
+      - on_missing:on_missing_value – Defines the behavior when no mapping is found
+
+        Supported values:
+        - *MARK_RECORD_AS_FAILED* – The record is marked as failed and processing continues
+        - *SET_TO_NULL* – The destination field is assigned null
+        - *ABORT_PROCESS* – The ETL process is aborted with an exception
+
     - **FAST_SQL_TRANSFORMER(sqlQuery)** Retrieves the field value by executing a SQL query against the source database. The SQL query must return at least one column; only the first column of the first row 
 of the result set will be used as the destination field value. If the query returns no rows or the resulting value is null, the transformer will:
       - apply the destination field default value if defined, or
