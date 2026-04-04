@@ -31,12 +31,13 @@ public class DefaultObjectFieldsValuesGenerator implements JavaObjectFieldsValue
 				field.setValue(field.getAuxFieldMapping().getTransformerInstance().transform(processor, srcObject, dstObject,
 				    avaliableSrcObjects, field.getAuxFieldMapping(), srcConn, dstConn).getTransformedValue());
 				
-				if (field.getValue() == null && field.getDefaultValue() != null) {
+				if ((field.getValue() == null || field.getValue().toString().isBlank()) && field.getDefaultValue() != null) {
 					field.setValue(field.getDefaultValue());
 				}
 			}
 			
 			FieldTransformingInfo fieldInfo;
+			
 			try {
 				fieldInfo = field.getTransformerInstance().transform(processor, srcObject, dstObject, avaliableSrcObjects,
 				    field, srcConn, dstConn);

@@ -292,7 +292,7 @@ public class DBException extends SQLException implements EtlException {
 	
 	@Override
 	public ActionOnEtlException getAction() {
-		return ActionOnEtlException.ABORT;
+		return ActionOnEtlException.ABORT_PROCESS;
 	}
 	
 	@Override

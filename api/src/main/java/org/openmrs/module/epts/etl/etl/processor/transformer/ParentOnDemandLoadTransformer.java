@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.datasource.SqlConditionElement;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
+import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
@@ -316,8 +317,12 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		}
 		catch (InconsistentStateException e) {
 			
-			InconsistenceInfo i = InconsistenceInfo.generate(srcObject.generateTableName(), srcObject.getObjectId(),
-			    parentTableName, srcObject.getFieldValue(parentSourceField), null,
+			ParentTable parentInfo = ((TableConfiguration) srcObject.getRelatedConfiguration())
+			        .findParentRefInfoByParentTable(parentTableName);
+			
+			parentInfo.setTableName(parentTableName);
+			
+			InconsistenceInfo i = InconsistenceInfo.generate(srcObject, parentInfo,
 			    processor.getRelatedEtlConfiguration().getOriginAppLocationCode());
 			
 			srcObject.setFieldValue(this.parentSourceField, null);
@@ -337,7 +342,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		
 		if (dstParent == null) {
 			throw new EtlTransformationException("Error on transforming the parentDstRecord on " + getTransformerDsc(),
-			        srcObject, ActionOnEtlException.ABORT);
+			        srcObject, ActionOnEtlException.ABORT_PROCESS);
 		}
 		
 		return new FieldTransformingInfo(field, dstParent.getObjectId().asSimpleValue(),
@@ -494,7 +499,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 						throw new EtlTransformationException(
 						        "The " + refInfo.getTableName() + "(" + params[i] + ") of " + dstConf.getTableName() + "("
 						                + srcObject.getObjectId().asSimpleNumericValue() + ") cannot be found on src db",
-						        srcObject, ActionOnEtlException.ABORT);
+						        srcObject, ActionOnEtlException.ABORT_PROCESS);
 					}
 					
 					params[i] = parentInDst.getObjectId().asSimpleNumericValue();

@@ -63,7 +63,7 @@ public class SimpleValueTransformer extends AbstractEtlFieldTransformer {
 		
 		if (additionalSrcObjects == null || additionalSrcObjects.isEmpty()) {
 			throw new EtlTransformationException("SimpleValueTransformer requires at least one source object.", srcObject,
-			        ActionOnEtlException.ABORT);
+			        ActionOnEtlException.ABORT_PROCESS);
 		}
 		
 		Object result = EtlFieldTransformer.tryToReplaceParametersOnSrcValue(additionalSrcObjects,

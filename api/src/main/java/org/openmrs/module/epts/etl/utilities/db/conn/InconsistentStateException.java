@@ -1,10 +1,13 @@
 package org.openmrs.module.epts.etl.utilities.db.conn;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
+import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
@@ -31,9 +34,17 @@ public class InconsistentStateException extends EtlExceptionImpl {
 	}
 	
 	public InconsistentStateException(EtlDatabaseObject obj, Map<ParentTableImpl, Integer> missingParents) {
-		super(generateMissingInfo(obj, missingParents));
+		super(generateMissingInfo(obj, missingParents), obj, ActionOnEtlException.ABORT_PROCESS);
 		
 		this.missingParents = missingParents;
+	}
+	
+	public InconsistentStateException(List<InconsistenceInfo> inconsistenceInfo) {
+		this(inconsistenceInfo.get(0).getObj(), InconsistenceInfo.parseToMissingInfo(inconsistenceInfo));
+	}
+	
+	public InconsistentStateException(InconsistenceInfo inconsistenceInfo) {
+		this(inconsistenceInfo.getObj(), inconsistenceInfo.parseToMissingInfo());
 	}
 	
 	public static String generateMissingInfo(EtlDatabaseObject obj, Map<ParentTableImpl, Integer> missingParents) {

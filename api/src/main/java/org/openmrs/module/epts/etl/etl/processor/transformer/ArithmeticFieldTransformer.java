@@ -83,7 +83,7 @@ public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
 		}
 		if (field.getValueToTransform() == null) {
 			throw new EtlTransformationException("Source value must be provided for arithmetic transformation.", srcObject,
-			        ActionOnEtlException.ABORT);
+			        ActionOnEtlException.ABORT_PROCESS);
 		}
 		
 		String srcValueWithParamsReplaced = EtlFieldTransformer
@@ -103,7 +103,7 @@ public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
 		catch (Exception e) {
 			
 			throw new EtlTransformationException("Failed to evaluate arithmetic expression: " + field.getValueToTransform(),
-			        e, srcObject, ActionOnEtlException.ABORT);
+			        e, srcObject, ActionOnEtlException.ABORT_PROCESS);
 		}
 	}
 	

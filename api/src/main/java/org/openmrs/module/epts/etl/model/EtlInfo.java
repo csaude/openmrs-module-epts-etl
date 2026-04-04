@@ -231,13 +231,8 @@ public class EtlInfo {
 								getProcessor().logDebug("The parent for default for parent ["
 								        + parentInfo.getParentRecordInOrigin() + "] could not be loaded. The dstRecord [");
 								
-								this.getResultItem()
-								        .addInconsistence(InconsistenceInfo.generate(
-								            getTransformedObject().generateTableName(), getTransformedObject().getObjectId(),
-								            parentInfo.getParentTableConfInDst().getTableName(),
-								            parentInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(), null,
-								            this.getDstConf().getOriginAppLocationCode()));
-								
+								this.getResultItem().addInconsistence(InconsistenceInfo.generate(getTransformedObject(),
+								    parentInfo.getParentTableConfInDst(), this.getDstConf().getOriginAppLocationCode()));
 							}
 						}
 						
@@ -276,13 +271,7 @@ public class EtlInfo {
 			
 			boolean skipDstParentLoad = false;
 			
-			try {
-				skipDstParentLoad = tinfo.skipRelationshipResolution() || parentIsDstParentConf;
-			}
-			catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			skipDstParentLoad = tinfo.skipRelationshipResolution() || parentIsDstParentConf;
 			
 			if (!skipDstParentLoad) {
 				performeParentInfoInitialization(srcConn, refInfo);
@@ -328,12 +317,8 @@ public class EtlInfo {
 						}
 					}
 					finally {
-						this.getResultItem()
-						        .addInconsistence(InconsistenceInfo.generate(getTransformedObject().generateTableName(),
-						            getTransformedObject().getObjectId(), refInfo.getTableName(),
-						            refInfo.generateParentOidFromChild(getTransformedObject()).getSimpleValue(),
-						            refInfo.getDefaultValueDueInconsistency(),
-						            this.getDstConf().getOriginAppLocationCode()));
+						this.getResultItem().addInconsistence(InconsistenceInfo.generate(getTransformedObject(), refInfo,
+						    this.getDstConf().getOriginAppLocationCode()));
 					}
 				}
 				
@@ -404,21 +389,15 @@ public class EtlInfo {
 				getTaskProcessor().logWarn(
 				    "Missing metadata " + parentInOrigin + ". This issue will be documented on inconsitence_info table");
 				
-				this.getResultItem()
-				        .addInconsistence(InconsistenceInfo.generate(getTransformedObject().generateTableName(),
-				            getTransformedObject().getObjectId(), refInfo.getTableName(),
-				            refInfo.generateParentOidFromChild(getTransformedObject()).getSimpleValue(),
-				            refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+				this.getResultItem().addInconsistence(InconsistenceInfo.generate(getTransformedObject(), refInfo,
+				    this.getDstConf().getOriginAppLocationCode()));
 			}
 		} else {
 			getTaskProcessor().logWarn("Missing metadata " + refInfo.generateParentOidFromChild(getTransformedObject())
 			        + ". This issue will be documented on inconsitence_info table");
 			
-			this.getResultItem()
-			        .addInconsistence(InconsistenceInfo.generate(getTransformedObject().generateTableName(),
-			            getTransformedObject().getObjectId(), refInfo.getTableName(),
-			            refInfo.generateParentOidFromChild(getTransformedObject()).getSimpleValue(),
-			            refInfo.getDefaultValueDueInconsistency(), this.getDstConf().getOriginAppLocationCode()));
+			this.getResultItem().addInconsistence(
+			    InconsistenceInfo.generate(getTransformedObject(), refInfo, this.getDstConf().getOriginAppLocationCode()));
 		}
 	}
 	

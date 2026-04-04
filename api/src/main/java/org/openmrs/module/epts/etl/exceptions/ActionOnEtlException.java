@@ -1,7 +1,7 @@
 package org.openmrs.module.epts.etl.exceptions;
 
 public enum ActionOnEtlException {
-	ABORT,
+	ABORT_PROCESS,
 	LOG,
 	IGNORE;
 	
@@ -10,7 +10,7 @@ public enum ActionOnEtlException {
 	}
 	
 	public boolean abort() {
-		return this.equals(ABORT);
+		return this.equals(ABORT_PROCESS);
 	}
 	
 	public boolean ignore() {

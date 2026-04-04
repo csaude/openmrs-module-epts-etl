@@ -164,10 +164,7 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 							
 							logDebug(msg);
 							
-							InconsistenceInfo incInfo = InconsistenceInfo.generate(
-							    recWithDefaultParentInfo.getDstRelatedObject().generateTableName(),
-							    recWithDefaultParentInfo.getDstRelatedObject().getObjectId(), parentRefInfo.getTableName(),
-							    recWithDefaultParentInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(), null,
+							InconsistenceInfo incInfo = InconsistenceInfo.generate(recWithDefaultParentInfo, parentRefInfo,
 							    mainSrc.getOriginAppLocationCode());
 							
 							incInfo.save(mainSrc, srcConn);

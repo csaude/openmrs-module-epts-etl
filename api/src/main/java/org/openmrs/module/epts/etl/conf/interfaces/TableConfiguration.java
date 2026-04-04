@@ -2430,6 +2430,21 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return null;
 	}
 	
+	default ParentTable findParentRefInfoByParentTable(String parentTable) {
+		List<ParentTable> parents = findAllRefToParent(parentTable);
+		
+		if (utilities.listHasElement(parents)) {
+			if (utilities.arrayHasExactlyOneElement(parents)) {
+				return parents.get(0);
+			}
+			
+			throw new EtlExceptionImpl(
+			        "Multiple references to parent '" + parentTable + "' found within table '" + this.getTableName() + "'");
+		}
+		
+		return null;
+	}
+	
 	default void tryToGenerateTableAlias(TableAliasesGenerator aliasGenerator) {
 		synchronized (this) {
 			if (this.hasAlias())

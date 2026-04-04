@@ -12,11 +12,10 @@ import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
-import org.openmrs.module.epts.etl.etl.model.stage.EtlStageObjectInfo;
 import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaObjectDAO;
+import org.openmrs.module.epts.etl.etl.model.stage.EtlStageObjectInfo;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
-import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -27,6 +26,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationResultHeader;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.InconsistentStateException;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 public class EtlLoadHelper {
@@ -134,10 +134,18 @@ public class EtlLoadHelper {
 	}
 	
 	private boolean hasUnresolvedError(DstConf dst) {
+		
 		for (EtlDatabaseObject r : this.getSrcObjects()) {
 			EtlDatabaseObject dstObject = r.retriveDestinationRecord(dst);
 			
 			if (dstObject != null && dstObject.getEtlInfo().hasExceptionOnEtl()) {
+				
+				if (dstObject.getEtlInfo().getExceptionOnEtl() instanceof InconsistentStateException
+				        && dst.getRelatedEtlConf().getDefaultInconsistencyBehavior().markRecordAsFailed()) {
+					
+					continue;
+				}
+				
 				return true;
 			}
 		}
@@ -307,8 +315,8 @@ public class EtlLoadHelper {
 		
 		for (EtlDatabaseObject obj : toLoad) {
 			
-			if (obj.getEtlInfo().hasExceptionOnEtl()) continue;
-			
+			if (obj.getEtlInfo().hasExceptionOnEtl())
+				continue;
 			
 			EtlInfo etlInfo = obj.getEtlInfo();
 			
@@ -327,12 +335,15 @@ public class EtlLoadHelper {
 					}
 				} else {
 					
-					if (getProcessor().getRelatedEtlConfiguration().getGeneralBehaviourOnEtlException().abort()) {
-						throw new EtlExceptionImpl("Found inconsistences on dstRecord " + etlInfo.getTransformedObject()
-						        + " " + etlInfo.getResultItem().getInconsistenceInfo());
-					}
+					InconsistentStateException e = new InconsistentStateException(
+					        etlInfo.getResultItem().getInconsistenceInfo());
 					
-					etlInfo.setStatus(EtlStatus.FAIL);
+					if (getProcessor().getRelatedEtlConfiguration().getDefaultInconsistencyBehavior().abortProcess()) {
+						throw e;
+					} else {
+						etlInfo.setExceptionOnEtl(e);
+						etlInfo.setStatus(EtlStatus.FAIL);
+					}
 				}
 			} else {
 				etlInfo.setStatus(EtlStatus.READY);

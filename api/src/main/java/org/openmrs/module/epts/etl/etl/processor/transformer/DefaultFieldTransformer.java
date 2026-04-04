@@ -105,7 +105,7 @@ public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 		if (!found) {
 			throw new EtlTransformationException(
 			        "The field '" + field.getName() + "' does not belong to any configured source table", srcObject,
-			        ActionOnEtlException.ABORT);
+			        ActionOnEtlException.ABORT_PROCESS);
 		}
 		
 		return new FieldTransformingInfo(field, dstValue, ds);

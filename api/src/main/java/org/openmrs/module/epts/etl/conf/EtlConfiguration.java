@@ -24,6 +24,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
+import org.openmrs.module.epts.etl.conf.types.EtlInconsistencyBehavior;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.conf.types.EtlProcessType;
 import org.openmrs.module.epts.etl.conf.types.EtlTotalRecordsCountStrategy;
@@ -169,7 +170,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private boolean reRunable;
 	
-	private ActionOnEtlException generalBehaviourOnEtlException;
+	private ActionOnEtlException defaultExceptionBehavior;
+	
+	private EtlInconsistencyBehavior defaultInconsistencyBehavior;
 	
 	/**
 	 * Defines additional source tables that are not explicitly configured as ETL sources but are
@@ -197,8 +200,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		this.waitTimeToCheckStatus = 5;
 		
-		this.generalBehaviourOnEtlException = ActionOnEtlException.ABORT;
+		this.defaultExceptionBehavior = ActionOnEtlException.ABORT_PROCESS;
 		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
+		this.defaultInconsistencyBehavior = EtlInconsistencyBehavior.ABORT_PROCESS;
 	}
 	
 	public RelationshipResolutionStrategy getRelationshipResolutionStrategy() {
@@ -1901,11 +1905,23 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@Override
 	public ActionOnEtlException getGeneralBehaviourOnEtlException() {
-		return this.generalBehaviourOnEtlException;
+		return this.defaultExceptionBehavior;
 	}
 	
-	public void setGeneralBehaviourOnEtlException(ActionOnEtlException generalBehaviourOnEtlException) {
-		this.generalBehaviourOnEtlException = generalBehaviourOnEtlException;
+	public ActionOnEtlException getDefaultExceptionBehavior() {
+		return defaultExceptionBehavior;
+	}
+	
+	public void setDefaultExceptionBehavior(ActionOnEtlException defaultExceptionBehavior) {
+		this.defaultExceptionBehavior = defaultExceptionBehavior;
+	}
+	
+	public EtlInconsistencyBehavior getDefaultInconsistencyBehavior() {
+		return defaultInconsistencyBehavior;
+	}
+	
+	public void setDefaultInconsistencyBehavior(EtlInconsistencyBehavior defaultInconsistencyBehavior) {
+		this.defaultInconsistencyBehavior = defaultInconsistencyBehavior;
 	}
 	
 	@Override

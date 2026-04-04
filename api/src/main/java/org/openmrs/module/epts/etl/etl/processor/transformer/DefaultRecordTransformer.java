@@ -47,7 +47,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		}
 		
 		if (srcObject == null) {
-			throw new EtlTransformationException("SrcObject cannot be null", null, ActionOnEtlException.ABORT);
+			throw new EtlTransformationException("SrcObject cannot be null", null, ActionOnEtlException.ABORT_PROCESS);
 		}
 		
 		processor.logTrace("Transforming dstRecord " + srcObject);

@@ -175,7 +175,8 @@ public interface RelatedTable extends TableConfiguration {
 			Key k = new Key(map.getParentFieldName());
 			
 			k.setValue(obj.getFieldValue(map.getChildFieldName()));
-			
+			k.setDataType(map.getChildField().getDataType());
+			k.setTypeClass(map.getChildField().getTypeClass());
 			oid.addKey(k);
 		}
 		

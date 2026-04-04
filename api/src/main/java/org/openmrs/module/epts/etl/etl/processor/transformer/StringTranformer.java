@@ -110,7 +110,7 @@ public class StringTranformer extends AbstractEtlFieldTransformer {
 		
 		if (additionalSrcObjects == null || additionalSrcObjects.isEmpty()) {
 			throw new EtlTransformationException("StringTransformer requires at least one source object.", null, srcObject,
-			        ActionOnEtlException.ABORT);
+			        ActionOnEtlException.ABORT_PROCESS);
 		}
 		
 		try {
@@ -127,7 +127,7 @@ public class StringTranformer extends AbstractEtlFieldTransformer {
 		catch (Exception e) {
 			
 			throw new EtlTransformationException("Failed to evaluate string expression: " + field.getValueToTransform(), e,
-			        srcObject, ActionOnEtlException.ABORT);
+			        srcObject, ActionOnEtlException.ABORT_PROCESS);
 		}
 	}
 	

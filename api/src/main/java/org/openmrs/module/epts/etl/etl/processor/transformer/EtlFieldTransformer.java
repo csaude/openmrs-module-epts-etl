@@ -99,14 +99,10 @@ public interface EtlFieldTransformer {
 	public static Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final Object srcValue)
 	        throws EtlTransformationException {
 		
-		if (!(srcValue instanceof String))
+		if (!(srcValue instanceof String) || srcValue == null || srcValue.toString().isBlank())
 			return srcValue;
 		
 		String srcValueAsString = srcValue.toString();
-		
-		if (srcValueAsString == null || srcValueAsString.isEmpty()) {
-			throw new EtlTransformationException("The srcValue is empty", srcObjects.get(0), ActionOnEtlException.ABORT);
-		}
 		
 		if (!srcValueAsString.contains("@")) {
 			return srcValueAsString;
@@ -150,7 +146,7 @@ public interface EtlFieldTransformer {
 			
 			if (!found) {
 				throw new EtlTransformationException("Parameter '" + paramName + "' not found in source objects.",
-				        srcObjects.get(0), ActionOnEtlException.ABORT);
+				        srcObjects.get(0), ActionOnEtlException.ABORT_PROCESS);
 			}
 			
 			if (srcValueAsString.equals("@" + paramName)) {

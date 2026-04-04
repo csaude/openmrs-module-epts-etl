@@ -481,12 +481,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			        + ") has composite pk. You cannot performe the request action!");
 		}
 		
-		Integer defaultParent = (Integer) inconsistenceInfoSource.getKey().getSimpleRefMapping()
-		        .getDefaultValueDueInconsistency();
-		
-		InconsistenceInfo info = InconsistenceInfo.generate(tableConfiguration.getTableName(), this.getObjectId(),
-		    inconsistenceInfoSource.getKey().getChildTableConf().getTableName(), inconsistenceInfoSource.getValue(),
-		    defaultParent, recordOriginLocationCode);
+		InconsistenceInfo info = InconsistenceInfo.generate(this, inconsistenceInfoSource.getKey(),
+		    recordOriginLocationCode);
 		info.save(tableConfiguration, conn);
 	}
 	
