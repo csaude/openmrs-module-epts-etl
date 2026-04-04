@@ -37,7 +37,7 @@ The process configuration file is the heart of the application. For each process
 - *syncStageSchema*: an optional token indicating the database name where the process data will be stored. If not present, the name "etl_stage_area" will be used.
 - *doNotTransformsPrimaryKeys*: indicates whether the primary keys in this process are transformed. If yes, the transformed records are given a new primary key; if no, the primary key in the source is the same in the destination.
 - *manualMapPrimaryKeyOnField*: if present, the value from this field will be mapped as a primary key for all tables that don't have a primary key but have a field with a name matching this field. This value will be overridden by the corresponding value in the ETL configuration session if present there.
-- **relationshipResolutionStrategy** defines how the ETL engine should handle relationship (foreign key) resolution for a field.
+- *relationshipResolutionStrategy* defines how the ETL engine should handle relationship (foreign key) resolution for a field.
   By default, when a field represents a relationship, the ETL process attempts to resolve the corresponding parent record in the destination database.
   Supported values:
   - *RESOLVE* – Default behavior. The ETL engine looks up and resolves the corresponding record in the destination database.
@@ -49,7 +49,27 @@ The process configuration file is the heart of the application. For each process
 - *startupScripts*:  A list of SQL scripts to be executed at startup. The files should be placed in @etlRootDirectory/dump-scripts/startup. It is important to ensure that multiple executions of these scripts do not result in inconsistencies;
 - *reRunable*: Normally, when a process is completed, the application skips its execution if the user attempts to re-run it. This property allows the process to be executed multiple times. If the user initiates the process after it has finished, it will restart and execute from the beginning.
 - *relatedEtlSrcTables*: Defines additional source tables that are not explicitly configured in the ETL process but are related to the primary configured source tables. These tables must be declared to ensure they are correctly recognized as part of the data domain rather than being treated as metadata tables. Properly listing all related source tables is essential for accurate relationship resolution during the ETL process, particularly when handling joins, foreign keys, or dependent records.
+- *defaultInconsistencyBehavior*: Defines the default behavior to be applied when a data inconsistency is detected during the ETL process. A data inconsistency occurs when the ETL engine encounters unexpected or invalid data conditions, such as:
+  - missing required references
+  - invalid foreign key relationships
+  - inconsistent source data values
+  - unresolved dependencies between records
 
+  This setting acts as a global fallback behavior and is applied whenever no specific behavior is defined at a lower level (e.g., field-level or transformer-level configurations).
+
+  Supported values:
+	- *MARK_RECORD_AS_FAILED* – The record is marked as failed, but the ETL process continues.
+	- *SET_TO_NULL* –  Sets the relatedfield value to null..
+	- *ABORT_PROCESS* – An exception is thrown and the ETL process is interrupted according to the configured execution strategy.
+- *defaultExceptionBehavior*: Defines the default behavior to be applied when an exception occurs during the ETL process. An exception may occur during any phase of the ETL pipeline, including extraction, transformation, or
+loading, and typically indicates an unexpected error such as: database access failures transformation errors (e.g. invalid expressions, parsing issues) missing required data internal processing errors
+This configuration acts as a global fallback and is applied whenever no more specific behavior is defined at a lower level (e.g., field-level or transformer-level exception handling).
+
+Supported values:
+  - *LOG* – The exception is logged and the ETL process continues with the next record.
+  - *MARK_RECORD_AS_FAILED* – The record is marked as failed and processing continues.
+  - *ABORT_PROCESS* – The exception is propagated and the ETL process is interrupted.
+       
 ## The Database configuration
 This section allowd the database configuration. The "srcConnConf" allows the configuration of source database and the "dstConnConf" allows the configuration of destination database. Each element allow bellows parameters: 
 - "dataBaseUserName" which represent the database username;
