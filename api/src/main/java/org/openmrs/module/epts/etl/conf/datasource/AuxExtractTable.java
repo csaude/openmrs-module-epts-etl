@@ -248,6 +248,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	@Override
 	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
 		FieldsMapping.tryToReplacePlaceholders(getJoinFields(), schemaInfoSrc);
+		
 		setJoinExtraCondition(utilities.tryToReplacePlaceholders(getJoinExtraCondition(), schemaInfoSrc));
 		
 		InnerAuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);

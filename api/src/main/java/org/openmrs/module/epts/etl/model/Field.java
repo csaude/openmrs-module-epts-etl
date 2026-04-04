@@ -327,6 +327,11 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
+	public boolean isBooleanColumnType() {
+		return AttDefinedElements.isBooleanType(this.getDataType());
+	}
+	
+	@JsonIgnore
 	public boolean isIntegerField() {
 		return AttDefinedElements.isInteger(this.getDataType());
 	}
@@ -521,7 +526,11 @@ public class Field implements Serializable {
 				if (this.getPrecision() == null) {
 					this.setPrecision(TypePrecision.init(250, null));
 				}
-			} else {
+			} else if (this.isBooleanColumnType()) {
+				this.setTypeClass(Boolean.class);
+			}
+			
+			else {
 				this.setTypeClass(Object.class);
 			}
 		} else {

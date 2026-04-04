@@ -25,7 +25,7 @@ public interface TransformableField {
 	
 	String getTransformer();
 	
-	String getValueToTransform();
+	Object getValueToTransform();
 	
 	String getDataSourceName();
 	

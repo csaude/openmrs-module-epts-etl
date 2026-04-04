@@ -36,12 +36,8 @@ public class FieldTransformingInfo {
 			this.srcField.determineTypeClass();
 		}
 		
-		if (this.transformedValue != null && utilities.isNumericType(srcField.getTypeClass())) {
-			this.transformedValue = utilities.parseValue(transformedValue.toString(), srcField.getTypeClass());
-		} else if (transformedValue != null && utilities.isBooleanType(srcField.getTypeClass())) {
-			this.transformedValue = utilities.parseValue(transformedValue.toString(), srcField.getTypeClass());
-		} else if (transformedValue != null && utilities.isDateType(srcField.getTypeClass())) {
-			this.transformedValue = utilities.parseValue(transformedValue.toString(), srcField.getTypeClass());
+		if (this.transformedValue != null) {
+			this.transformedValue = utilities.parseValue(transformedValue, srcField.getTypeClass());
 		}
 	}
 	

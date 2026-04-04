@@ -343,7 +343,7 @@ public class AttDefinedElements {
 	
 	public static boolean isNumeric(String attType) {
 		return utilities.isStringIn(attType.toLowerCase(), "int", "integer", "long", "byte", "short", "double", "float",
-		    "bit", "tinyint", "bigint", "bigint unsigned");
+		    "tinyint", "bigint", "bigint unsigned");
 	}
 	
 	public static boolean isString(String attType) {
@@ -405,8 +405,10 @@ public class AttDefinedElements {
 		  are forcing INT8 to be Integer*/
 		if (utilities.isStringIn(databaseType, "INT", "MEDIUMINT", "INT8", "BIGINT", "SERIAL", "SERIAL4"))
 			return "Integer";
-		if (utilities.isStringIn(databaseType, "TINYINT", "BIT"))
+		if (utilities.isStringIn(databaseType, "TINYINT"))
 			return "Byte";
+		if (utilities.isStringIn(databaseType, "BIT"))
+			return "Boolean";		
 		if (utilities.isStringIn(databaseType, "YEAR", "SMALLINT"))
 			return "Short";
 		if (utilities.isStringIn(databaseType, "BIGINT", "INT8", "SERIAL", "BIGINT UNSIGNED"))
@@ -436,6 +438,10 @@ public class AttDefinedElements {
 		return isDatabaseDateType || isJavaDateType;
 	}
 	
+	public static boolean isBooleanType(String type) {
+		return utilities.isStringIn(type.toLowerCase(), "boolean", "java.lang.Boolean", "bit");
+	}
+	
 	public static String[] convertTableAttNameToClassAttName(String[] dbAtts) {
 		List<String> atts = new ArrayList<String>();
 		
@@ -451,7 +457,7 @@ public class AttDefinedElements {
 	}
 	
 	public static boolean isSmallInt(String type) {
-		return utilities.isStringIn(type.toLowerCase(), "tinyint", "bit");
+		return utilities.isStringIn(type.toLowerCase(), "tinyint");
 	}
 	
 	public static boolean isInteger(String type) {

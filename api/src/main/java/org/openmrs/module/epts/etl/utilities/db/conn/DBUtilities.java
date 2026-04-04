@@ -1637,22 +1637,29 @@ public class DBUtilities {
 		}
 	}
 	
-	public static String tryToReplaceParamsInQuery(String query, EtlDatabaseObject paramSrc) {
+	public static <T extends Object> T tryToReplaceParamsInQuery(T query, EtlDatabaseObject paramSrc) {
 		return tryToReplaceParamsInQuery(query, null, paramSrc);
 	}
 	
-	public static String tryToReplaceParamsInQuery(String query, EtlConfiguration paramSrc) {
+	public static <T extends Object> T tryToReplaceParamsInQuery(T query, EtlConfiguration paramSrc) {
 		return tryToReplaceParamsInQuery(query, paramSrc, null);
 	}
 	
-	public static String tryToReplaceParamsInQuery(String query, EtlConfiguration etlConfParamSrc,
+	@SuppressWarnings("unchecked")
+	public static <T extends Object> T tryToReplaceParamsInQuery(T query, EtlConfiguration etlConfParamSrc,
 	        EtlDatabaseObject etlObjectParamSrc) {
-		if (!utilities.stringHasValue(query))
+		
+		if (!(query instanceof String))
 			return query;
+		
+		String strQuery = query.toString();
+		
+		if (!utilities.stringHasValue(strQuery))
+			return (T) strQuery;
 		
 		String paramRegex = "@(\\w+)";
 		Pattern pattern = Pattern.compile(paramRegex);
-		Matcher matcher = pattern.matcher(query);
+		Matcher matcher = pattern.matcher(strQuery);
 		StringBuffer result = new StringBuffer();
 		
 		while (matcher.find()) {
@@ -1681,6 +1688,6 @@ public class DBUtilities {
 		}
 		matcher.appendTail(result);
 		
-		return result.toString();
+		return (T) result.toString();
 	}
 }

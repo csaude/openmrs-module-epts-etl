@@ -765,7 +765,7 @@ public class DateAndTimeUtilities {
 		return createDate(stringDate, dateFormat);
 	}
 	
-	private static String determineDateFormat(String stringDate) {
+	public static String determineDateFormat(String stringDate) {
 		
 		if (stringDate == null || stringDate.isBlank()) {
 			throw new ForbiddenOperationException("Data invalida");

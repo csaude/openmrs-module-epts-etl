@@ -28,7 +28,8 @@ public class SqlProcessFInalizer extends AbstractProcessFinalizer {
 			}
 			
 			if (getRelatedProcessController().getSchemaInfoSrc() != null) {
-				sql = DBUtilities.tryToReplaceParamsInQuery(sql, getRelatedProcessController().getSchemaInfoSrc());
+				sql = DBUtilities.tryToReplaceParamsInQuery(sql, getRelatedProcessController().getSchemaInfoSrc())
+				        .toString();
 			}
 			
 			BaseDAO.executeQueryWithRetryOnError(sql, null, conn);

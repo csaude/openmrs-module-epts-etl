@@ -163,6 +163,7 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	@Override
 	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
 		FieldsMapping.tryToReplacePlaceholders(getJoinFields(), schemaInfoSrc);
+		
 		setJoinExtraCondition(utilities.tryToReplacePlaceholders(getJoinExtraCondition(), schemaInfoSrc));
 	}
 	

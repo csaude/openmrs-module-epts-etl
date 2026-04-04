@@ -36,8 +36,14 @@ public class DefaultObjectFieldsValuesGenerator implements JavaObjectFieldsValue
 				}
 			}
 			
-			FieldTransformingInfo fieldInfo = field.getTransformerInstance().transform(processor, srcObject, dstObject,
-			    avaliableSrcObjects, field, srcConn, dstConn);
+			FieldTransformingInfo fieldInfo;
+			try {
+				fieldInfo = field.getTransformerInstance().transform(processor, srcObject, dstObject, avaliableSrcObjects,
+				    field, srcConn, dstConn);
+			}
+			catch (Exception e) {
+				throw e;
+			}
 			
 			map.put(field.getName(), fieldInfo != null ? fieldInfo : null);
 		}

@@ -196,7 +196,6 @@ public class ConfVM {
 		    this.etlConfiguration.getRelatedController() == null ? new ProcessController(null, reloadedSyncConfiguration)
 		            : this.etlConfiguration.getRelatedController());
 		reloadedSyncConfiguration.getRelatedController().setConfiguration(reloadedSyncConfiguration);
-		reloadedSyncConfiguration.loadAllTables();
 		
 		reloadedSyncConfiguration.setClassPath(retrieveClassPath());
 		reloadedSyncConfiguration.setModuleRootDirectory(retrieveModuleFolder());

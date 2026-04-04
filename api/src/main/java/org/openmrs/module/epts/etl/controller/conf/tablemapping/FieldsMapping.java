@@ -35,9 +35,9 @@ public class FieldsMapping extends Field implements TransformableField {
 	
 	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private String srcValue;
+	private Object srcValue;
 	
-	private String dstValue;
+	private Object dstValue;
 	
 	private String srcField;
 	
@@ -296,19 +296,19 @@ public class FieldsMapping extends Field implements TransformableField {
 		this.transformer = transformer;
 	}
 	
-	public String getSrcValue() {
+	public Object getSrcValue() {
 		return srcValue;
 	}
 	
-	public void setSrcValue(String srcValue) {
+	public void setSrcValue(Object srcValue) {
 		this.srcValue = srcValue;
 	}
 	
-	public String getDstValue() {
+	public Object getDstValue() {
 		return dstValue;
 	}
 	
-	public void setDstValue(String dstValue) {
+	public void setDstValue(Object dstValue) {
 		this.dstValue = dstValue;
 	}
 	
@@ -440,7 +440,7 @@ public class FieldsMapping extends Field implements TransformableField {
 	}
 	
 	public boolean hasSrcValue() {
-		return utilities.stringHasValue(this.getSrcValue());
+		return this.getSrcValue() != null;
 	}
 	
 	public boolean hasDstField() {
@@ -448,7 +448,7 @@ public class FieldsMapping extends Field implements TransformableField {
 	}
 	
 	public boolean hasDstValue() {
-		return utilities.stringHasValue(this.getDstValue());
+		return this.getDstValue() != null;
 	}
 	
 	private Field findSrcFieldInDataSource(List<EtlDataSource> dataSource) {
@@ -513,7 +513,7 @@ public class FieldsMapping extends Field implements TransformableField {
 	}
 	
 	@Override
-	public String getValueToTransform() {
+	public Object getValueToTransform() {
 		return this.getSrcValue();
 	}
 	
@@ -570,10 +570,10 @@ public class FieldsMapping extends Field implements TransformableField {
 		super.tryToReplacePlaceholders(schemaInfoSrc);
 		
 		setSrcValue(utilities.tryToReplacePlaceholders(getSrcValue(), schemaInfoSrc));
+		setDstValue(utilities.tryToReplacePlaceholders(getDstValue(), schemaInfoSrc));
 		setSrcField(utilities.tryToReplacePlaceholders(getSrcField(), schemaInfoSrc));
 		setDataSourceName(utilities.tryToReplacePlaceholders(getDataSourceName(), schemaInfoSrc));
 		setDstField(utilities.tryToReplacePlaceholders(getDstField(), schemaInfoSrc));
-		setDstValue(utilities.tryToReplacePlaceholders(getDstValue(), schemaInfoSrc));
 		setDataType(utilities.tryToReplacePlaceholders(getDataType(), schemaInfoSrc));
 	}
 }

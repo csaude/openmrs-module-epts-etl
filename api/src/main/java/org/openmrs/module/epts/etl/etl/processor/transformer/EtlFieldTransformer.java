@@ -96,18 +96,23 @@ public interface EtlFieldTransformer {
 		
 	}
 	
-	public static Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final String srcValue)
+	public static Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final Object srcValue)
 	        throws EtlTransformationException {
 		
-		if (srcValue == null || srcValue.isEmpty()) {
+		if (!(srcValue instanceof String))
+			return srcValue;
+		
+		String srcValueAsString = srcValue.toString();
+		
+		if (srcValueAsString == null || srcValueAsString.isEmpty()) {
 			throw new EtlTransformationException("The srcValue is empty", srcObjects.get(0), ActionOnEtlException.ABORT);
 		}
 		
-		if (!srcValue.contains("@")) {
-			return srcValue;
+		if (!srcValueAsString.contains("@")) {
+			return srcValueAsString;
 		}
 		
-		String expression = srcValue;
+		String expression = srcValueAsString;
 		
 		Matcher matcher = PARAM_PATTERN.matcher(expression);
 		
@@ -148,7 +153,7 @@ public interface EtlFieldTransformer {
 				        srcObjects.get(0), ActionOnEtlException.ABORT);
 			}
 			
-			if (srcValue.equals("@" + paramName)) {
+			if (srcValueAsString.equals("@" + paramName)) {
 				return paramValue;
 			}
 			

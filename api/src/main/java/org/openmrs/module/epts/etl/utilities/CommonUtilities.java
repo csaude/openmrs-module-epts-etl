@@ -1271,27 +1271,82 @@ public class CommonUtilities implements Serializable {
 		return getField(obj, fieldName).getType();
 	}
 	
-	public Object parseValue(String value, Class<?> destinationType) {
-		if (destinationType.equals(String.class) && value instanceof String) {
-			return value;
-		} else if (destinationType.equals(Date.class) && value instanceof String) {
-			return DateAndTimeUtilities.createDate(value);
-			
-		} else if (destinationType.equals(Double.class) && value instanceof String) {
-			return Double.parseDouble(value);
-		} else if (destinationType.equals(Integer.class) && value instanceof String) {
-			return (int) utilities.forcarAproximacaoPorDefeito(value);
-		} else if (destinationType.equals(Long.class) && value instanceof String) {
-			return Long.parseLong(value);
-		} else if (destinationType.equals(Boolean.class) && value instanceof String) {
-			return Boolean.parseBoolean(isStringIn(value.toUpperCase(), "true", "1") ? "true" : "false");
-		} else if (destinationType.equals(Short.class) && value instanceof String) {
-			return Short.parseShort(value);
-		} else if (destinationType.equals(Float.class) && value instanceof String) {
-			return Float.parseFloat(value);
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public Object parseValue(Object value, Class<?> destinationType) {
+		
+		if (value == null) {
+			return null;
 		}
 		
-		return value;
+		// 🔹 já compatível
+		if (destinationType.isAssignableFrom(value.getClass())) {
+			return value;
+		}
+		
+		String str = value.toString().trim();
+		
+		// 🔹 String
+		if (destinationType == String.class) {
+			return str;
+		}
+		
+		// 🔹 Integer
+		if (destinationType == Integer.class || destinationType == int.class) {
+			return Integer.parseInt(str);
+		}
+		
+		// 🔹 Long
+		if (destinationType == Long.class || destinationType == long.class) {
+			return Long.parseLong(str);
+		}
+		
+		// 🔹 Double
+		if (destinationType == Double.class || destinationType == double.class) {
+			return Double.parseDouble(str);
+		}
+		
+		// 🔹 Boolean
+		if (destinationType == Boolean.class || destinationType == boolean.class) {
+			return Boolean.parseBoolean(str);
+		}
+		
+		// 🔹 Character
+		if (destinationType == Character.class || destinationType == char.class) {
+			if (str.length() != 1) {
+				throw new IllegalArgumentException("Cannot convert to char: " + str);
+			}
+			return str.charAt(0);
+		}
+		
+		// 🔹 Enum
+		if (destinationType.isEnum()) {
+			return Enum.valueOf((Class<Enum>) destinationType, str);
+		}
+		
+		// 🔹 LocalDate
+		if (destinationType == java.time.LocalDate.class) {
+			return java.time.LocalDate.parse(str);
+		}
+		
+		// 🔹 LocalDateTime
+		if (destinationType == java.time.LocalDateTime.class) {
+			return java.time.LocalDateTime.parse(str);
+		}
+		
+		// 🔹 Date (java.util.Date)
+		if (destinationType == java.util.Date.class) {
+			try {
+				String format = DateAndTimeUtilities.determineDateFormat(str);
+				java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(format);
+				return sdf.parse(str);
+			}
+			catch (Exception e) {
+				throw new RuntimeException("Error parsing date: " + str, e);
+			}
+		}
+		
+		// 🔹 fallback
+		throw new IllegalArgumentException("Unsupported conversion from " + value.getClass() + " to " + destinationType);
 	}
 	
 	/**
@@ -1410,7 +1465,7 @@ public class CommonUtilities implements Serializable {
 		return Date.class.isAssignableFrom(fieldType) || fieldType == Date.class;
 	}
 	
-	public String tryToReplacePlaceholders(String toReplace, EtlDatabaseObject src) {
+	public <T> T tryToReplacePlaceholders(T toReplace, EtlDatabaseObject src) {
 		if (src != null) {
 			return DBUtilities.tryToReplaceParamsInQuery(toReplace, src);
 		}
@@ -1418,14 +1473,14 @@ public class CommonUtilities implements Serializable {
 		return toReplace;
 	}
 	
-	public List<String> tryToReplacePlaceholders(List<String> toReplace, EtlDatabaseObject src) {
+	public <T> List<T> tryToReplacePlaceholdersAll(List<T> toReplace, EtlDatabaseObject src) {
 		
 		if (toReplace == null)
 			return null;
 		
-		List<String> replaced = new ArrayList<>(toReplace.size());
+		List<T> replaced = new ArrayList<>(toReplace.size());
 		
-		for (String r : toReplace) {
+		for (T r : toReplace) {
 			replaced.add(utilities.tryToReplacePlaceholders(r, src));
 		}
 		

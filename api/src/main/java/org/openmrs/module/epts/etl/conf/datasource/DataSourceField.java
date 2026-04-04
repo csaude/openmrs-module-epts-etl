@@ -155,8 +155,8 @@ public class DataSourceField extends Field implements TransformableField {
 	}
 	
 	@Override
-	public String getValueToTransform() {
-		return this.getValue() != null ? this.getValue().toString() : null;
+	public Object getValueToTransform() {
+		return this.getValue();
 	}
 	
 	@Override

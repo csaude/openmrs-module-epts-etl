@@ -642,9 +642,8 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
-		this.setIgnorableFields(utilities.tryToReplacePlaceholders(getIgnorableFields(), schemaInfoSrc));
-		
-		utilities.tryToReplacePlaceholders(getTableAlias(), schemaInfoSrc);
+		this.setIgnorableFields(utilities.tryToReplacePlaceholdersAll(getIgnorableFields(), schemaInfoSrc));
+		setTableAlias(utilities.tryToReplacePlaceholders(getTableAlias(), schemaInfoSrc));
 		
 		if (hasParents()) {
 			for (ParentTable p : this.getParents()) {
@@ -656,20 +655,13 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 			this.getPrimaryKey().tryToReplacePlaceholders(schemaInfoSrc);
 		}
 		
-		if (useSharedPKKey()) {
-			utilities.tryToReplacePlaceholders(this.getSharePkWith(), schemaInfoSrc);
-		}
+		setSharePkWith(utilities.tryToReplacePlaceholders(this.getSharePkWith(), schemaInfoSrc));
 		
-		if (hasObservationDateFields()) {
-			this.setObservationDateFields(
-			    utilities.tryToReplacePlaceholders(this.getObservationDateFields(), schemaInfoSrc));
-		}
+		this.setObservationDateFields(utilities.tryToReplacePlaceholders(this.getObservationDateFields(), schemaInfoSrc));
 		
 		if (hasUniqueKeys()) {
 			UniqueKeyInfo.tryToReplacePlaceholders(this.getUniqueKeys(), schemaInfoSrc);
 		}
-		
-		setManualMapPrimaryKeyOnField(utilities.tryToReplacePlaceholders(manualMapPrimaryKeyOnField, schemaInfoSrc));
 		
 		setExtraConditionForExtract(utilities.tryToReplacePlaceholders(getExtraConditionForExtract(), schemaInfoSrc));
 		
