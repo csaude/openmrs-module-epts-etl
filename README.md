@@ -54,9 +54,7 @@ The process configuration file is the heart of the application. For each process
   - invalid foreign key relationships
   - inconsistent source data values
   - unresolved dependencies between records
-
   This setting acts as a global fallback behavior and is applied whenever no specific behavior is defined at a lower level (e.g., field-level or transformer-level configurations).
-
   Supported values:
 	- *MARK_RECORD_AS_FAILED* – The record is marked as failed, but the ETL process continues.
 	- *SET_TO_NULL* –  Sets the relatedfield value to null..
@@ -65,10 +63,10 @@ The process configuration file is the heart of the application. For each process
 loading, and typically indicates an unexpected error such as: database access failures transformation errors (e.g. invalid expressions, parsing issues) missing required data internal processing errors
 This configuration acts as a global fallback and is applied whenever no more specific behavior is defined at a lower level (e.g., field-level or transformer-level exception handling).
 
-Supported values:
-  - *LOG* – The exception is logged and the ETL process continues with the next record.
-  - *MARK_RECORD_AS_FAILED* – The record is marked as failed and processing continues.
-  - *ABORT_PROCESS* – The exception is propagated and the ETL process is interrupted.
+	Supported values:
+  	- *LOG* – The exception is logged and the ETL process continues with the next record.
+  	- *MARK_RECORD_AS_FAILED* – The record is marked as failed and processing continues.
+  	- *ABORT_PROCESS* – The exception is propagated and the ETL process is interrupted.
        
 ## The Database configuration
 This section allowd the database configuration. The "srcConnConf" allows the configuration of source database and the "dstConnConf" allows the configuration of destination database. Each element allow bellows parameters: 
