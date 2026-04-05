@@ -70,7 +70,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			EtlDatabaseObject srcRecord = (EtlDatabaseObject) record;
 			srcRecord.loadObjectIdData(getSrcConf());
 			
-			for (DstConf mappingInfo : getEtlItemConfiguration().getDstConf()) {
+			for (DstConf mappingInfo : etlItemConf.getDstConf()) {
 				if (mappingInfo.isDisabled()) {
 					continue;
 				}
@@ -113,8 +113,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		
 		tryToPerfomeEtlOnChild(etlItemConf, loadHelper, srcConn, dstConn);
 		
-		logInfo(
-		    "ETL OPERATION [" + getEtlItemConfiguration().getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
+		logInfo("ETL OPERATION [" + etlItemConf.getConfigCode() + "] DONE ON " + etlObjects.size() + "' RECORDS");
 	}
 	
 	private void tryToPerfomeEtlOnChild(EtlItemConfiguration itemConf, EtlLoadHelper loadHelper, Connection srcConn,

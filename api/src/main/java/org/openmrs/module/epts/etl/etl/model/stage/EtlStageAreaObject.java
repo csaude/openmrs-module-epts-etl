@@ -82,23 +82,27 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			if (srcStageInfoObject == null)
 				throw new EtlExceptionImpl("The related srcStageInfoObject cannot be null");
 			
-			this.setRelatedConfiguration(((DstConf) etlTable).getSrcConf().generateRelatedDstStageTableConf(srcConn));
+			this.setRelatedConfiguration(etlTable.generateRelatedDstStageTableConf(srcConn));
+			
+			EtlConfigurationTableConf srcStageTable = ((DstConf) etlTable).getSrcConf()
+			        .generateRelatedSrcStageTableConf(srcConn);
 			
 			keyInfoTabConf = ((DstConf) etlTable).getSrcConf().generateRelatedStageDstUniqueKeysTableConf(srcConn);
-			String operation_id = obj.getEtlInfo().getProcessor().getEngine().getEngineId();
+			String operation_id = obj.getEtlInfo().getRelatedItemConf().getConfigCode();
 			
 			EtlStageAreaObject existing = null;
 			
 			if (srcStageInfoObject.hasValuedObjectId()) {
-				String condition = "etl_confing_id = ? and stage_record_id = ? and dst_table_name = ? ";
-				Object[] params = { operation_id, srcStageInfoObject.getObjectId().asSimpleValue(),
-				        etlTable.getTableName() };
+				String condition = "etl_confing_id = ? and src_stage_table_name = ? and stage_record_id = ? and dst_table_name = ? ";
+				Object[] params = { operation_id, srcStageTable.getTableName(),
+				        srcStageInfoObject.getObjectId().asSimpleValue(), etlTable.getTableName() };
 				
 				existing = EtlStageAreaObjectDAO.get(etlTable.generateRelatedDstStageTableConf(srcConn), condition, params,
 				    srcConn);
 				
 				if (existing != null) {
 					this.setFieldValue("id", existing.getFieldValue("id"));
+					this.setFieldValue("stage_record_id", existing.getFieldValue("id"));
 					
 					existing.loadObjectIdData();
 					
@@ -117,6 +121,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			    !status.isFullLoaded() ? obj.getEtlInfo().getExceptionOnEtl().getLocalizedMessage() : null);
 			
 			this.setFieldValue("etl_confing_id", operation_id);
+			this.setFieldValue("src_stage_table_name", srcStageTable.getTableName());
 			this.setFieldValue("migration_status", status.toInt());
 			this.setFieldValue("last_sync_date", DateAndTimeUtilities.getCurrentSystemDate(srcConn));
 			this.setFieldValue("dst_table_name", etlTable.getTableName());

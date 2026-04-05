@@ -82,6 +82,10 @@ public class EtlInfo {
 		
 	}
 	
+	public EtlItemConfiguration getRelatedItemConf() {
+		return ((DstConf) this.transformedObject.getRelatedConfiguration()).getParentConf();
+	}
+	
 	public EtlInfo getParentEtlInfo() {
 		return parentEtlInfo;
 	}

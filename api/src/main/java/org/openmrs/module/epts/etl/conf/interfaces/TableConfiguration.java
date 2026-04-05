@@ -2698,13 +2698,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				
 				String fullTableName = this.getSyncStageSchema() + "." + tableName;
 				
-				String parentTableName = this.generateFullStageTableName();
-				
 				sql += "CREATE TABLE " + fullTableName + "(\n";
 				sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 				sql += DBUtilities.generateTableBigIntField("stage_record_id", notNullConstraint, conn) + endLineMarker;
 				sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
 				sql += DBUtilities.generateTableVarcharField("dst_compacted_object_uk", 190, nullConstraint, conn)
+				        + endLineMarker;
+				sql += DBUtilities.generateTableVarcharField("src_stage_table_name", 100, notNullConstraint, conn)
 				        + endLineMarker;
 				sql += DBUtilities.generateTableVarcharField("etl_confing_id", 190, nullConstraint, conn) + endLineMarker;
 				sql += DBUtilities.generateTableVarcharField("conflict_resolution_type", 30, notNullConstraint, conn)
@@ -2726,19 +2726,22 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				    "dst_compacted_object_uk", conn) + endLineMarker;
 				
 				sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_dst".toLowerCase(),
-				    "stage_record_id, etl_confing_id, dst_table_name", conn) + endLineMarker;
+				    "stage_record_id, src_stage_table_name, etl_confing_id, dst_table_name", conn) + endLineMarker;
 				
-				sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
-				    parentTableName, "id", conn) + endLineMarker;
 				sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
 				sql += ")";
 				
-				String indexName = tableName + "_idx";
-				String indexFields = "stage_record_id, dst_table_name";
+				String indexName1 = tableName + "_idx";
+				String indexFields1 = "stage_record_id, src_stage_table_name";
 				
-				String idxDefinition = DBUtilities.generateIndexDefinition(fullTableName, indexName, indexFields, conn);
+				String idxDefinition1 = DBUtilities.generateIndexDefinition(fullTableName, indexName1, indexFields1, conn);
 				
-				BaseDAO.executeBatch(conn, sql, idxDefinition);
+				String indexName2 = tableName + "src_rec__idx";
+				String indexFields2 = "stage_record_id, dst_table_name";
+				
+				String idxDefinition2 = DBUtilities.generateIndexDefinition(fullTableName, indexName2, indexFields2, conn);
+				
+				BaseDAO.executeBatch(conn, sql, idxDefinition1, idxDefinition2);
 			}
 			
 		}
