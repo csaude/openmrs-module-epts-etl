@@ -491,6 +491,10 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		List<FieldsMapping> machedFields = new ArrayList<FieldsMapping>();
 		
 		for (FieldsMapping field : this.allMapping) {
+			if (field.getSrcField() == null) {
+				continue;
+			}
+			
 			if (field.getSrcField().equals(srcField)) {
 				machedFields.add(field);
 				
