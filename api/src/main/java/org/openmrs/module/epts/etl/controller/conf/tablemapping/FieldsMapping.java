@@ -165,19 +165,29 @@ public class FieldsMapping extends Field implements TransformableField {
 		FieldsMapping f = FieldsMapping.fastCreate(dsF.getValue().toString(), dsF.getDstField(), true);
 		
 		if (dsF.getValue().toString().startsWith("@")) {
-			f.setSrcField(dsF.getValue().toString().substring(1));
 			
-			EtlDataSource ds;
+			String fn = dsF.getValue().toString().substring(1);
 			
-			if (dsF.getParent() instanceof SrcConf) {
-				ds = dsF.getParent();
-			} else if (dsF.getParent() instanceof EtlAdditionalDataSource) {
-				ds = ((EtlAdditionalDataSource) dsF.getParent()).getRelatedSrcConf();
+			Object paramValue = dsF.getParent().getRelatedEtlConf().getParamValue(fn);
+			
+			if (paramValue == null) {
+				f.setSrcField(fn);
+				
+				EtlDataSource ds;
+				
+				if (dsF.getParent() instanceof SrcConf) {
+					ds = dsF.getParent();
+				} else if (dsF.getParent() instanceof EtlAdditionalDataSource) {
+					ds = ((EtlAdditionalDataSource) dsF.getParent()).getRelatedSrcConf();
+				} else {
+					throw new EtlExceptionImpl("Unsupported datasource type " + dsF.getParent());
+				}
+				
+				f.setDataSourceName(ds.getAlias());
 			} else {
-				throw new EtlExceptionImpl("Unsupported datasource type " + dsF.getParent());
+				f.setSrcValue(paramValue);
+				f.setSrcField(null);
 			}
-			
-			f.setDataSourceName(ds.getAlias());
 		}
 		
 		return f;

@@ -82,12 +82,15 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			if (srcStageInfoObject == null)
 				throw new EtlExceptionImpl("The related srcStageInfoObject cannot be null");
 			
-			this.setRelatedConfiguration(etlTable.generateRelatedDstStageTableConf(srcConn));
+			EtlConfigurationTableConf dstStageTable = etlTable.generateRelatedDstStageTableConf(srcConn);
+			
+			this.setRelatedConfiguration(dstStageTable);
 			
 			EtlConfigurationTableConf srcStageTable = ((DstConf) etlTable).getSrcConf()
 			        .generateRelatedSrcStageTableConf(srcConn);
 			
-			keyInfoTabConf = ((DstConf) etlTable).getSrcConf().generateRelatedStageDstUniqueKeysTableConf(srcConn);
+			keyInfoTabConf = etlTable.generateRelatedStageDstUniqueKeysTableConf(srcConn);
+			
 			String operation_id = obj.getEtlInfo().getRelatedItemConf().getConfigCode();
 			
 			EtlStageAreaObject existing = null;

@@ -137,22 +137,22 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		this.tryToLoadFieldValueGenerator();
 		
 		if (hasObjectFields()) {
-			for (DataSourceField f : this.getObjectFields()) {
-				f.setParent(this);
+			for (DataSourceField field : this.getObjectFields()) {
+				field.setParent(this);
 				
-				f.loadType(null, this);
+				field.loadType(null, this);
 				
-				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(f);
+				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(field);
 				
 				if (auxFieldMapping.hasDataSourceName()) {
-					f.setValue(null);
-					f.setSrcField(null);
+					field.setValue(null);
+					field.setSrcField(null);
 					
-					f.setAuxFieldMapping(auxFieldMapping);
+					field.setAuxFieldMapping(auxFieldMapping);
 				}
 				
-				f.tryToLoadTransformer(null);
-				f.loadType(null, this);
+				field.tryToLoadTransformer(null);
+				field.loadType(null, this);
 			}
 		} else {
 			throw new ForbiddenOperationException(
@@ -295,12 +295,12 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 		
 		EtlDatabaseObject obj = this.newInstance();
 		
-		for (DataSourceField f : this.getObjectFields()) {
-			FieldTransformingInfo valueInfo = values.get(f.getName());
+		for (DataSourceField field : this.getObjectFields()) {
+			FieldTransformingInfo valueInfo = values.get(field.getName());
 			
-			obj.setFieldValue(f.getName(), valueInfo.getTransformedValue());
+			obj.setFieldValue(field.getName(), valueInfo.getTransformedValue());
 			
-			obj.getField(f.getName()).setTransformingInfo(valueInfo);
+			obj.getField(field.getName()).setTransformingInfo(valueInfo);
 			valueInfo.setTransformationDatasource(this);
 		}
 		

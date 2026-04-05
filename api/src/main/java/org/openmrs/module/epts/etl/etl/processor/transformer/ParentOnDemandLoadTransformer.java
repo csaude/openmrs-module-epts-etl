@@ -620,6 +620,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 						
 					}
 					dstConf.addAllToAvaliableDataSource(avaliableDataSource);
+					
+					dstConf.addToPrefferedDataSource(dstConf.getSrcConf());
 					dstConf.addAllToPreferredDataSource(preferredDataSource);
 					
 					dstConf.fullLoad(dstConn);

@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 import org.openmrs.module.epts.etl.conf.AbstractRelatedTable;
 import org.openmrs.module.epts.etl.conf.ChildTable;
@@ -2768,6 +2770,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				String nullConstraint = "NULL";
 				String endLineMarker = ",\n";
 				
+				String uuid =  utilities.removeCharactersOnString(UUID.randomUUID().toString(), "-");
+				
 				String fullTableName = this.getSyncStageSchema() + "." + tableName;
 				
 				sql += "CREATE TABLE " + fullTableName + "(\n";
@@ -2777,14 +2781,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				sql += DBUtilities.generateTableVarcharField("column_name", 100, notNullConstraint, conn) + endLineMarker;
 				sql += DBUtilities.generateTableVarcharField("key_value", 100, nullConstraint, conn) + endLineMarker;
 				sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-				sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+				sql += DBUtilities.generateTableUniqueKeyDefinition(("unq_record_key_" + uuid).toLowerCase(),
 				    "stage_record_id, key_name, column_name", conn) + endLineMarker;
-				sql += DBUtilities.generateTableForeignKeyDefinition(tableName + "_parent_record", "stage_record_id",
-				    parentTableName, "id", conn) + endLineMarker;
+				sql += DBUtilities.generateTableForeignKeyDefinition(("parent_record_" + uuid).toLowerCase(),
+				    "stage_record_id", parentTableName, "id", conn) + endLineMarker;
 				sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
 				sql += ")";
 				
-				String indexName = tableName + "_idx";
+				String indexName = ("idx_" + uuid).toLowerCase();
 				String indexFields = "key_name, column_name, key_value";
 				
 				String idxDefinition = DBUtilities.generateIndexDefinition(fullTableName, indexName, indexFields, conn);
