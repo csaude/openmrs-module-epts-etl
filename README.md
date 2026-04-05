@@ -477,13 +477,22 @@ of the result set will be used as the destination field value. If the query retu
     - **COALESCE_TRANSFORMER(fieldOrValue1, ..., fieldOrValuen)** Returns the first non-null value obtained from a sequence of candidate inputs. Each parameter is evaluated in order and transformed into a value; if the result of the first parameter is null, the transformer evaluates the second, and so on until a non-null value is found. If all evaluated parameters result in null, the final result is null.
 Parameters may represent fixed values, dynamic parameters, or fields from available data sources. When referencing a field, it can be specified using the simple form "field" or the qualified form "dataSourceName.field" when disambiguation between data sources is required.
     - **SIMPLE_VALUE_TRANSFORMER** Performs direct assignment of the source value to the destination field. Any dynamic parameters present in the source value are resolved before assignment. This transformer is used automatically when no explicit transformer is defined for a field mapping.
-    - **PARENT_ON_DEMAND_TRANSFORMER(parentTable,parent_field_oin_datasource_object:srcField,on_demand_check_condition:condition,template:templateName,dstField₁:srcFieldOrValue₁,...,dstFieldₙ:srcFieldOrValueₙ)**: Ensures that a related parent record exists in the destination table and returns its primary key as the transformed value. The transformer may resolve the parent from the source database, reuse an already existing parent previously created on demand in the destination database, or create the parent on demand when necessary. The transformer requires the parent table name and at least one of the following special parameters:
+    - **PARENT_ON_DEMAND_TRANSFORMER(parentTable,parent_field_oin_datasource_object:srcField,on_demand_check_condition:condition,template:templateName,dstField₁:srcFieldOrValue₁,...,dstFieldₙ:srcFieldOrValueₙ, override_fields:fiel1,field2,...)**: Ensures that a related parent record exists in the destination table and returns its primary key as the transformed value. The transformer may resolve the parent from the source database, reuse an already existing parent previously created on demand in the destination database, or create the parent on demand when necessary. The transformer requires the parent table name and at least one of the following special parameters:
       - *parent_field_oin_datasource_object:srcField* – identifies the source field used to resolve the parent record from the source database
       - *on_demand_check_condition:condition* – defines a condition used to search for an already existing parent record previously created on demand in the destination database  
       - *An optional template:templateName* parameter may also be provided to define the template used to initialize the EtlItemConfiguration responsible for creating or loading the parent on demand.
       - Additional parameters may be used to populate fields of the parent record when it needs to be created. Each additional parameter must follow the format **dstField:srcFieldOrValue**.
       - The value assigned to dstField may be:
-        - a field from the available data sources (e.g. date_started:encounter_datetime)
+        - a field from the available data sources (e.g. date_sta
+      - *override_fields:fiel1,field2,...* - Defines the list of fields that should be updated on an existing parent record when it is reused by the PARENT_ON_DEMAND_TRANSFORMER. By default, when a parent record already exists in the destination database, it is reused as-is and no updates are applied. However, in some scenarios it may be necessary to update specific fields of the existing parent using the same transformation logic defined for parent creation.
+        This parameter allows specifying which fields should be recalculated and overwritten on the existing parent record.
+        Format
+        ```
+        override_fields:field1,field2,...,fieldN
+        ```
+        Behavior
+        
+        The specified fields will be recomputed using their corresponding mappings. The computed values will overwrite the existing values in the destination parent record. Only the listed fields are updated; all other fields remain unchanged. The same transformation rules apply as for parent creationrted:encounter_datetime)
         - a constant value (e.g. visit_type_id:42)
         - a dynamic ETL parameter starting with @ (e.g. location_id:@migration_location_id)
         - the literal null to explicitly set the field to null (e.g. date_stopped:null)
