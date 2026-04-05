@@ -431,4 +431,10 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects) {
+		// TODO Auto-generated method stub
+		
+	}
 }

@@ -276,7 +276,7 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public void save(TableConfiguration syncTableInfo, Connection conn) throws DBException {
 		// TODO Auto-generated method stub
@@ -458,52 +458,58 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public List<EtlDatabaseObject> getDestinationObjects() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public void setDestinationObjects(List<EtlDatabaseObject> destinationObjects) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public void save(TableConfiguration syncTableInfo, ConflictResolutionType onConflict, Connection conn)
 	        throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public EtlInfo getEtlInfo() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public void setEtlInfo(EtlInfo info) {
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public void tryToReplaceFieldWithKey(Key k) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects) {
 		// TODO Auto-generated method stub
 		
 	}

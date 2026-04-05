@@ -422,4 +422,13 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	public void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery) {
 		throw new ForbiddenOperationException("Forbiden Method");
 	}
+	
+	@Override
+	public String toString() {
+		String fields = this.objectFields != null ? this.objectFields.toString() : "";
+		
+		fields = utilities.stringHasValue(fields) ? "(" + fields + ")" : "";
+		
+		return this.getName() + fields;
+	}
 }

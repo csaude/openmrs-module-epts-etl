@@ -60,13 +60,9 @@ public interface TransformableField {
 		return null;
 	}
 	
-	default EtlNullBehavior nullValueBehavior() {
-		return EtlNullBehavior.ALLOW;
-	}
+	EtlNullBehavior nullValueBehavior();
 	
-	default RelationshipResolutionStrategy relationshipResolutionStrategy() {
-		return RelationshipResolutionStrategy.RESOLVE;
-	}
+	RelationshipResolutionStrategy relationshipResolutionStrategy();
 	
 	void setRelationshipResolutionStrategy(RelationshipResolutionStrategy strategy);
 	

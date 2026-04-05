@@ -41,12 +41,15 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	public GenericDatabaseObject() {
 	}
 	
+	@Override
 	public List<GenericDatabaseObject> getAuxLoadObject() {
 		return auxLoadObject;
 	}
 	
-	public void setAuxLoadObject(List<GenericDatabaseObject> auxLoadObject) {
-		this.auxLoadObject = auxLoadObject;
+	@SuppressWarnings("unchecked")
+	@Override
+	public void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects) {
+		this.auxLoadObject = (List<GenericDatabaseObject>) auxLoadObjects;
 	}
 	
 	@Override

@@ -195,4 +195,10 @@ public class DataSourceField extends Field implements TransformableField {
 		
 		return clonedItems;
 	}
+
+	@Override
+	public RelationshipResolutionStrategy relationshipResolutionStrategy() {
+		return this.relationshipResolutionStrategy;
+	}
+
 }

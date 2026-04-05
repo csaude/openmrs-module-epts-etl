@@ -184,7 +184,7 @@ public class EtlInfo {
 			
 			if (utilities.listHasElement(recursive)) {
 				getProcessor().logDebug("Recursive relationship found reloading parents for record "
-				        + this.getTransformedObject() + " with parent ");
+				        + this.getTransformedObject() + " with parent: " + recursive);
 				
 				DatabaseObjectDAO.insert(recursive, srcConn);
 			} else {
@@ -571,7 +571,7 @@ public class EtlInfo {
 			    srcConn);
 			
 			getProcessor().logDebug("Recursive relationship found reloading parents for record "
-			        + this.getTransformedObject() + " with parent ");
+			        + this.getTransformedObject() + " with parent: " + defaultParentInfo);
 			
 			defaultParentInfo.save((TableConfiguration) defaultParentInfo.getRelatedConfiguration(),
 			    ConflictResolutionType.KEEP_EXISTING, srcConn);

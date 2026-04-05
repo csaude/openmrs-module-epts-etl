@@ -160,6 +160,10 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	
 	private List<FieldsMapping> onDemandParentFieldMappings;
 	
+	private List<FieldsMapping> overrideFields;
+	
+	private String overrideFieldsStr;
+	
 	private List<SqlConditionElement> onDemandCondtionElements;
 	
 	private String onDemandCheckCondition;
@@ -222,6 +226,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 					}
 					
 					this.templateName = srcFieldOrValue;
+				} else if (dstField.equals("override_fields")) {
+					this.overrideFieldsStr = srcFieldOrValue;
 				} else {
 					if (!utilities.stringHasValue(srcFieldOrValue) || srcFieldOrValue.toLowerCase().equals("null")) {
 						srcFieldOrValue = null;
@@ -231,6 +237,27 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 					
 					this.onDemandParentFieldMappings.add(fm);
 				}
+			}
+		}
+		
+		if (utilities.stringHasValue(this.overrideFieldsStr)) {
+			String[] toOverride = this.overrideFieldsStr.split(",");
+			
+			this.overrideFields = new ArrayList<>(toOverride.length);
+			
+			for (String to : toOverride) {
+				FieldsMapping f = new FieldsMapping();
+				f.setDstField(to);
+				
+				int i = onDemandParentFieldMappings.indexOf(f);
+				
+				if (i < 0) {
+					throw new EtlExceptionImpl("The field to override '" + f.getDstField()
+					        + "' is not listed on onDemandFields on transformer \n" + getTransformerDsc());
+				}
+				
+				overrideFields.add(onDemandParentFieldMappings.get(i));
+				
 			}
 		}
 		
@@ -427,6 +454,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 			transformationType = TransformationType.ON_DEMAND;
 		}
 		
+		srcParent.setAuxLoadObject(additionalSrcObjects);
+		
 		EtlLoadHelper loadHelper = EtlLoadHelper.fastLoadRecord(processor, srcParent, dstConf, transformationType, srcConn,
 		    dstConn);
 		
@@ -619,6 +648,9 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 						preferredDataSource = this.relatedDstConf.getAllPrefferredDataSource();
 						
 					}
+					
+					dstConf.setMapping(this.overrideFields);
+					
 					dstConf.addAllToAvaliableDataSource(avaliableDataSource);
 					
 					dstConf.addToPrefferedDataSource(dstConf.getSrcConf());

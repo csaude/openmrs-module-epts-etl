@@ -70,6 +70,8 @@ public interface EtlDatabaseObject extends EtlObject {
 	 */
 	List<? extends EtlDatabaseObject> getAuxLoadObject();
 	
+	void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects);
+	
 	/**
 	 * Load the destination parents id to this object
 	 * 

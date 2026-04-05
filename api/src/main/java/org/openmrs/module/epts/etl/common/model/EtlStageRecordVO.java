@@ -693,4 +693,10 @@ public class EtlStageRecordVO extends BaseVO implements EtlDatabaseObject {
 	public void setEtlInfo(EtlInfo info) {
 	}
 	
+	@Override
+	public void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects) {
+		// TODO Auto-generated method stub
+		
+	}
+	
 }
