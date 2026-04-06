@@ -260,7 +260,6 @@ Each operation can be configured using the following fields:
 - *totalAvaliableRecordsToProcess*: Specifies the total number of records to process when using *USE_PROVIDED_COUNT* strategy.
 
 ## The etl item configuration
-## The etl item configuration
 The ETL item configuration defines the rules for data extraction, transformation, and loading. Each operation within a process applies its logic to the configured ETL items. These items represent the core units of work in the ETL pipeline.
 
 Each ETL item typically contains two main components:
