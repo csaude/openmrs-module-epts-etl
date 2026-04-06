@@ -26,7 +26,7 @@ The process configuration file is the heart of the application. For each process
 - **The section 3** defines the operations configuration parameters.
 - **The section 4** lists the ETL configuration. This define the rules of how the extraction, transformation and load will be hundled.
 
-## The common configuration/
+## The common configuration
 - *processType*: A string representing the Process Type. The supported types are listed in the section "Supported Process Types."
 - *etlRootDirectory*: a full path to the directory where the process files will be placed.
 - *childConfigFilePath*: a full path to another JSON configuration file which defines a process that will be executed when the current process is finished. This parameter allows multiple processes to be executed in sequence. This can be useful, for example, when there is a need to merge multiple databases.
@@ -115,6 +115,82 @@ The finalizer is an object which perfome the finalization tasks. A finalizer is 
    ...
 }
 ```
+
+## The Validator
+Defines a list of validation rules that are executed during the ETL process.
+
+Validators allow dynamic validation of data, configuration values, or database state. They can be applied at any level of the ETL configuration and are useful for enforcing data integrity and business rules.
+
+### Structure
+
+```
+{
+   "validators":[
+      {
+         "name":"",
+         "value":{
+            "value":"",
+            "transformer":""
+         },
+         "rule":{
+            "type":"",
+            "expectedValue":""
+         },
+         "message":"",
+         "phase":"",
+         "behavior":"",
+         "connectionToUse":""
+      }
+   ]
+}
+```
+
+### Fields
+
+- **name** – Unique identifier of the validator
+- **value** – Defines how the value to be validated is obtained
+  - *value* – source value
+  - *transformer* – optional transformer to compute the value
+- **rule** – Defines the validation rule
+  - *type* – validation type (e.g., EQUALS, NOT_NULL, EXISTS)
+  - *expectedValue* – expected value (if applicable)
+- **message** – Custom error message if validation fails
+- **phase** – When the validation should be executed
+  - BEFORE_LOAD
+  - AFTER_LOAD
+- **behavior** – Action to take if validation fails
+  - MARK_RECORD_AS_FAILED
+  - IGNORE
+  - ABORT_PROCESS
+- **connectionToUse:** by default, validators use the SRC connection. This property allows overriding the connection to DST or MAIN.
+- 
+### Example
+
+```
+  "validators": [
+    {
+      "name": "dst_location_is_hiv_department",
+      "connectionToUse":"DST",
+      "value": {
+        "name": "${destination_location_id}",
+        "dataType":"int",
+        "transformer": "FAST_SQL_TRANSFORMER(select value_reference from ${dst_db}.location_attribute where attribute_type_id = 25 and location_id = ${destination_location_id})"
+      },
+
+      "rule": {
+        "type": "EQUALS",
+        "expectedValue":233595
+      },
+
+      "message": "The provided destination location ${destination_location_id} does not represent a valid hiv  department",
+      
+      "phase": "BEFORE_LOAD",
+      
+      "behavior": "ABORT_PROCESS"
+    }
+  ]
+```
+
 
 
 ## The Operation configuration
