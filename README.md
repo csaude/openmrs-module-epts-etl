@@ -116,9 +116,6 @@ The basic structure of this parameter is shown below:
 - *extraConditionForExtract*: An optional SQL condition appended to the extraction query when retrieving records from the dynamic source table.
 - *auxExtractTable*: An optional list of additional tables used to enrich or filter the extraction process. These tables can be joined to introduce extra conditions or act as supplementary data sources. For full details, refer to [AuxExtractTable](#aux-extract-table).
 
-  
-
-## The finalizer
 ## The finalizer
 The *finalizer* is an optional configuration element responsible for executing post-processing tasks after the ETL process has completed. It is typically used to perform cleanup operations, data adjustments, or any additional logic required once all ETL operations have finished.
 
