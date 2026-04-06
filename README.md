@@ -162,7 +162,7 @@ Validators allow dynamic validation of data, configuration values, or database s
   - MARK_RECORD_AS_FAILED
   - IGNORE
   - ABORT_PROCESS
-- **connectionToUse:** by default, validators use the SRC connection. This property allows overriding the connection to DST or MAIN.
+- **connectionToUse:** by default, validators use the SRC connection. This property allows overriding the connection to *dstConnInfo* or *mainConnInfo*.
 - 
 ### Example
 
