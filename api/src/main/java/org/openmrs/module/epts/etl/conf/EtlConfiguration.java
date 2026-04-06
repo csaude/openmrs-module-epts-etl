@@ -1056,8 +1056,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		code = item.getSrcConf().getTableName() + "_to_" + code;
 		
+		item.setShortCode(code);
+		
 		code += "_on_" + this.generateProcessId()
-		        + (item.hasParentItemConf() ? "_within_" + item.getParentItemConf().getConfigCode() : "");
+		        + (item.hasParentItemConf() ? "_within_" + item.getParentItemConf().getShortCode() : "");
 		
 		item.setConfigCode(finalizeItemCodeGeneration(code));
 		

@@ -76,7 +76,17 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private boolean doNotFullLoadDstConf;
 	
+	private String shortCode;
+	
 	public EtlItemConfiguration() {
+	}
+	
+	public String getShortCode() {
+		return shortCode;
+	}
+	
+	public void setShortCode(String shortCode) {
+		this.shortCode = shortCode;
 	}
 	
 	public boolean isDoNotFullLoadDstConf() {
