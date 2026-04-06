@@ -18,6 +18,7 @@ import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -30,7 +31,6 @@ import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -438,14 +438,14 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject dstObject,
-	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
+	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
+	        throws DBException {
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
 		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects)
-		        .query(processor.getEngine(), srcConn);
+		        .query(processor != null ? processor.getEngine() : null, srcConn);
 		
 		if (utilities.listHasNoElement(list)) {
 			return null;

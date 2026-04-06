@@ -1,13 +1,21 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
+import java.sql.Connection;
+import java.util.List;
+
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.types.EtlNullBehavior;
 import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
+import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.ArithmeticFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformerType;
+import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
+import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
  * In an ETL a {@link TransformableField} represents a field which can have its value (src-value)
@@ -42,6 +50,14 @@ public interface TransformableField {
 	String getSrcField();
 	
 	Object getDefaultValue();
+	
+	default FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
+	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, Connection srcConn,
+	        Connection dstConn) throws DBException, EtlTransformationException {
+		
+		return this.getTransformerInstance().transform(processor, srcObject, transformedRecord, additionalSrcObjects, this,
+		    srcConn, dstConn);
+	}
 	
 	default FieldTransformerType getTransformerType() {
 		if (this.hasTransformerInstance()) {
@@ -196,5 +212,7 @@ public interface TransformableField {
 	default void tryToLoadTransformer(DstConf dstConf) {
 		FieldTransformerType.tryToLoadTransformerToField(this, dstConf);
 	}
+	
+	EtlDataSource getDataSource();
 	
 }

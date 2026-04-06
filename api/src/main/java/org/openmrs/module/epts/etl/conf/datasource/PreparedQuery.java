@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -22,7 +23,6 @@ import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 /**
  * Represents an prepared query ready to be executed. It alwas has a ready query and its parameters

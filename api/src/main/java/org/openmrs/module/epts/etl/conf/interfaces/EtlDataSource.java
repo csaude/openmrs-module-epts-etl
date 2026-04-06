@@ -5,12 +5,12 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlField;
 import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public interface EtlDataSource extends DatabaseObjectConfiguration {
 	

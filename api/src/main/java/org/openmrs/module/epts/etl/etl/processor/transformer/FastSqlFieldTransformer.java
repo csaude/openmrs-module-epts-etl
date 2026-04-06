@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EmptyTransformedValueException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
@@ -94,16 +95,15 @@ public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
-		if (additionalSrcObjects == null || additionalSrcObjects.isEmpty()) {
+		/*if (additionalSrcObjects == null || additionalSrcObjects.isEmpty()) {
 			throw new EtlExceptionImpl("FastSqlFieldTransformer requires at least one source object.");
-		}
+		}*/
 		
 		if (dataSourceConfig == null) {
 			synchronized (lock) {
 				if (dataSourceConfig == null) {
 					
-					QueryDataSourceConfig conf = new QueryDataSourceConfig(sqlQuery,
-					        (SrcConf) srcObject.getRelatedConfiguration());
+					QueryDataSourceConfig conf = new QueryDataSourceConfig(sqlQuery, (SrcConf) field.getDataSource());
 					
 					conf.fullLoad(srcConn);
 					
@@ -113,7 +113,7 @@ public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 		}
 		
 		EtlDatabaseObject srcObj = dataSourceConfig.loadRelatedSrcObject(processor, srcObject, transformedRecord,
-		    additionalSrcObjects, srcConn);
+		    additionalSrcObjects, hasOverrideConnection() ? getOverrideConnection() : srcConn);
 		
 		Object dstValue = null;
 		
@@ -127,8 +127,9 @@ public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 		}
 		
 		if (field.getDefaultValue() == null) {
-			throw new EmptyTransformedValueException(additionalSrcObjects.get(0), field.getSrcField(), this,
-			        additionalSrcObjects.get(0).getRelatedConfiguration().getGeneralBehaviourOnEtlException());
+			EtlDatabaseObject obj = utilities.listHasElement(additionalSrcObjects) ? additionalSrcObjects.get(0) : null;
+			
+			throw new EmptyTransformedValueException(obj, field.getSrcField(), this, ActionOnEtlException.ABORT_PROCESS);
 		}
 		
 		return null;

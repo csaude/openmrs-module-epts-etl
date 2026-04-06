@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.datasource.TableDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadCurrentIntervals;
@@ -32,7 +33,6 @@ import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> extends AbstractSearchParams<T> {
 	

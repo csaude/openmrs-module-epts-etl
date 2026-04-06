@@ -161,4 +161,12 @@ public interface EtlFieldTransformer {
 		return buffer.toString();
 	}
 	
+	Connection getOverrideConnection();
+	
+	void setOverrideConnection(Connection overrideConnection);
+	
+	default boolean hasOverrideConnection() {
+		return this.getOverrideConnection() != null;
+	}
+	
 }

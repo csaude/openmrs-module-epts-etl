@@ -180,7 +180,6 @@ public enum FieldTransformerType {
 		if (field.getTransformerType().isMapping()) {
 			field.setRelationshipResolutionStrategy(RelationshipResolutionStrategy.SKIP);
 		}
-		
 	}
 	
 	public static List<Object> tryToLoadTransformerParameters(String def) {

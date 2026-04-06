@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.inconsistenceresolver.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -12,7 +13,6 @@ import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	

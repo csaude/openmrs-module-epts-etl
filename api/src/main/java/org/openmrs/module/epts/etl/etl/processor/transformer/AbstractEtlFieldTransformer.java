@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.etl.processor.transformer;
 
+import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
@@ -13,9 +14,22 @@ public abstract class AbstractEtlFieldTransformer implements EtlFieldTransformer
 	
 	protected TransformableField field;
 	
+	private Connection overrideConnection;
+	
 	public AbstractEtlFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
 		this.parameters = parameters;
 		this.relatedDstConf = relatedDstConf;
 		this.field = field;
 	}
+	
+	@Override
+	public Connection getOverrideConnection() {
+		return overrideConnection;
+	}
+	
+	@Override
+	public void setOverrideConnection(Connection overrideConnection) {
+		this.overrideConnection = overrideConnection;
+	}
+	
 }

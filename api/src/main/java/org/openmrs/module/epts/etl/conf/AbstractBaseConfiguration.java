@@ -10,6 +10,8 @@ public abstract class AbstractBaseConfiguration implements BaseConfiguration {
 	
 	private List<Extension> extension;
 	
+	private List<DefaultEtlValidator> validators;
+	
 	public AbstractBaseConfiguration() {
 	}
 	
@@ -27,6 +29,18 @@ public abstract class AbstractBaseConfiguration implements BaseConfiguration {
 	
 	public void setComments(Object comments) {
 		this.comments = comments;
+	}
+	
+	public List<DefaultEtlValidator> getValidators() {
+		return validators;
+	}
+	
+	public void setValidators(List<DefaultEtlValidator> validators) {
+		this.validators = validators;
+	}
+	
+	public boolean hasValidator() {
+		return utilities.listHasElement(this.validators);
 	}
 	
 }

@@ -22,6 +22,7 @@ import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.datasource.SqlFunctionInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.exceptions.DatabaseNotSupportedException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;

@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
@@ -34,6 +35,7 @@ import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
@@ -870,7 +872,81 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					addConfiguredTable(new GenericTableConfiguration(tableName));
 				}
 			}
+			
+			ensureEtlSchemaTablesExists();
+			
+			OpenConnection dstConn = getDstConnInfo().openConnection();
+			
+			try {
+				DefaultEtlValidator.tryToValidate(this, conn, dstConn);
+			}
+			finally {
+				if (dstConn != null)
+					dstConn.finalizeConnection();
+			}
 		}
+	}
+	
+	private OpenConnection ensureEtlSchemaTablesExists() throws DBException {
+		if (!this.isImportStageSchemaExists()) {
+			this.createStageSchema();
+		}
+		
+		if (!existInconsistenceInfoTable()) {
+			createInconsistenceInfoTable();
+		}
+		
+		if (!existOperationProgressInfoTable()) {
+			createTableOperationProgressInfo();
+		}
+		
+		if (!existsDefaultGeneratedObjectKeyTable()) {
+			createDefaultGeneratedObjectKeyTable();
+		}
+		
+		if (!existEtlRecordErrorTable()) {
+			createEtlRecordErrorTable();
+		}
+		
+		if (!existsSkippedRecordsTable()) {
+			createSkippedRecordsTable();
+		}
+		
+		if (!existRelatedRecursiveRecordInfoTable()) {
+			logDebug("GENERATING RELATED RECURSIVE TABLE");
+			
+			createRecordWithDefaultParentInfoTable();
+			
+			logDebug("RELATEDRECURSIVE TABLE GENERATED");
+		}
+		
+		OpenConnection conn = openSrcConn();
+		
+		if (this.hasDstConnInfo()) {
+			
+			//Try to openConnection to determine if db schama exists
+			boolean dstDbExists = false;
+			
+			try {
+				OpenConnection dstConn = getDstConnInfo().openConnection();
+				dstConn.finalizeConnection();
+				
+				dstDbExists = true;
+			}
+			catch (DBException e) {
+				if (DBUtilities.determineDataBaseFromException(e).equals(DBUtilities.MYSQL_DATABASE)) {
+					if (!DBException.checkIfExceptionContainsMessage(e, "Unknown database")) {
+						throw e;
+					}
+				} else
+					throw e;
+			}
+			
+			if (!dstDbExists) {
+				this.getDstConnInfo().restoreDump(this);
+			}
+		}
+		return conn;
 	}
 	
 	private void tryToExecuteStartupScripts(DBConnectionInfo connInfo) throws DBException {
@@ -1947,4 +2023,388 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		return getSqlScriptsDirectory() + FileUtilities.getPathSeparator() + dbConnConf.getDatabaseSchemaPath();
 	}
+	
+	private void createStageSchema() throws DBException {
+		OpenConnection conn = getSrcConnInfo().openConnection();
+		
+		try {
+			if (DBUtilities.isMySQLDB(conn)) {
+				DBUtilities.createDb(getSrcConnInfo(), this.getSyncStageSchema());
+			} else {
+				BaseDAO.executeBatch(conn, "CREATE SCHEMA " + this.getSyncStageSchema());
+			}
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	private boolean isImportStageSchemaExists() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		try {
+			return DBUtilities.isResourceExist(null, null, DBUtilities.RESOURCE_TYPE_SCHEMA, this.getSyncStageSchema(),
+			    conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	private boolean existRelatedRecursiveRecordInfoTable() {
+		OpenConnection conn = null;
+		
+		try {
+			String schema = this.getSyncStageSchema();
+			String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+			String tabName = this.getRecordWithDefaultParentInfoTableName();
+			
+			conn = openSrcConn();
+			
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			if (conn != null) {
+				conn.finalizeConnection();
+			}
+			
+		}
+	}
+	
+	public boolean existInconsistenceInfoTable() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		String schema = this.getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = "inconsistence_info";
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminated();
+			conn.finalizeConnection();
+		}
+	}
+	
+	public boolean existsDefaultGeneratedObjectKeyTable() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		String schema = this.getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME;
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminated();
+			conn.finalizeConnection();
+		}
+	}
+	
+	public boolean existsSkippedRecordsTable() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		String schema = this.getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = EtlConfiguration.SKIPPED_RECORD_TABLE_NAME;
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminated();
+			conn.finalizeConnection();
+		}
+	}
+	
+	public boolean existOperationProgressInfoTable() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		String schema = this.getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = "table_operation_progress_info";
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminated();
+			conn.finalizeConnection();
+		}
+	}
+	
+	public boolean existEtlRecordErrorTable() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		String schema = this.getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME;
+		
+		try {
+			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			
+			throw new RuntimeException(e);
+		}
+		finally {
+			conn.markAsSuccessifullyTerminated();
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void createTableOperationProgressInfo() throws DBException {
+		
+		EtlConfiguration config = this;
+		
+		OpenConnection conn = openSrcConn();
+		
+		try {
+			String sql = "";
+			
+			sql += "CREATE TABLE " + config.getSyncStageSchema() + ".table_operation_progress_info (\n";
+			sql += DBUtilities.generateTableAutoIncrementField("id", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("operation_id", 250, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("operation_name", 250, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("table_name", 100, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableDateTimeField("started_at", "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableDateTimeField("last_refresh_at", "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("min_record_id", 11, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("max_record_id", 11, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("total_records", 11, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableIntegerField("total_processed_records", 11, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("status", 50, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableTimeStampField("creation_date", conn) + ",\n";
+			sql += DBUtilities.generateTableUniqueKeyDefinition(
+			    config.getSyncStageSchema() + "_UNQ_OPERATION_ID".toLowerCase(), "operation_id", conn) + ",\n";
+			sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "table_operation_progress_info_pk", conn) + "\n";
+			
+			sql += ");\n";
+			
+			BaseDAO.executeBatch(conn, sql);
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void createSkippedRecordsTable() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String schema = this.getSyncStageSchema();
+		
+		String tableName = EtlConfiguration.SKIPPED_RECORD_TABLE_NAME;
+		
+		sql += "CREATE TABLE " + schema + "." + tableName + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("table_name", 30, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("object_id", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_key".toLowerCase(), "table_name, object_id",
+		    conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		try {
+			BaseDAO.executeBatch(conn, sql);
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void createRecordWithDefaultParentInfoTable() {
+		OpenConnection conn = null;
+		
+		try {
+			conn = openSrcConn();
+			
+			String tableName = this.getRecordWithDefaultParentInfoTableName();
+			
+			String sql = "";
+			String notNullConstraint = "NOT NULL";
+			String endLineMarker = ",\n";
+			
+			sql += "CREATE TABLE " + this.generateFullRecursiveInfoTableName() + "(\n";
+			sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
+			        + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("src_table_name", 100, notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableBigIntField("src_rec_id", notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableBigIntField("dst_rec_id", notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("parent_table", 50, notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableVarcharField("parent_field", 50, notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableBigIntField("src_parent_id", notNullConstraint, conn) + endLineMarker;
+			sql += DBUtilities.generateTableNumericField("inconsistent_parent", 1, notNullConstraint, -1, conn)
+			        + endLineMarker;
+			sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+			
+			sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+			    "src_rec_id, parent_table, parent_field", conn) + endLineMarker;
+			
+			sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
+			sql += ")";
+			
+			String indexName = tableName + "location_idx";
+			String indexFields = "record_origin_location_code";
+			
+			String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullRecursiveInfoTableName(), indexName,
+			    indexFields, conn);
+			
+			BaseDAO.executeBatch(conn, sql, idxDefinition);
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		catch (DBException e) {
+			throw new EtlExceptionImpl(e);
+		}
+		finally {
+			if (conn != null) {
+				conn.finalizeConnection();
+			}
+		}
+	}
+	
+	private void createDefaultGeneratedObjectKeyTable() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String schema = this.getSyncStageSchema();
+		
+		String tableName = EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME;
+		
+		sql += "CREATE TABLE " + schema + "." + tableName + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("table_name", 30, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("column_name", 30, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("key_value", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_key".toLowerCase(), "table_name, column_name",
+		    conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		try {
+			BaseDAO.executeBatch(conn, sql);
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void createEtlRecordErrorTable() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String schema = this.getSyncStageSchema();
+		
+		String tableName = EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME;
+		
+		sql += "CREATE TABLE " + schema + "." + tableName + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("record_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("table_name", 50, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("origin_location_code", 50, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("exception", 200, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("exception_description", 1000, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
+		sql += ")";
+		
+		String idxDefinition = DBUtilities.generateIndexDefinition(schema + "." + tableName,
+		    tableName + "_idx".toLowerCase(), "table_name, origin_location_code", conn) + ";";
+		
+		try {
+			BaseDAO.executeBatch(conn, sql, idxDefinition);
+			
+			conn.markAsSuccessifullyTerminated();
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
+	private void createInconsistenceInfoTable() throws DBException {
+		OpenConnection conn = openSrcConn();
+		
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		String sql = "";
+		
+		sql += "CREATE TABLE " + this.getSyncStageSchema() + ".inconsistence_info (\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("table_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableIntegerField("record_id", 11, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("parent_table_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("parent_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("default_parent_id", "NULL", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
+		        + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "inconsistence_info_pk", conn);
+		sql += ");";
+		
+		try {
+			BaseDAO.executeBatch(conn, sql);
+			conn.markAsSuccessifullyTerminated();
+		}
+		finally {
+			conn.finalizeConnection();
+		}
+	}
+	
 }

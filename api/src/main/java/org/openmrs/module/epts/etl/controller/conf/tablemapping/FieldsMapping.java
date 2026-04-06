@@ -67,6 +67,8 @@ public class FieldsMapping extends Field implements TransformableField {
 	
 	private EtlNullBehavior nullValueBehavior;
 	
+	private EtlDataSource dataSource;
+	
 	public FieldsMapping() {
 		this.nullValueBehavior = EtlNullBehavior.ALLOW;
 		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
@@ -585,5 +587,14 @@ public class FieldsMapping extends Field implements TransformableField {
 		setDataSourceName(utilities.tryToReplacePlaceholders(getDataSourceName(), schemaInfoSrc));
 		setDstField(utilities.tryToReplacePlaceholders(getDstField(), schemaInfoSrc));
 		setDataType(utilities.tryToReplacePlaceholders(getDataType(), schemaInfoSrc));
+	}
+	
+	@Override
+	public EtlDataSource getDataSource() {
+		return this.dataSource;
+	}
+	
+	public void setDataSource(EtlDataSource dataSource) {
+		this.dataSource = dataSource;
 	}
 }

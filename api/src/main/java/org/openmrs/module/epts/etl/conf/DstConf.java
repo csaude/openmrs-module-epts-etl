@@ -426,16 +426,10 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			return;
 		}
 		
-		if (fm.hasTransformer() && !fm.useDefaultTransformer()) {
-			
-			fm.loadType(this, null);
-			
-			return;
-		}
-		
 		for (EtlDataSource pref : this.getAllPrefferredDataSource()) {
 			if (pref.containsField(fm.getSrcField())) {
 				fm.setDataSourceName(pref.getAlias());
+				fm.setDataSource(pref);
 				
 				fm.loadType(this, pref);
 				
@@ -470,18 +464,28 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 						break;
 					} else {
 						fm.setDataSourceName(notPref.getAlias());
-						
+						fm.setDataSource(notPref);
 						fm.loadType(this, notPref);
 					}
 				}
 			}
 		}
 		
-		if (qtyOccurences == 0 && !isIgnoreUnmappedFields()) {
+		boolean hasTransformer = fm.hasTransformer() && !fm.useDefaultTransformer();
+		
+		if (hasTransformer) {
+			fm.loadType(this, null);
+			
+			if (fm.getDataSource() == null) {
+				fm.setDataSource(this.getSrcConf());
+			}
+		}
+		
+		if (qtyOccurences == 0 && !isIgnoreUnmappedFields() && !hasTransformer) {
 			throw new FieldNotAvaliableInAnyDataSource(fm.getSrcField());
 		}
 		
-		if (qtyOccurences > 1) {
+		if (qtyOccurences > 1 && !hasTransformer) {
 			throw new FieldAvaliableInMultipleDataSources(fm.getSrcField());
 		}
 		

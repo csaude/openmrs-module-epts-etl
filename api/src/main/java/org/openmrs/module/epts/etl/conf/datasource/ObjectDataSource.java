@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
@@ -29,7 +30,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class ObjectDataSource implements EtlAdditionalDataSource {
+public class ObjectDataSource extends AbstractEtlDataConfiguration implements EtlAdditionalDataSource {
 	
 	private String name;
 	
@@ -324,7 +325,6 @@ public class ObjectDataSource implements EtlAdditionalDataSource {
 	
 	@Override
 	public String getQuery() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	

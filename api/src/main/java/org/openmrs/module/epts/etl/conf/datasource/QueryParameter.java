@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.conf.types.ParameterValueType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -166,7 +166,8 @@ public class QueryParameter extends Field {
 		
 		if (beforeCompareClauseMatcher.find() || afterCompareClauseMatcher.find()) {
 			type = ParameterContextType.COMPARE_CLAUSE;
-		} else if (isSelectStarting(beforeParam) && !beforeParam.contains(" from ") && (afterParam.contains(" from ") || dbmsType.isMysql())) {
+		} else if (isSelectStarting(beforeParam) && !beforeParam.contains(" from ")
+		        && (afterParam.contains(" from ") || dbmsType.isMysql())) {
 			type = ParameterContextType.SELECT_FIELD;
 		} else if (inClauseBeforeMatcher.matches() || inClauseAfterMatcher.matches()) {
 			type = ParameterContextType.IN_CLAUSE;

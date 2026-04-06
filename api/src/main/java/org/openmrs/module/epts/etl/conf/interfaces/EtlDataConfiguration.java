@@ -2,11 +2,13 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openmrs.module.epts.etl.conf.DefaultEtlValidator;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTemplate;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
@@ -22,6 +24,10 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	EtlConfiguration getRelatedEtlConf();
 	
 	EtlDataConfiguration getParentConf();
+	
+	boolean hasValidator();
+	
+	public List<DefaultEtlValidator> getValidators();
 	
 	void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration);
 	
