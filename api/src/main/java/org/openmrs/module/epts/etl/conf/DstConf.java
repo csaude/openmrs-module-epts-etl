@@ -491,29 +491,29 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 	}
 	
-	public FieldsMapping getMapping(String srcField) {
-		List<FieldsMapping> machedFields = new ArrayList<FieldsMapping>();
+	public FieldsMapping getMappingUsingDstField(String dstFieldName) {
+		List<FieldsMapping> matchedFields = new ArrayList<FieldsMapping>();
 		
 		for (FieldsMapping field : this.allMapping) {
-			if (field.getSrcField() == null) {
+			if (field.getDstField() == null) {
 				continue;
 			}
 			
-			if (field.getSrcField().equals(srcField)) {
-				machedFields.add(field);
+			if (field.getDstField().equals(dstFieldName)) {
+				matchedFields.add(field);
 				
-				if (machedFields.size() > 1) {
-					throw new ForbiddenOperationException("Cannot determine the mapping field for '" + srcField
+				if (matchedFields.size() > 1) {
+					throw new ForbiddenOperationException("Cannot determine the mapping field for '" + dstFieldName
 					        + "' since it has multiple matching fields");
 				}
 			}
 		}
 		
-		if (machedFields.isEmpty()) {
-			throw new ForbiddenOperationException("Cannot determine the mapping field for '" + srcField + "'");
+		if (matchedFields.isEmpty()) {
+			throw new ForbiddenOperationException("Cannot determine the mapping field for '" + dstFieldName + "'");
 		}
 		
-		return machedFields.get(0);
+		return matchedFields.get(0);
 	}
 	
 	public String getMappedField(String srcField) {

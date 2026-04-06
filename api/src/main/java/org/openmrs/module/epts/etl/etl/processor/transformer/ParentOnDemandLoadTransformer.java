@@ -387,8 +387,13 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 			
 			FieldTransformingInfo fieldInfo = null;
 			
-			fieldInfo = this.parentSourceIdMapping.getTransformerInstance().transform(processor, srcObject,
-			    transformedRecord, additionalSrcObjects, parentSourceIdMapping, srcConn, dstConn);
+			try {
+				fieldInfo = this.parentSourceIdMapping.getTransformerInstance().transform(processor, srcObject,
+				    transformedRecord, additionalSrcObjects, parentSourceIdMapping, srcConn, dstConn);
+			}
+			catch (Exception e) {
+				throw e;
+			}
 			
 			if (fieldInfo != null && fieldInfo.getTransformedValue() != null) {
 				SrcConf srcConf = loadSrcConfForExistingSrcParentIfNeeded(srcConn, dstConn);

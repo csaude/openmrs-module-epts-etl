@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 import org.openmrs.module.epts.etl.conf.AbstractRelatedTable;
@@ -2738,7 +2737,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				
 				String idxDefinition1 = DBUtilities.generateIndexDefinition(fullTableName, indexName1, indexFields1, conn);
 				
-				String indexName2 = tableName + "src_rec__idx";
+				String indexName2 = tableName + "src_rec_idx";
 				String indexFields2 = "stage_record_id, dst_table_name";
 				
 				String idxDefinition2 = DBUtilities.generateIndexDefinition(fullTableName, indexName2, indexFields2, conn);

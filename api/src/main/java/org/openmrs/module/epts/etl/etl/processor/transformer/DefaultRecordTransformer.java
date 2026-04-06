@@ -99,7 +99,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 				if (refInfo.getTableName().equals(migratedDstParent.getRelatedConfiguration().getObjectName())) {
 					Field fk = transformedRec.getField(refInfo);
 					
-					FieldsMapping f = ((DstConf) transformedRec.getRelatedConfiguration()).getMapping(fk.getName());
+					FieldsMapping f = ((DstConf) transformedRec.getRelatedConfiguration())
+					        .getMappingUsingDstField(fk.getName());
 					
 					fk.setTransformingInfo(
 					    new FieldTransformingInfo(f, migratedDstParent.getObjectId().asSimpleNumericValue(),

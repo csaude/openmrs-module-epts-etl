@@ -106,6 +106,7 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 				if (existing != null) {
 					this.setFieldValue("id", existing.getFieldValue("id"));
 					this.setFieldValue("stage_record_id", existing.getFieldValue("id"));
+					this.loadObjectIdData();
 					
 					existing.loadObjectIdData();
 					
