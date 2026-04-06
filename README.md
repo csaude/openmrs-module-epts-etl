@@ -1,108 +1,137 @@
 # Introduction
-The epts-etl module is an OpenMRS module designed to perform generic ETL operations and much more. The epts-etl module can be integrated with an OpenMRS instance, but it can also run as a stand-alone Java application. Please note that this module is still in development, and some of its features may not function correctly at this time.
+The sisrme-etl module is an OpenMRS module designed to support generic and extensible ETL (Extract, Transform, Load) operations, along with additional data processing capabilities. It provides a flexible framework for defining data migration, transformation, and synchronization workflows across different data sources.
+
+The sisrme-etl module can be integrated with an OpenMRS instance or executed as a stand-alone Java application, allowing it to be used in a wide range of deployment scenarios.
+
+Please note that this module is currently under active development. As a result, some features may be incomplete, subject to change, or not yet fully stable.
+
 # Architecture overview
-The epts-etl module is written in Java and follows the OpenMRS module pattern. Its core functionality is implemented at the API level, allowing it to operate as a stand-alone application. At the top of the EPTS-ETL logic are Processes, which represent a set of operations intended to function as tasks that collectively achieve a specific objective.
+The sisrme-etl module is implemented in Java and follows the OpenMRS module architecture. Its core functionality resides at the API level, enabling it to run both as part of an OpenMRS instance or as a stand-alone application.
 
- ![eptssync_arquitecture](docs/Eptssync_Arquitecture.png)
+At the highest level of the sisrme-etl architecture are **Processes**, which represent a collection of operations executed together to achieve a specific objective. Each process encapsulates the full workflow required to perform a data migration or transformation task.
 
-From the code perspective an process is handled by the [ProcessController](api/src/main/java/org/openmrs/module/epts/etl/controller/ProcessController.java) class and the tasks or operations are handled by [OperationController](api/src/main/java/org/openmrs/module/epts/etl/controller/OperationController.java) class. 
- 
-The process and its operations are configured via JSON file on which all the necessary information for a process to be run are specified. The configuration file will determine which kind of process must be performed.
- 
-The process configuration is mapped to [EtlConfiguration](api/src/main/java/org/openmrs/module/epts/etl/conf/EtlConfiguration.java) class and each operation are mapped to [EtlOperationConfig](api/src/main/java/org/openmrs/module/epts/etl/conf/EtlOperationConfig.java).
-Each operation defined in the process configuration file will perform the very same task on all items listed on the configuration file. The etl item configuration is mapped to [EtlItemConfiguration](api/src/main/java/org/openmrs/module/epts/etl/conf/EtlItemConfiguration.java) which defines the rules of ETL.
- 
-An [Operation Controller](api/src/main/java/org/openmrs/module/epts/etl/controller/OperationController.java) performs its task using an [Task Processor](api/src/main/java/org/openmrs/module/epts/etl/engine/TaskProcessor.java). The processors are monitored by [Engine](api/src/main/java/org/openmrs/module/epts/etl/engine/Engine.java) class. The interaction between the core classes is illustrated on the image below.
+![eptssync_arquitecture](docs/Eptssync_Arquitecture.png)
+
+From a code perspective, a process is managed by the [ProcessController](api/src/main/java/org/openmrs/module/epts/etl/controller/ProcessController.java), while individual tasks (operations) are handled by the [OperationController](api/src/main/java/org/openmrs/module/epts/etl/controller/OperationController.java).
+
+Processes and their corresponding operations are defined through a JSON configuration file. This file contains all the necessary information required to execute a process and determines the type of ETL workflow to be performed.
+
+The process configuration is mapped to the [EtlConfiguration](api/src/main/java/org/openmrs/module/epts/etl/conf/EtlConfiguration.java) class, while each operation is mapped to the [EtlOperationConfig](api/src/main/java/org/openmrs/module/epts/etl/conf/EtlOperationConfig.java) class.
+
+Each operation defined in the configuration file is applied uniformly across all configured items. These items are defined using the [EtlItemConfiguration](api/src/main/java/org/openmrs/module/epts/etl/conf/EtlItemConfiguration.java), which specifies the rules for extraction, transformation, and loading.
+
+An [OperationController](api/src/main/java/org/openmrs/module/epts/etl/controller/OperationController.java) executes its tasks using a [TaskProcessor](api/src/main/java/org/openmrs/module/epts/etl/engine/TaskProcessor.java). These processors are orchestrated and monitored by the [Engine](api/src/main/java/org/openmrs/module/epts/etl/engine/Engine.java), which manages the execution lifecycle of the ETL process.
+
+The interaction between these core components is illustrated in the diagram below.
 
 ![how-the-process-is-performed](docs/how-the-process-is-performed.png)
 
 ## The Process Configuration File
-The process configuration file is the heart of the application. For each process type there is a specific configuration setup which must be done. A configuration file is a JSON file which in almost all cases has 4 sections as shown below.
+The process configuration file is the core element of the application. Each process type requires a specific configuration structure that defines how the ETL workflow should be executed. The configuration is provided as a JSON file, which in most cases is organized into four main sections, as illustrated below.
 
- ![config-sections](docs/config-sections.png)
- 
-- **The section 1** contains the general configurations usually applied to all the operations and involved etl items.
-- **The section 2** defines the database connection info for source database and/or destination database.
-- **The section 3** defines the operations configuration parameters.
-- **The section 4** lists the ETL configuration. This define the rules of how the extraction, transformation and load will be hundled.
+![config-sections](docs/config-sections.png)
+
+- **Section 1** contains general configurations that are typically applied across all operations and ETL items within the process.
+- **Section 2** defines the database connection details for the source and/or destination systems.
+- **Section 3** specifies the configuration parameters for each operation in the process.
+- **Section 4** lists the ETL item configurations, defining the rules for how data extraction, transformation, and loading should be performed.
 
 ## The common configuration
-- *processType*: A string representing the Process Type. The supported types are listed in the section "Supported Process Types."
-- *etlRootDirectory*: a full path to the directory where the process files will be placed.
-- *childConfigFilePath*: a full path to another JSON configuration file which defines a process that will be executed when the current process is finished. This parameter allows multiple processes to be executed in sequence. This can be useful, for example, when there is a need to merge multiple databases.
-- *originAppLocationCode*: a token representing the location where the process is running. In the case of the merge process, this will be the source location.
-- *manualStart*: an optional boolean indicating whether the process related to this configuration file will be manualy started. If true, the process will not start at application startup.
-- *params*: a map object that enables the configuration of parameters. These parameters are usually used in queries defined in the ETL item configuration.
-- *disabled*: indicates whether the process is disabled.
-- *syncStageSchema*: an optional token indicating the database name where the process data will be stored. If not present, the name "etl_stage_area" will be used.
-- *doNotTransformsPrimaryKeys*: indicates whether the primary keys in this process are transformed. If yes, the transformed records are given a new primary key; if no, the primary key in the source is the same in the destination.
-- *manualMapPrimaryKeyOnField*: if present, the value from this field will be mapped as a primary key for all tables that don't have a primary key but have a field with a name matching this field. This value will be overridden by the corresponding value in the ETL configuration session if present there.
-- *relationshipResolutionStrategy* defines how the ETL engine should handle relationship (foreign key) resolution for a field.
-  By default, when a field represents a relationship, the ETL process attempts to resolve the corresponding parent record in the destination database.
+- *processType*: A string representing the process type. The supported types are listed in the section "Supported Process Types".
+- *etlRootDirectory*: The absolute path to the directory where all process-related files will be stored.
+- *childConfigFilePath*: The absolute path to another JSON configuration file defining a process to be executed after the current one completes. This enables chaining multiple processes in sequence, which is useful for scenarios such as merging multiple databases.
+- *originAppLocationCode*: A token representing the location where the process is executed. In merge scenarios, this typically represents the source location.
+- *manualStart*: An optional boolean indicating whether the process should be started manually. If set to true, the process will not start automatically when the application starts.
+- *params*: A map of configurable parameters that can be referenced throughout the ETL configuration, typically within queries and transformers.
+- *disabled*: Indicates whether the process is disabled.
+- *syncStageSchema*: An optional value defining the database schema used for staging ETL data. If not specified, the default schema "etl_stage_area" will be used.
+- *doNotTransformsPrimaryKeys*: Indicates whether primary keys should be transformed. If false, source primary keys are preserved in the destination; if true, new primary keys are generated.
+- *manualMapPrimaryKeyOnField*: If specified, this field will be used as the primary key for tables that do not explicitly define one but contain a matching field. This value can be overridden at the ETL item configuration level.
+- *relationshipResolutionStrategy*: Defines how the ETL engine handles relationship (foreign key) resolution. By default, the engine attempts to resolve and validate related records in the destination database.
   Supported values:
-  - *RESOLVE* – Default behavior. The ETL engine looks up and resolves the corresponding record in the destination database.
-  - *SKIP* – Skips relationship resolution. The transformed value is written directly to the destination field without lookup or validation.
-  - *VALIDATE_ONLY* – Validates that the referenced record exists in the destination database without performing resolution. If the record does not exist, the ETL process reacts according to the configured error handling strategy- *autoIncrementHandlingType*: define how the schema defined auto-increment will be handled. The possible values: (1) AS_SCHEMA_DEFINED meaning that the Etl process will respect the Auto-Increment as defined on table Schema definition. This is the default behavior of the Etl Configuration (2) IGNORE_SCHEMA_DEFINITION meaning that the auto-increment defined by table schema will be ignored and the application itself will handle the key values. The value for this property can be overridden by the value from the same property from the Etl Item Configuration.
-- *primaryKeyInitialIncrementValue*: A numeric value added to the primary key of the very first destination record for all tables defined in the ETL Item Configuration. This property cannot be used when autoIncrementHandlingType is explicitly set to AS_SCHEMA_DEFINED. If this property is provided and autoIncrementHandlingType is not specified, it will automatically be set to IGNORE_SCHEMA_DEFINITION. The value of this property will be applied to all destination tables defined in the *ETL Item Configuration*. However, you can override this value for specific tables by defining the same property within the *EtlItemConf* or *DstConf*. 
-- *dynamicSrcConf*: This configuration parameter enables the dynamic setup of the EtlConfiguration. In this context, "dynamic" refers to the ability to derive certain parameters from a database table, allowing multiple configurations to be generated from a single configuration file. The configuration file effectively serves as a template, populated with data from table records. This approach is particularly useful when working with multiple database sources and performing specific processes on each of them. For example, you can register the database sources in a table (e.g., src_database) and use this table as a dynamic source for generating configurations.
-- *finalizer*: represents a object which define the additional tasks to be performed after the process if finished.
-- *startupScripts*:  A list of SQL scripts to be executed at startup. The files should be placed in @etlRootDirectory/dump-scripts/startup. It is important to ensure that multiple executions of these scripts do not result in inconsistencies;
-- *reRunable*: Normally, when a process is completed, the application skips its execution if the user attempts to re-run it. This property allows the process to be executed multiple times. If the user initiates the process after it has finished, it will restart and execute from the beginning.
-- *relatedEtlSrcTables*: Defines additional source tables that are not explicitly configured in the ETL process but are related to the primary configured source tables. These tables must be declared to ensure they are correctly recognized as part of the data domain rather than being treated as metadata tables. Properly listing all related source tables is essential for accurate relationship resolution during the ETL process, particularly when handling joins, foreign keys, or dependent records.
-- *defaultInconsistencyBehavior*: Defines the default behavior to be applied when a data inconsistency is detected during the ETL process. A data inconsistency occurs when the ETL engine encounters unexpected or invalid data conditions, such as:
-  - missing required references
-  - invalid foreign key relationships
-  - inconsistent source data values
-  - unresolved dependencies between records
-  This setting acts as a global fallback behavior and is applied whenever no specific behavior is defined at a lower level (e.g., field-level or transformer-level configurations).
+  - *RESOLVE* – Default behavior. The ETL engine resolves and retrieves the corresponding record in the destination database.
+  - *SKIP* – Skips relationship resolution. The transformed value is written directly to the destination field without validation.
+  - *VALIDATE_ONLY* – Only validates that the referenced record exists in the destination database. If not, the process reacts according to the configured error handling strategy.
+- *autoIncrementHandlingType*: Defines how auto-increment fields defined at the database schema level should be handled.
+  - *AS_SCHEMA_DEFINED* – The ETL process respects the auto-increment behavior defined in the schema (default).
+  - *IGNORE_SCHEMA_DEFINITION* – The ETL process ignores the schema definition and manually controls primary key generation.
+  This value can be overridden at the ETL item configuration level.
+- *primaryKeyInitialIncrementValue*: A numeric value added to the primary key of the first destination record across all configured tables. This property cannot be used when *autoIncrementHandlingType* is set to *AS_SCHEMA_DEFINED*. If provided without explicitly setting *autoIncrementHandlingType*, the value will default to *IGNORE_SCHEMA_DEFINITION*. This setting can be overridden at the *EtlItemConfiguration* or *DstConf* level.
+- *dynamicSrcConf*: Enables dynamic configuration generation based on data stored in a database table. This allows a single configuration file to act as a template that is expanded into multiple configurations using table records. This is particularly useful when processing multiple source databases or environments dynamically.
+- *finalizer*: Defines additional tasks to be executed after the process has completed.
+- *startupScripts*: A list of SQL scripts to be executed during application startup. Scripts must be located in *@etlRootDirectory/dump-scripts/startup*. Scripts should be idempotent to avoid inconsistencies across multiple executions.
+- *reRunable*: By default, completed processes are not re-executed. When set to true, the process can be restarted and executed again from the beginning.
+- *relatedEtlSrcTables*: Defines additional source tables that are not explicitly configured but are related to the main source tables. Declaring these tables ensures they are treated as part of the ETL domain rather than metadata, which is critical for correct relationship resolution, joins, and dependency handling.
+- *defaultInconsistencyBehavior*: Defines the default behavior when a data inconsistency is detected during the ETL process. This acts as a global fallback when no specific behavior is defined at a lower level (e.g., field or transformer).
   Supported values:
-	- *MARK_RECORD_AS_FAILED* – The record is marked as failed, but the ETL process continues.
-	- *SET_TO_NULL* –  Sets the relatedfield value to null..
-	- *ABORT_PROCESS* – An exception is thrown and the ETL process is interrupted according to the configured execution strategy.
-- *defaultExceptionBehavior*: Defines the default behavior to be applied when an exception occurs during the ETL process. An exception may occur during any phase of the ETL pipeline, including extraction, transformation, or
-loading, and typically indicates an unexpected error such as: database access failures transformation errors (e.g. invalid expressions, parsing issues) missing required data internal processing errors
-This configuration acts as a global fallback and is applied whenever no more specific behavior is defined at a lower level (e.g., field-level or transformer-level exception handling).
-
-	Supported values:
-  	- *LOG* – The exception is logged and the ETL process continues with the next record.
-  	- *MARK_RECORD_AS_FAILED* – The record is marked as failed and processing continues.
-  	- *ABORT_PROCESS* – The exception is propagated and the ETL process is interrupted.
+  - *MARK_RECORD_AS_FAILED* – The record is marked as failed and processing continues.
+  - *SET_TO_NULL* – The affected field value is set to null.
+  - *ABORT_PROCESS* – The process is interrupted by throwing an exception.
+- *defaultExceptionBehavior*: Defines the default behavior when an exception occurs during any phase of the ETL process (extraction, transformation, or loading). This setting acts as a global fallback when no more specific handling is defined.
+  Supported values:
+  - *LOG* – The exception is logged and processing continues with the next record.
+  - *MARK_RECORD_AS_FAILED* – The record is marked as failed and processing continues.
+  - *ABORT_PROCESS* – The exception is propagated and the ETL process is interrupted.
        
 ## The Database configuration
-This section allowd the database configuration. The "srcConnConf" allows the configuration of source database and the "dstConnConf" allows the configuration of destination database. Each element allow bellows parameters: 
-- "dataBaseUserName" which represent the database username;
-- "dataBaseUserPassword" which represents the database password;
-- "connectionURI" the connection url to the dabase;
-- "driveClassName" the jdbc drive class name for database connection;
-- "schema" an optional field to specify the database schema if it cannot be determined from the connection url or if it is diffent from this one.
-- "databaseSchemaPath": an optional field which indicate the path where the database schema is located. If present, and the specified database is not present on the specified database, the database will be created according to this script;
-- Other configuration for database from jdbc.poll.Datasource: *maxActiveConnections*, *maxIdleConnections*, *minIdleConnections*
+This section defines the database connection settings used by the ETL process. It supports configuration for both the source database (*srcConnConf*) and the destination database (*dstConnConf*).
 
+Each of these elements accepts the following parameters:
+
+- *dataBaseUserName* – The username used to authenticate with the database.
+- *dataBaseUserPassword* – The password used for database authentication.
+- *connectionURI* – The JDBC connection URL used to establish the database connection.
+- *driverClassName* – The fully qualified name of the JDBC driver class.
+- *schema* – An optional parameter used to explicitly define the database schema. This is useful when the schema cannot be inferred from the connection URL or when it differs from the default schema.
+- *databaseSchemaPath* – An optional parameter specifying the path to a database schema script. If provided, and the target database does not exist, it will be created using this script.
+- Additional JDBC connection pool configurations (from *javax.sql.DataSource* / connection pool implementation), including:
+  - *maxActiveConnections* – Maximum number of active connections allowed.
+  - *maxIdleConnections* – Maximum number of idle connections in the pool.
+  - *minIdleConnections* – Minimum number of idle connections maintained in the pool.
+    
 ## dynamicSrcConf
-This parameter enables the dynamic setup of the EtlConfiguration. In this context, "dynamic" refers to the ability to derive certain parameters from a database table, allowing multiple configurations to be generated from a single configuration file. The configuration file effectively serves as a template, populated with data from table records. This approach is particularly useful when working with multiple database sources and performing specific processes on each of them. For example, you can register the database sources in a table (e.g., src_database) and use this table as a dynamic source for generating configurations.
+This parameter enables dynamic generation of the *EtlConfiguration*. In this context, "dynamic" refers to the ability to derive configuration parameters from records stored in a database table, allowing multiple configurations to be produced from a single JSON definition.
 
-The very basic structure of definition of this parameter is shown bellow.
+With this approach, the configuration file acts as a template, which is expanded at runtime using data retrieved from the specified table. This is particularly useful when working with multiple source databases or environments, where the same ETL logic must be executed repeatedly with different input parameters.
 
+For example, database connection details can be stored in a table (e.g., *src_database*), and each record can be used to generate and execute a distinct ETL configuration.
+
+The basic structure of this parameter is shown below:
 ```
 {
-   ...
-   "dynamicSrcConf":{
-      "tableName":"",
-      "extraConditionForExtract":"",
-      "auxExtractTable":[
-         
-      ]
-   }
-   ...
+...
+	"dynamicSrcConf":{
+		"tableName":"",
+		"extraConditionForExtract":"",
+		"auxExtractTable":[
+		
+		  ]
+		}
+...
 }
 ```
 
-- "tableName": is database table name which will act as the source of dynamic configuration
-- "extraConditionForExtract": optional param which contains the extra sql condition to be injected when the operation queries for records to process.
-- "auxExtractTable": optional list containing the joining tables which helps to add additional extraction conditions; this act as a extra data source also. For full details of "auxExtractTable" configuration please refere to [AuxExtractTable](#aux-extract-table)
+
+- *tableName*: The name of the database table that serves as the source for dynamic configuration generation.
+- *extraConditionForExtract*: An optional SQL condition appended to the extraction query when retrieving records from the dynamic source table.
+- *auxExtractTable*: An optional list of additional tables used to enrich or filter the extraction process. These tables can be joined to introduce extra conditions or act as supplementary data sources. For full details, refer to [AuxExtractTable](#aux-extract-table).
+
+  
 
 ## The finalizer
-The finalizer is an object which perfome the finalization tasks. A finalizer is configured as a java class. Currently only a [SqlProcessFInalizer](api/src/main/java/org/openmrs/module/epts/etl/controller/SqlProcessFInalizer.java) is supported. And to use this, you only need to provide the "sqlFinalizerQuery". You can also provide a "connectionToUse" if needed which specify which connection to use to performe de query. The possible values are "mainConnInfo", "srcConnInfo" and "dstConnInfo". By default the "srcConnInfo" is used.
+## The finalizer
+The *finalizer* is an optional configuration element responsible for executing post-processing tasks after the ETL process has completed. It is typically used to perform cleanup operations, data adjustments, or any additional logic required once all ETL operations have finished.
+
+A finalizer is implemented as a Java class. Currently, the only supported implementation is [SqlProcessFinalizer](api/src/main/java/org/openmrs/module/epts/etl/controller/SqlProcessFInalizer.java), which allows execution of SQL statements as part of the finalization step.
+
+To use this finalizer, you must provide the *sqlFinalizerQuery*, which defines the SQL command to be executed. Optionally, you can specify the database connection to be used through the *connectionToUse* parameter.
+
+Supported values for *connectionToUse*:
+- *mainConnInfo* – Uses the main application connection
+- *srcConnInfo* – Uses the source database connection (default)
+- *dstConnInfo* – Uses the destination database connection
+
+If *connectionToUse* is not specified, the finalizer will default to using *srcConnInfo*.
 
 ```
 {
@@ -162,8 +191,8 @@ Validators allow dynamic validation of data, configuration values, or database s
   - MARK_RECORD_AS_FAILED
   - IGNORE
   - ABORT_PROCESS
-- **connectionToUse:** by default, validators use the SRC connection. This property allows overriding the connection to *dstConnInfo* or *mainConnInfo*.
-- 
+- **connectionToUse** – Specifies which database connection should be used when executing the validator. By default, validators use the *srcConnInfo* connection. This property allows overriding the connection to *dstConnInfo* or *mainConnInfo* when required.  
+
 ### Example
 
 ```
@@ -192,30 +221,54 @@ Validators allow dynamic validation of data, configuration values, or database s
 ```
 
 
-
 ## The Operation configuration
-This section allow the configuration of operations. Each operation can be defined by the following fields:
-- "operationType": indicates the operation to be executed for each item defined on ETL configuration session;
-- "processingBatch": the amount of records to be processed in a batch, if not present, a default batch of 1000 will be applied;
-- "threadingMode": indicates if the processing should be done using a SINGLE or MULTI threads. Possible values: MULTI, SINGLE, default is MULTI;
-- "fisicalCpuMultiplier": when using MULTI threading, the amount of available physical CPU will be multiplied by the value from this propertie. This allow to overpower the processing. Notice that using big values for this can lead to process slowdown; 
-- "processingMode": indicate the way the ETL items will be processed. (1) SERIAL: indicates that one ETL Item will be processed at time (2) PARALLEL: all the listed ETL Item will be processed at same time; if not present, a SERIAL mode will be applied;
-- "processorFullClassName": a full class name indicating a customized processor.
-- "skipFinalDataVerification": the final verification is done to check if all the records on the source were processed to the destination database. If this field is set to false, the final check will be skipped! Since the final verification could take time, disabling it could improve the speed; 
-- "doNotWriteOperationHistory": by default the information of each processed record is stored on the Etl Staging table. This information is important as can help to know the source and destination of an record processed on the ETL process. If this field is set to true, the history will not be stored and this could improve the speed of process.
-- "useSharedConnectionPerThread": If the processing is done by multiple threads, setting this field to true means all threads will share the same database connection. This can help reduce deadlocks but may negatively impact performance. This configuration is also useful when we need to ensure that the records in a batch are available in the target database simultaneously.
-- "actionType": represent the action on the ETL process. The supported action are: (1) CREATE: This action creates new dstRecord on ETL operation (2) DELETE:  This action deletes the dstRecord on ETL operation (3) UPDATE: This action update the dstRecord on ETL operation. If not present, a CREATE action will be applied.
-- "afterEtlActionType": defines the action which will be perfomed on the src record after the operation. Only the action "DELETE" will have effect;
-- "dstType": indicates the destination type which can be: (1) **db**: the transformed record will be stored on the database (2) **json**: the transformed record will be written on json file (3) **dump**: the transformed record will be written os sql file as an sql query (4) **csv**: the transformed record will be written on csv file. When the dstType is a file, then the file will be stored under @etlRootDirectory/data/@originAppLocationCode (5) **console** the tranformed records will be written on the console
-- "disabled": if true , the this operation will not be run;
-- "child": a nested operation configuration which will be executed after the main operation is finished;
-- "finishOnNoRemainRecordsToProcess": When a process starts, it determines the *minimum* and *maximum* records in intervals to be processed and calculates the *number of records to handle* within each interval. The process will analyze the entire range between the minimum and maximum records and will only complete once the maximum record is reached. However, if *finishOnNoRemainRecordsToProcess* is set to true, the process will finish as soon as the calculated number of records to process is reached, even if the maximum record has not been reached.
-- "totalCountStrategy": Define the strategy for calculating the total number of records to be processed. When the application processes the ETL item for the first time, it calculates the total record count, which is useful for progress tracking. By default, this property is set to 'COUNT_ONCE,' meaning the application will calculate the total record count during the initial processing. If the process is interrupted and restarted, the count will not be recalculated. Depending on the complexity of the ETL process, this calculation can be time-consuming, and you may want to disable it. In such cases, you can use 'USE_MAX_RECORD_ID_AS_COUNT,' which uses the maximum record ID from the source table's record range as the total count. If you already have the count and you don't want the application recalculate it you can use the "USE_PROVIDED_COUNT" strategy; in this strategy you only need to provide the "totalAvaliableRecordsToProcess" within the The Etl operation Configuration as explained in the propertie below.
-- "totalAvaliableRecordsToProcess": provide the pre-calculated total number of records do be processed. (refere to "totalCountStrategy" propertie above);       
-	
+This section defines how ETL operations are executed. Each operation controls how the configured ETL items are processed, including execution strategy, performance tuning, and post-processing behavior.
+
+:contentReference[oaicite:0]{index=0}
+
+Each operation can be configured using the following fields:
+
+- *operationType*: Defines the type of operation to be executed for each ETL item in the configuration.
+- *processingBatch*: Specifies the number of records to be processed per batch. If not provided, a default value of 1000 is used.
+- *threadingMode*: Determines whether processing is performed using a single thread or multiple threads. Supported values:
+  - *MULTI* – Multi-threaded processing (default)
+  - *SINGLE* – Single-threaded processing
+- *fisicalCpuMultiplier*: When using *MULTI* threading, this value multiplies the number of available CPU cores to increase parallelism. Higher values may improve throughput but can also lead to resource contention and reduced performance.
+- *processingMode*: Defines how ETL items are processed:
+  - *SERIAL* – ETL items are processed one at a time (default)
+  - *PARALLEL* – All ETL items are processed concurrently
+- *processorFullClassName*: The fully qualified class name of a custom processor implementation to override the default processing behavior.
+- *skipFinalDataVerification*: Controls whether the final verification step is executed. This step checks if all source records were successfully processed into the destination. Setting this to true skips the verification, which can improve performance for large datasets.
+- *doNotWriteOperationHistory*: By default, the ETL process records execution details in staging tables. Setting this to true disables history tracking, which can improve performance but reduces traceability.
+- *useSharedConnectionPerThread*: When using multi-threading, setting this to true forces all threads to share the same database connection. This can reduce deadlocks but may impact performance. It is useful when consistency across batch operations is required.
+- *actionType*: Defines the action to be performed on the destination:
+  - *CREATE* – Inserts new records (default)
+  - *UPDATE* – Updates existing records
+  - *DELETE* – Deletes records
+- *afterEtlActionType*: Defines the action to be applied to the source record after processing. Currently, only *DELETE* has an effect.
+- *dstType*: Specifies the output destination type:
+  - *db* – Stores transformed records in the database
+  - *json* – Writes records to a JSON file
+  - *dump* – Writes SQL statements to a file
+  - *csv* – Writes records to a CSV file
+  - *console* – Outputs records to the console  
+  When a file-based destination is used, files are stored under *@etlRootDirectory/data/@originAppLocationCode*
+- *disabled*: If set to true, the operation will not be executed.
+- *child*: Defines a nested operation that will be executed after the main operation completes.
+- *finishOnNoRemainRecordsToProcess*: Controls early termination of the operation. If true, the process finishes as soon as the expected number of records is processed, even if the maximum record range has not been reached.
+- *totalCountStrategy*: Defines how the total number of records to process is calculated:
+  - *COUNT_ONCE* – Calculates total count only during the first execution (default)
+  - *USE_MAX_RECORD_ID_AS_COUNT* – Uses the maximum record ID as an approximation of total count
+  - *USE_PROVIDED_COUNT* – Uses a pre-defined total count
+- *totalAvaliableRecordsToProcess*: Specifies the total number of records to process when using *USE_PROVIDED_COUNT* strategy.
 
 ## The etl item configuration
-The etl item configuration section defines the rules of extraction, transformation and load. Each operation in a process will perform its task on these items. Below are listed the properties which can appear in an item configuration. Each item can contain two objects representing the data source configuration and destination configuration.
+## The etl item configuration
+The ETL item configuration defines the rules for data extraction, transformation, and loading. Each operation within a process applies its logic to the configured ETL items. These items represent the core units of work in the ETL pipeline.
+
+Each ETL item typically contains two main components:
+- *srcConf* – defines how data is extracted from the source
+- *dstConf* – defines how data is transformed and loaded into the destination
 
 ```
 {
@@ -265,31 +318,41 @@ The etl item configuration section defines the rules of extraction, transformati
 }
 ```
 
-The srcConf defines the configuration of the data source for an ETL item, while the dstConf defines the destination tables and how data should be loaded into them. These configurations may be omitted in simple scenarios where no transformation is required, allowing destination fields to be automatically mapped from the source.
 
-In addition, ETL items may optionally use a template, which allows configurations to be reused and parameterized, reducing duplication across similar ETL definitions. Templates can be applied at different levels of the configuration (e.g., srcConf, dstConf, childItemConf, etc.). Further details on how templates work and how to define them are provided below.
+The *srcConf* defines how data is extracted from the source system, including filtering, joins, and additional data sources. The *dstConf* defines how the extracted data is transformed and loaded into one or more destination tables.
 
-Below are the main configuration elements available for an ETL Item.
+In simple scenarios where no transformation is required, these configurations may be omitted, allowing the ETL engine to automatically map destination fields from the source data.
+
+ETL items can also leverage *templates*, which enable reuse and parameterization of configuration blocks. Templates help reduce duplication and improve maintainability, especially when dealing with similar ETL definitions that differ only by a few parameters (e.g., extraction conditions or target tables). Templates can be applied at multiple levels of the configuration, including *srcConf*, *dstConf*, and *childItemConf*.
+
+Below are the main configuration elements available for an ETL item.
 
 ### The "srcConf"
-The "srcConf '' allows the configuration of datasource in an etl process. The relevant configuration fields are explained below
-- *tableName*: table name of the main data source.
-- *parents*: list of configured parents. Note that if there is no additional configuration for the parent, there is no need to include this property as it will automatically loaded using the information schema;
-- *metadata*: optional boolean indicating that the table is a metadata table;
-- *removeForbidden*: optional boolean that indicate if records from this table can be automatically removed when there is inconsistencies
-- *observationDateFields*: optional list of date fields which will be checked when an operation need to look for records which had some action in certain period (ex. records created or updated within a period)
-- *extraConditionForExtract*: optional param which contains the extra sql condition to be injected when the operation queries for records to process.
-- *uniqueKeys*: optional list containing the unique key info. This is unnecessary if the table has explicit unique keys;
-- *auxExtractTable*: optional list containing the joining tables which helps to add additional extraction conditions; this act as a extra data source also;
-- *extraTableDataSource*: optional list of auxiliary tables to be used as data source
-- *extraQueryDataSource*: option list of auxiliary queries to be used as data source;
-- *extraObjectDataSource*: option list of auxiliary objects configuration to be used as data source;
-- *onConflict*: refere to [dstConf.onConflict](#onConflict) 
-  
-Bellow are additional explanation of complex configuration on "srcConf"
+The *srcConf* defines how data is extracted from the source system for a given ETL item. It specifies the main data source, as well as any additional data sources, filters, and extraction rules required during the ETL process.
+
+The main configuration fields are described below:
+
+- *tableName*: The name of the primary source table.
+- *parents*: A list of parent table configurations. If no additional configuration is required for parent tables, this property can be omitted, as parent relationships are automatically inferred from the database schema.
+- *metadata*: An optional boolean indicating whether the table should be treated as a metadata table.
+- *removeForbidden*: An optional boolean indicating whether records from this table can be automatically removed when inconsistencies are detected.
+- *observationDateFields*: An optional list of date fields used to identify records affected within a specific time range (e.g., records created or updated within a given period).
+- *extraConditionForExtract*: An optional SQL condition appended to the extraction query to filter the records to be processed.
+- *uniqueKeys*: An optional list defining unique key constraints. This is not required if the table already defines explicit unique keys at the database level.
+- *auxExtractTable*: An optional list of auxiliary tables used to enrich or filter the extraction process. These tables are typically joined to the main table and can also act as additional data sources.
+- *extraTableDataSource*: An optional list of auxiliary tables to be used as additional data sources during transformation.
+- *extraQueryDataSource*: An optional list of custom queries used as additional data sources.
+- *extraObjectDataSource*: An optional list of object-based data source configurations.
+- *onConflict*: Refers to [dstConf.onConflict](#onConflict), defining how conflicts should be handled during processing.
+
+Below are additional details for the more complex configurations within *srcConf*.
 
 #### Unique Keys
-The *"uniqueKeys"* allow the configuration of src table unique keys. If the table defines the unique keys in its metadata then there is no need to manually configure the unique keys. But when needed, the unique keys can be configured following below pattern.
+The *"uniqueKeys"* property allows explicit configuration of unique key constraints for the source table.
+
+If the table already defines unique keys at the database level, this configuration is not required, as the ETL engine will automatically detect and use them. However, in cases where the database metadata is incomplete, unavailable, or needs to be overridden, unique keys can be manually defined using this property.
+
+When specified, the unique keys must follow the structure shown below.
 
 ``` {
    "srcConf":{
@@ -305,9 +368,15 @@ The *"uniqueKeys"* allow the configuration of src table unique keys. If the tabl
    }
 }
 ```
-
 #### Parents configuration
-A parent is configured as an object and can have additional properties. Note that when there are no additional properties you can omit the parent on the list of parents. When you want to manually add parent on the etl item configuration it should have the appearance bellow:
+A parent is defined as an object representing a relationship between the current source table and another table (typically via a foreign key).
+
+In most cases, it is not necessary to explicitly configure parents, as the ETL engine automatically detects and resolves parent relationships using the database schema metadata. However, when additional customization is required, parents can be explicitly defined in the configuration.
+
+A parent can include additional properties to control how the relationship is handled during the ETL process. When no extra configuration is needed, the parent entry can be omitted entirely.
+
+When explicitly defined, a parent configuration should follow the structure shown below:
+
 ```
 {
    "srcConf":{
@@ -336,19 +405,28 @@ A parent is configured as an object and can have additional properties. Note tha
    }
 }
 ```
+For each parent, it is possible to define a **mapping**, which specifies how child fields relate to parent fields. Within the *mapping* configuration, the following properties can also be defined: *defaultValueDueInconsistency*, *setNullDueInconsistency*, and *ignorable*.
 
-For each parent, we can define the **mapping**, which allows us to specify the child and parent fields. Within the "mapping," we can also define the following fields: *defaultValueDueInconsistency*, *setNullDueInconsistency*, and *ignorable*.
+- *defaultValueDueInconsistency*: If defined, this value will replace the original child field value when the referenced parent record cannot be found.
+- *setNullDueInconsistency*: A boolean flag. When set to true, the child field value will be set to null if the referenced parent record is not found.
+- *ignorable*: Indicates whether the relationship can be ignored when inconsistencies occur.
 
-If present, the value in the "defaultValueDueInconsistency" field will replace the original value in the child if the original value does not represent an existing parent. The "setNullDueInconsistency" field is a boolean value. If set to true, the original parent value will be replaced by null if it is inconsistent. The "ignorable" field indicates whether this relationship can be ignored.
+In addition to field mappings, the parent configuration supports *conditionalFields*. These fields define conditions under which a specific relationship should be applied, allowing relationships to be selectively enforced rather than globally applied to all records.
 
-Within the parent configuration we can also define the "conditionalFields". The conditional fields determine the condition when a specific relationship will be applied. This means that this relationship is not applied for all the records in the child table. An example can be found in openmrs data model. E.g the table person_attribute which has the fields "person_attribute_type_id" and "value". For the specific "person_attribute_type_id" the "value" could reference a specific record in other tables, ex: when the type is 7, then the "value" refies to a location which is detailed in table "location". In this case, we can map the relationship between the table "person_attribute" and "location" as a conditional relationship where the conditional field name is "person_attribute_type_id" and the conditional value is "7".
+A common example can be found in the OpenMRS data model. In the *person_attribute* table, the fields *person_attribute_type_id* and *value* are used such that the meaning of *value* depends on the type. For instance, when *person_attribute_type_id = 7*, the *value* represents a reference to a record in the *location* table. In this scenario, a conditional relationship can be defined between *person_attribute* and *location*, where the condition is based on *person_attribute_type_id = 7*.
 
-We can also define a global "defaultValueDueInconsistency" and "setNullDueInconsistency" in a relationship between the table and its parents. These are global properties within the relatishioship meaning that for all the mapping these values will be applied.   
+It is also possible to define global *defaultValueDueInconsistency* and *setNullDueInconsistency* properties at the parent level. When defined at this level, these values apply to all mappings within the relationship, providing a consistent fallback behavior across all child-parent mappings.
 
 #### The auxExtractTable table configuration
 <a name="aux-extract-table"></a>
 
-The **"auxExtractTable"** element, allow the specification of extra tables to be used as joining tables to the main table. This allow the inclusion of additional querying condition from those joining tables. This is also used as an additional data source for the etl item configuration.     
+The **"auxExtractTable"** element allows the definition of additional tables to be joined with the main source table during data extraction.
+
+These tables serve two main purposes:
+- Enable the inclusion of additional filtering conditions based on related tables
+- Act as supplementary data sources for the ETL item during transformation
+
+By configuring *auxExtractTable*, it is possible to enrich the extraction logic with more complex joins and conditions, without modifying the main source table definition. This is particularly useful when the required filtering or data depends on related tables rather than the primary source table alone.
 
 ```
 {
@@ -377,37 +455,46 @@ The **"auxExtractTable"** element, allow the specification of extra tables to be
 }
 ```	 
 
-As can be seen on the code above, each auxExtractTable can have the **tableName** which represents the name of table to be joined; **joinExtraCondition** which define an extra sql condition for joining; **joinFields** which are optional joining fields which must only be specified if the data model does not define the joining fields between the main table and the joining table or if you what to add static joining condition, there is also **joiningType** which can be INNER, LEFT or RIGHT; the **joinExtraConditionScope** tells weather the "joinExtraCondition" will be inserted on the JOIN clause or on the MAIN query clause; the possible values are: JOIN_CLAUSE or WHERE_CLAUSE; the "doNotUseAsDatasource" allows the exclusion of the "auxExtractTable" from the data sources; by default, an "auxExtractTable" is also a datasource.
+As shown in the configuration above, each *auxExtractTable* entry supports the following properties:
 
-**NOTE** that you can add inner "auxExtractTable" within the main "auxExtractTable" which is also a list of auxiliary tables which allow you to add more conditions for extraction.
+- **tableName** – The name of the table to be joined with the main source table.
+- **joinExtraCondition** – An additional SQL condition to be applied during the join operation.
+- **joinFields** – Optional fields defining how the join should be performed. These should only be specified when the relationship between tables is not defined in the data model or when custom/static join conditions are required.
+- **joiningType** – The type of join to be performed. Supported values are: *INNER*, *LEFT*, and *RIGHT*.
+- **joinExtraConditionScope** – Defines where the *joinExtraCondition* will be applied:
+  - *JOIN_CLAUSE* – The condition is applied directly within the JOIN statement.
+  - *WHERE_CLAUSE* – The condition is applied in the main query WHERE clause.
+- **doNotUseAsDatasource** – When set to true, the auxiliary table will not be used as a data source during transformation. By default, every *auxExtractTable* is also considered an available data source.
+
+**NOTE**: It is possible to define nested *auxExtractTable* elements. Each auxiliary table can itself include additional auxiliary tables, allowing the construction of complex join hierarchies and advanced extraction conditions.
 
 ###### The Joining Fields
 <a name="joinFields"></a>
 
-The **joinFields** property defines how the "auxExtractTable" joins with the main source table. This property can be omitted if the database schema already specifies the relationships between tables through foreign key references. However, you may need to manually define **joinFields** if:
+The **joinFields** property defines how an *auxExtractTable* is joined with the main source table.
 
-- The schema does not define foreign key relationships.
-- You want to include custom static joining conditions.
+In most cases, this property can be omitted, as the ETL engine is able to automatically determine join conditions based on foreign key relationships defined in the database schema. However, manual configuration of **joinFields** may be required in the following scenarios:
 
-Each object in the joinFields is typically defined by a pair of fields: "srcField" and "dstField". Here:
+- When the database schema does not define explicit foreign key relationships.
+- When custom or static join conditions need to be applied.
 
-- srcField refers to a field in the auxExtractTable.
-- dstField refers to a field in the main source table.
+Each entry in *joinFields* is typically defined using a pair of fields: *srcField* and *dstField*:
+- *srcField* – Refers to a field in the auxiliary table (*auxExtractTable*).
+- *dstField* – Refers to a field in the main source table.
 
-If you need to include static conditions in the join, you can use the following pairs:
+For more advanced use cases, static conditions can also be defined using:
+- *srcField* and *srcValue*
+- *dstField* and *dstValue*
 
-- "srcField" and "srcValue"
-- "dstField" and "dstValue"
-
-This allows for greater flexibility in customizing the join logic.
-
+This approach provides additional flexibility, allowing both dynamic field-based joins and fixed-value conditions to be combined when defining the join logic.
 
 #### The extra datasource table configuration
 
-The **"extraTableDataSource"** element allows the definition of additional tables that will be used as data sources alongside the main table defined in the ETL configuration. These tables are typically joined with the main table in order to enrich the extracted dataset with additional attributes or to apply extra filtering conditions during the extraction phase.
+The **"extraTableDataSource"** element allows the definition of additional tables to be used as data sources alongside the main source table defined in the ETL configuration.
 
-The relevant configuration for an extra table datasource is illustrated below.
+These auxiliary tables are typically joined with the main table to enrich the extracted dataset with additional attributes or to enable more advanced filtering conditions during the extraction phase. Unlike *auxExtractTable*, which focuses primarily on join conditions, *extraTableDataSource* explicitly introduces new data sources that can be referenced during transformation.
 
+The relevant configuration for an extra table data source is illustrated below.
 ```
 {
    "srcConf":{
@@ -435,22 +522,26 @@ The relevant configuration for an extra table datasource is illustrated below.
 
 As shown in the configuration above, each **extraTableDataSource** may define the following properties:
 
-- **tableName** specifies the name of the additional table that will be used as an auxiliary data source during extraction.
+- **tableName** – Specifies the name of the additional table that will be used as an auxiliary data source during extraction.
 
-- **joinExtraCondition** defines an additional SQL condition that will be applied when joining this table with the main data source. This condition can be used to restrict or refine the joined records beyond the standard join criteria.
+- **joinExtraCondition** – Defines an additional SQL condition applied when joining this table with the main data source. This condition can be used to further restrict or refine the joined records beyond the default join logic.
 
-- **joinFields** defines optional join fields used to establish the relationship between the main table and the extra table. These fields should only be specified when the relationship between the tables cannot be automatically inferred from the data model or when a custom join condition is required. (See [The Joining Fields](#joinFields))
+- **joinFields** – Defines optional join fields used to establish the relationship between the main table and the extra table. These should only be specified when the relationship cannot be automatically inferred from the data model or when custom join logic is required. (See [The Joining Fields](#joinFields))
 
-- **joinType** defines the type of SQL join used to link the extra table with the main table. The supported values are *INNER*, *LEFT*, or *RIGHT*. If this property is not specified, the default join type is *LEFT*. When the join type is set to *INNER*, the ETL process will skip the main record if no matching record is found in the extra table.
+- **joinType** – Defines the type of SQL join used to connect the extra table with the main table. Supported values are *INNER*, *LEFT*, and *RIGHT*. If not specified, the default join type is *LEFT*. When set to *INNER*, the ETL process will skip the main record if no matching record exists in the extra table.
 
-- **joinExtraConditionScope** specifies where the **joinExtraCondition** should be applied within the generated SQL statement. The condition can be placed either in the JOIN clause itself or in the main WHERE clause of the query. The supported values are *JOIN_CLAUSE* and *WHERE_CLAUSE*.
+- **joinExtraConditionScope** – Specifies where the **joinExtraCondition** will be applied within the generated SQL statement:
+  - *JOIN_CLAUSE* – The condition is applied within the JOIN clause
+  - *WHERE_CLAUSE* – The condition is applied in the main WHERE clause
 
-- **auxExtractTable** allows the definition of additional auxiliary tables that can be joined with the **extraTableDataSource**. These auxiliary tables are typically used to introduce extra filtering conditions or to provide additional data required for the extraction logic. They may also act as supplementary data sources. (See [AuxExtractTable](#aux-extract-table))
-
+- **auxExtractTable** – Allows the definition of nested auxiliary tables to be joined with the **extraTableDataSource**. These tables can be used to introduce additional filtering conditions or provide supplementary data for the extraction logic. (See [AuxExtractTable](#aux-extract-table))
 - 
 #### The extraQueryDataSource configuration
 
-The **"extraQueryDataSource"** element, allows the specification of extra queries to be used as data source in addition to the main table. There relevant configuration info for extra table datasource is shown below.    
+The **"extraQueryDataSource"** element allows the definition of additional queries to be used as data sources alongside the main table. These queries can provide complementary data required during transformation or enable more advanced extraction logic.
+
+The configuration structure is shown below:
+
 ```
 {
    "srcConf":{
@@ -466,14 +557,27 @@ The **"extraQueryDataSource"** element, allows the specification of extra querie
 }
 ```
 
-As can be seen on the code above, each extraQueryDataSource can have the
-- **name** which represents the name of extra datasource query;
-- **query** which define the sql query;
-- **script** which defines the relative path to the file containing the query. The application will look for the query files under @etlRootDirectory/dump-scripts/. Note that the application will try to load the "script" only if the "query" field is empty.
-- **required** if true, the source record will be ignored if the query does not return an result;
+
+Each *extraQueryDataSource* entry supports the following properties:
+
+- **name** – A unique identifier for the additional query data source.
+- **query** – The SQL query to be executed. This query will act as a virtual data source during the ETL process.
+- **script** – The relative path to a file containing the SQL query. The application will look for this file under *@etlRootDirectory/dump-scripts/*. This property is only used if the *query* field is not provided.
+- **required** – A boolean flag indicating whether the result of the query is mandatory. If set to true and the query does not return any result, the corresponding source record will be skipped.
 
 #### The extraObjectDataSource configuration
-An object datasource allows to include object fields as datasource. The values for those object fields can be directly configured within the object datasource or be generated using an user defined custom generator. This generator can be written on a supported programing language (notice that currently only java language is supported).
+The **extraObjectDataSource** allows the definition of custom object-based data sources that can be used during the ETL process.
+
+Unlike table or query data sources, an object data source provides values through explicitly defined fields. These values can either be:
+- statically configured within the object data source, or
+- dynamically generated using a custom generator.
+
+Generators are user-defined components responsible for producing values at runtime. They can implement custom logic, including complex computations or integrations with external systems. Currently, only Java-based generators are supported.
+
+This type of data source is particularly useful when:
+- the required data does not exist in the database
+- values must be computed dynamically
+- external logic needs to be injected into the ETL process
 
 ```
 "extraObjectDataSource":[
@@ -596,15 +700,42 @@ Parameters may represent fixed values, dynamic parameters, or fields from availa
 
 For demo see [exploring-objectdatasource-field-transformers](docs/demo/README.md#exploring-objectdatasource-field-transformers) session.
 
-#### The use of params whithin Src Configuration
-The Src configuration allows the use of params for querying. The params can be present on "joinExtraCondition", "extraConditionForExtract", "query", "tableName", etc. Parameters will be defined as identifiers preceded by "@". Eng. "location_id = @locationId". The parameters can appear in several context within queries, namely, (1) as a select field: "SELECT @param1 as value FROM tab1 WHERE att2=1"; (2) in a comparison clause: "SELECT * FROM WHERE att2 = @param2" (3) In "in" clause: "SELECT * FROM tab1 WHERE att1 in (@param2)" (4) as DB resource: "SELECT * FROM @table_name WHERE att1 = value1". (5) in "tableName" specification in any party configuration file, e.g {"tableName":"@mainSchema.@nameOfTable"}
+#### The use of params within Src Configuration
+The *srcConf* supports the use of dynamic parameters in queries and configuration fields. These parameters allow flexible and reusable configurations by enabling values to be injected at runtime.
 
-The parameter value will be lookuped following below sequence:
-(1) first on configured parameters on "params" propertie;
-(2) in not present will be lookuped on properties of etl configurations file;
-(3) and finally on the current main src objects.  
+Parameters are defined as identifiers prefixed with "@", for example: *location_id = @locationId*.
 
-For demo see [the-power-of-parameters](docs/demo/README.md#the-power-of-parameters) session.
+They can be used in multiple contexts, including:
+
+1. As a selected field:  
+   *SELECT @param1 AS value FROM tab1 WHERE att2 = 1*
+
+2. In comparison clauses:  
+   *SELECT * FROM tab1 WHERE att2 = @param2*
+
+3. In *IN* clauses:  
+   *SELECT * FROM tab1 WHERE att1 IN (@param2)*
+
+4. As a database resource (e.g., dynamic table names):  
+   *SELECT * FROM @table_name WHERE att1 = value1*
+
+5. In *tableName* definitions across the configuration, for example:  
+   *{"tableName":"@mainSchema.@nameOfTable"}*
+
+Parameters can be used in various parts of the configuration, including:
+- *joinExtraCondition*
+- *extraConditionForExtract*
+- *query*
+- *tableName*
+- and other SQL-related fields
+
+The value of a parameter is resolved following this order of precedence:
+
+1. From the *params* property defined in the process configuration  
+2. From other properties within the ETL configuration file  
+3. From the current main source object being processed  
+
+For a practical example, see [the-power-of-parameters](docs/demo/README.md#the-power-of-parameters).
 
 ### The "DstConf"
 The "dstConf '' element is used to configure the destination object in an ETL operation. This element can be omitted if the dst fields can be automatically mapped from the available datasources;
