@@ -313,6 +313,9 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 	}
 	
 	public void loadIdToChilds() {
+		if (this.getKeyInfo() == null)
+			return;
+		
 		for (EtlDatabaseObject obj : this.getKeyInfo()) {
 			obj.setFieldValue("stage_record_id", this.getFieldValue("id"));
 		}
