@@ -19,9 +19,9 @@ public class SqlProcessFInalizer extends AbstractProcessFinalizer {
 		OpenConnection conn = null;
 		
 		try {
-			if (getRelatedFinalizerConf().getConnectionToUse().isMainConnInfo()) {
+			if (getRelatedFinalizerConf().getConnectionToUse().isMain()) {
 				conn = getRelatedProcessController().tryToOpenMainConnection();
-			} else if (getRelatedFinalizerConf().getConnectionToUse().isDstConnInfo()) {
+			} else if (getRelatedFinalizerConf().getConnectionToUse().isDst()) {
 				conn = getRelatedProcessController().tryToOpenMainConnection();
 			} else {
 				conn = getRelatedProcessController().openConnection();

@@ -2,19 +2,19 @@ package org.openmrs.module.epts.etl.conf.types;
 
 public enum EtlDBConnectionType {
 	
-	MAIN,
-	SRC,
-	DST;
+	mainConnInfo,
+	srcConnInfo,
+	dstConnInfo;
 	
 	public boolean isDst() {
-		return this.equals(DST);
+		return this.equals(dstConnInfo);
 	}
 	
 	public boolean isSrc() {
-		return this.equals(SRC);
+		return this.equals(srcConnInfo);
 	}
 	
 	public boolean isMain() {
-		return this.equals(MAIN);
+		return this.equals(mainConnInfo);
 	}
 }

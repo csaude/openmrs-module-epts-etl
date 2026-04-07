@@ -45,7 +45,7 @@ public class DefaultEtlValidator implements EtlValidator {
 	public DefaultEtlValidator() {
 		phase = ValidationPhase.AFTER_LOAD;
 		behavior = EtlInconsistencyBehavior.ABORT_PROCESS;
-		connectionToUse = EtlDBConnectionType.SRC;
+		connectionToUse = EtlDBConnectionType.srcConnInfo;
 	}
 	
 	@Override

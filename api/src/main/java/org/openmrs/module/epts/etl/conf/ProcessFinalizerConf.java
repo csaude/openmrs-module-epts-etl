@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.conf;
 
-import org.openmrs.module.epts.etl.conf.types.EtlConnectionType;
+import org.openmrs.module.epts.etl.conf.types.EtlDBConnectionType;
 import org.openmrs.module.epts.etl.controller.ProcessFinalizer;
 import org.openmrs.module.epts.etl.controller.SqlProcessFInalizer;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -17,17 +17,17 @@ public class ProcessFinalizerConf {
 	
 	private Class<? extends ProcessFinalizer> finalizerClazz;
 	
-	private EtlConnectionType connectionToUse;
+	private EtlDBConnectionType connectionToUse;
 	
 	public ProcessFinalizerConf() {
-		this.connectionToUse = EtlConnectionType.srcConnInfo;
+		this.connectionToUse = EtlDBConnectionType.srcConnInfo;
 	}
 	
-	public EtlConnectionType getConnectionToUse() {
+	public EtlDBConnectionType getConnectionToUse() {
 		return connectionToUse;
 	}
 	
-	public void setConnectionToUse(EtlConnectionType connectionToUse) {
+	public void setConnectionToUse(EtlDBConnectionType connectionToUse) {
 		this.connectionToUse = connectionToUse;
 	}
 	
