@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.io.IOException;
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -2737,12 +2738,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				
 				String idxDefinition1 = DBUtilities.generateIndexDefinition(fullTableName, indexName1, indexFields1, conn);
 				
-				String indexName2 = tableName + "src_rec_idx";
+				String indexName2 = tableName + "_src_rec_idx";
 				String indexFields2 = "stage_record_id, dst_table_name";
 				
 				String idxDefinition2 = DBUtilities.generateIndexDefinition(fullTableName, indexName2, indexFields2, conn);
 				
-				BaseDAO.executeBatch(conn, sql, idxDefinition1, idxDefinition2);
+				try {
+					BaseDAO.executeBatch(conn, sql, idxDefinition1, idxDefinition2);
+				}
+				catch (DBException e) {
+					if (!e.getLocalizedMessage().contains("Duplicate key name")) {
+						throw e;
+					}
+				}
 			}
 			
 		}
@@ -2769,7 +2777,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				String nullConstraint = "NULL";
 				String endLineMarker = ",\n";
 				
-				String uuid =  utilities.removeCharactersOnString(UUID.randomUUID().toString(), "-");
+				String uuid = utilities.removeCharactersOnString(UUID.randomUUID().toString(), "-");
 				
 				String fullTableName = this.getSyncStageSchema() + "." + tableName;
 				
@@ -2792,7 +2800,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				
 				String idxDefinition = DBUtilities.generateIndexDefinition(fullTableName, indexName, indexFields, conn);
 				
-				BaseDAO.executeBatch(conn, sql, idxDefinition);
+				try {
+					BaseDAO.executeBatch(conn, sql, idxDefinition);
+				}
+				catch (DBException e) {
+					if (!e.getLocalizedMessage().contains("Duplicate key name")) {
+						throw e;
+					}
+				}
 			}
 		}
 	}
@@ -2847,7 +2862,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullStageTableName(), indexName,
 				    indexFields, conn);
 				
-				BaseDAO.executeBatch(conn, sql, idxDefinition);
+				try {
+					BaseDAO.executeBatch(conn, sql, idxDefinition);
+				}
+				catch (DBException e) {
+					if (!e.getLocalizedMessage().contains("Duplicate key name")) {
+						throw e;
+					}
+				}
 			}
 		}
 	}
