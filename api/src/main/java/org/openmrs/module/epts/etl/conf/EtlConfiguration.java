@@ -736,8 +736,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 * @throws ForbiddenOperationException
 	 * @throws DBException
 	 */
-	public void init(OpenConnection srcConn, OpenConnection dstConn, OpenConnection mainConn)
-	        throws ForbiddenOperationException, DBException {
+	public void init(OpenConnection conn) throws ForbiddenOperationException, DBException {
 		if (initialized) {
 			return;
 		}
@@ -766,6 +765,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				this.getDstConnInfo().setRelatedEtlConf(this);
 				this.getDstConnInfo().tryToLoadPlaceHolders(this);
 			}
+			
+			ensureEtlSchemaTablesExists();
 			
 			if (this.getAutoIncrementHandlingType() == null) {
 				if (this.getPrimaryKeyInitialIncrementValue() != null && this.getPrimaryKeyInitialIncrementValue() > 0) {
@@ -800,8 +801,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			
 			List<EtlItemConfiguration> allItem = new ArrayList<>();
 			
-			tryToExecuteStartupScripts(srcConn.getDbConnInfo(), dstConn.getDbConnInfo());
-			
 			int pos = 0;
 			
 			for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
@@ -810,7 +809,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				item.setRelatedEtlConfig(this);
 				
 				if (item.isDynamic()) {
-					List<EtlItemConfiguration> dynamicItems = item.generateDynamicItems(this, srcConn);
+					List<EtlItemConfiguration> dynamicItems = item.generateDynamicItems(this, conn);
 					
 					if (utilities.listHasElement(dynamicItems)) {
 						logDebug(
@@ -853,14 +852,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				}
 			}
 			
-			ensureEtlSchemaTablesExists();
+			OpenConnection srcConn = openSrcConn();
+			OpenConnection dstConn = tryOpenDstConn();
 			
 			DefaultEtlValidator.tryToValidate(this, srcConn, dstConn);
-			
 		}
 	}
 	
-	private OpenConnection ensureEtlSchemaTablesExists() throws DBException {
+	private void ensureEtlSchemaTablesExists() throws DBException {
 		if (!this.isImportStageSchemaExists()) {
 			this.createStageSchema();
 		}
@@ -893,8 +892,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			logDebug("RELATEDRECURSIVE TABLE GENERATED");
 		}
 		
-		OpenConnection conn = openSrcConn();
-		
 		if (this.hasDstConnInfo()) {
 			
 			//Try to openConnection to determine if db schama exists
@@ -919,7 +916,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				this.getDstConnInfo().restoreDump(this);
 			}
 		}
-		return conn;
+		
+		tryToExecuteStartupScripts(getSrcConnInfo(), getDstConnInfo());
 	}
 	
 	private void tryToExecuteStartupScripts(DBConnectionInfo srcConnInfo, DBConnectionInfo dstConnInfo) throws DBException {
@@ -1115,10 +1113,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	public static <T extends EtlDatabaseObject> EtlConfiguration loadFromJSON(String json, File srcFile)
 	        throws ForbiddenOperationException {
 		
-		OpenConnection srcConn = null;
-		OpenConnection dstConn = null;
-		OpenConnection mainConn = null;
-		
 		try {
 			Class<?>[] types = new Class<?>[1];
 			
@@ -1128,17 +1122,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			        .readValue(json, EtlConfiguration.class);
 			
 			if (!etlConfiguration.isDynamic()) {
-				srcConn = etlConfiguration.openSrcConn();
-				dstConn = etlConfiguration.tryOpenDstConn();
-				mainConn = etlConfiguration.tryOpenMainConn();
-				
 				etlConfiguration.setConfigFilePath(srcFile.getAbsolutePath());
 				
 				etlConfiguration.setRelatedConfFile(srcFile);
 				
-				etlConfiguration.init(srcConn, dstConn, mainConn);
-				
-				srcConn.markAsSuccessifullyTerminated();
+				etlConfiguration.init(null);
 			}
 			
 			return etlConfiguration;
@@ -1160,19 +1148,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
-		}
-		finally {
-			if (srcConn != null) {
-				srcConn.finalizeConnection();
-			}
-			
-			if (dstConn != null) {
-				dstConn.finalizeConnection();
-			}
-			
-			if (mainConn != null) {
-				mainConn.finalizeConnection();
-			}
 		}
 	}
 	
@@ -1909,47 +1884,35 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		clonedEtlConf.setPrimaryKeyInitialIncrementValue(this.getPrimaryKeyInitialIncrementValue());
 		clonedEtlConf.setAutoIncrementHandlingType(this.getAutoIncrementHandlingType());
 		
-		OpenConnection srcConn = null;
-		OpenConnection dstConn = null;
-		OpenConnection mainConn = null;
+		OpenConnection conn = null;
 		
 		try {
-			srcConn = clonedEtlConf.openSrcConn();
-			dstConn = clonedEtlConf.tryOpenDstConn();
-			mainConn = clonedEtlConf.tryOpenMainConn();
+			conn = clonedEtlConf.openSrcConn();
 			
 			for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
 				
 				EtlItemConfiguration cloned = new EtlItemConfiguration();
 				
-				cloned.copyFromOther(item, clonedEtlConf, true, srcConn);
+				cloned.copyFromOther(item, clonedEtlConf, true, conn);
 				cloned.tryToReplacePlaceholders(schemaInfoSrc);
 				
 				if (item.getEtlItemSrcConf() != null) {
 					cloned.setEtlItemSrcConf(new EtlItemSrcConf());
-					cloned.getEtlItemSrcConf().copyFromOther(item.getEtlItemSrcConf(), null, cloned, srcConn);
+					cloned.getEtlItemSrcConf().copyFromOther(item.getEtlItemSrcConf(), null, cloned, conn);
 				}
 				
 				clonedEtlConf.getEtlItemConfiguration().add(cloned);
 			}
 			
-			clonedEtlConf.init(srcConn, dstConn, mainConn);
+			clonedEtlConf.init(conn);
 			
 		}
 		catch (DBException e) {
 			throw new EtlExceptionImpl(e);
 		}
 		finally {
-			if (srcConn != null) {
-				srcConn.finalizeConnection();
-			}
-			
-			if (dstConn != null) {
-				dstConn.finalizeConnection();
-			}
-			
-			if (mainConn != null) {
-				mainConn.finalizeConnection();
+			if (conn != null) {
+				conn.finalizeConnection();
 			}
 		}
 		
@@ -2221,7 +2184,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			sql += DBUtilities.generateTableAutoIncrementField("id", conn) + ",\n";
 			sql += DBUtilities.generateTableVarcharField("operation_id", 250, "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableVarcharField("operation_name", 250, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableVarcharField("table_name", 100, "NOT NULL", conn) + ",\n";
+			sql += DBUtilities.generateTableVarcharField("table_name", 200, "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableDateTimeField("started_at", "NOT NULL", conn) + ",\n";
 			sql += DBUtilities.generateTableDateTimeField("last_refresh_at", "NOT NULL", conn) + ",\n";

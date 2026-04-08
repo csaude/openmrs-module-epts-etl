@@ -65,7 +65,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		
 		applyFieldTransformations(processor, transformedRec, srcObjects, srcConn, dstConn);
 		
-		resolvePrimaryKeyAndParent(processor, transformedRec, migratedDstParent, srcConn, dstConn);
+		resolvePrimaryKeyAndParent(processor, srcObject, transformedRec, migratedDstParent, srcConn, dstConn);
 		
 		if (transformationType.onDemand()) {
 			transformedRec.setUuid(UUID.randomUUID().toString());
@@ -78,8 +78,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		return transformedRec;
 	}
 	
-	private void resolvePrimaryKeyAndParent(EtlProcessor processor, EtlDatabaseObject transformedRec,
-	        EtlDatabaseObject migratedDstParent, Connection srcConn, Connection dstConn)
+	private void resolvePrimaryKeyAndParent(EtlProcessor processor, EtlDatabaseObject srcRecord,
+	        EtlDatabaseObject transformedRec, EtlDatabaseObject migratedDstParent, Connection srcConn, Connection dstConn)
 	        throws EtlTransformationException, DBException {
 		
 		DstConf dstConf = (DstConf) transformedRec.getRelatedConfiguration();
@@ -90,6 +90,17 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		if (!dstConf.useSharedPKKey()) {
 			if (dstConf.useManualGeneratedObjectId() && !dstConf.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
 				transformedRec.getObjectId().asSimpleKey().setValue(dstConf.retriveNextRecordId(processor));
+			}
+		} else {
+			
+			if (migratedDstParent == null) {
+				Field pk = transformedRec.getField(transformedRec.getObjectId().asSimpleKey().getName());
+				pk.setValue(srcRecord.getObjectId().asSimpleKey().getValue());
+				
+				FieldTransformingInfo fi = new FieldTransformingInfo(dstConf.getMappingUsingDstField(pk.getName()),
+				        pk.getValue(), (EtlDataSource) srcRecord.getRelatedConfiguration());
+				
+				pk.setTransformingInfo(fi);
 			}
 		}
 		

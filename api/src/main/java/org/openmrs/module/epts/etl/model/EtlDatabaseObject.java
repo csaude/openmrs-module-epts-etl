@@ -843,4 +843,19 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		return succed;
 	}
+
+	default void loadValuesToUniqueKeyFields(EtlDatabaseObject srcRecord) {
+		
+		for(EtlDatabaseObjectUniqueKeyInfo o : srcRecord.getUniqueKeysInfo()) {
+			try {
+				UniqueKeyInfo uk = this.getUniqueKeyInfo(o);
+				
+				if (uk != null) {
+					uk.loadValuesToFields(srcRecord);
+				}
+			}
+			catch (ForbiddenOperationException e) {
+			}
+		}
+	}
 }
