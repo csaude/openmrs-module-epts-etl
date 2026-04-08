@@ -137,7 +137,9 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(this.getEngine(),
 		    transformedParent.getEtlInfo().getRelatedSrcObject(), srcConn);
 		
-		perform(itemConf, etlObjects, transformedParent, srcConn, dstConn);
+		if (!etlObjects.isEmpty()) {
+			perform(itemConf, etlObjects, transformedParent, srcConn, dstConn);
+		}
 	}
 	
 	@Override
