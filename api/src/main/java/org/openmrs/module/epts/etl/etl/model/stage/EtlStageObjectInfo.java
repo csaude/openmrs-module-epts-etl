@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -20,10 +22,13 @@ public class EtlStageObjectInfo {
 		
 		this.setSrcStageInfoObject(EtlStageAreaObject.generateSrc(srcObj, srcConn, dstConn));
 		
-		if (srcObj.hasDestinationRecords()) {
-			this.setDstStageInfoObject(
-			    EtlStageAreaObject.generateDst(srcStageInfoObject, srcObj.getDestinationObjects(), dstConn, srcConn));
+		if (!srcObj.hasDestinationRecords()) {
+			throw new EtlExceptionImpl("No dst objects found with src object: " + srcObj, srcObj,
+			        ActionOnEtlException.ABORT_PROCESS);
 		}
+		
+		this.setDstStageInfoObject(
+		    EtlStageAreaObject.generateDst(srcStageInfoObject, srcObj.getDestinationObjects(), dstConn, srcConn));
 	}
 	
 	public static EtlStageObjectInfo generate(EtlDatabaseObject rec, Connection srcConn, Connection dstConn)
@@ -81,10 +86,6 @@ public class EtlStageObjectInfo {
 	}
 	
 	private void loadDstStageObjectIdToDstKeyInfoObject() {
-		
-		if (!hasDstStageInfoObject()) {
-			return;
-		}
 		
 		for (EtlStageAreaObject obj : getDstStageInfoObject()) {
 			if (obj.getRelatedEtlObject().getEtlInfo().isInSuccessStatus()) {

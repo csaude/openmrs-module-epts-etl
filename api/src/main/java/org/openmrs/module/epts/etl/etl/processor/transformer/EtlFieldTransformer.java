@@ -121,17 +121,24 @@ public interface EtlFieldTransformer {
 			
 			boolean found = false;
 			
-			for (EtlDatabaseObject srcObject : srcObjects) {
-				
-				try {
-					paramValue = srcObject.getFieldValue(paramName);
-					found = true;
-					break;
+			EtlConfiguration tc = srcObjects.get(0).getRelatedConfiguration().getRelatedEtlConf();
+			
+			paramValue = tc.getParamValue(paramName);
+			
+			if (paramValue != null) {
+				found = true;
+			} else
+				for (EtlDatabaseObject srcObject : srcObjects) {
+					
+					try {
+						paramValue = srcObject.getFieldValue(paramName);
+						found = true;
+						break;
+					}
+					catch (ForbiddenOperationException e) {
+						// continue
+					}
 				}
-				catch (ForbiddenOperationException e) {
-					// continue
-				}
-			}
 			
 			if (!found) {
 				

@@ -409,20 +409,20 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public Date getStartDate() {
-		String startDate = getParamValue("startDate");
+		Object startDate = getParamValue("startDate");
 		
-		if (utilities.stringHasValue(startDate)) {
-			return DateAndTimeUtilities.createDate(startDate);
+		if (utilities.objectHasValue(startDate)) {
+			return DateAndTimeUtilities.createDate(startDate.toString());
 		}
 		
 		return null;
 	}
 	
 	public Date getEndDate() {
-		String endDate = getParamValue("endDate");
+		Object endDate = getParamValue("endDate");
 		
-		if (utilities.stringHasValue(endDate)) {
-			return DateAndTimeUtilities.createDate(endDate);
+		if (utilities.objectHasValue(endDate)) {
+			return DateAndTimeUtilities.createDate(endDate.toString());
 		}
 		
 		return null;
@@ -653,7 +653,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		String json = FileUtilities.realAllFileAsString(file);
 		
-		Properties fileProps = loadProperties(loadEnvPath(file));
+		Properties fileProps = loadProperties(System.getProperty("etl.env.file"));
 		
 		EtlConfiguration conf = EtlConfiguration.loadFromJSON(
 		    EtlDataConfiguration.resolvePlaceholders(json, fileProps, System.getProperties(), System.getenv()), file);
@@ -663,27 +663,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		conf.setRelatedConfFile(file);
 		
 		return conf;
-	}
-	
-	public static String loadEnvPath(File file) {
-		
-		if (file == null) {
-			throw new IllegalArgumentException("Config file cannot be null");
-		}
-		
-		File parentDir = file.getParentFile();
-		
-		if (parentDir == null) {
-			throw new IllegalStateException("Cannot determine parent directory for file: " + file.getAbsolutePath());
-		}
-		
-		File envFile = new File(parentDir, "env.properties");
-		
-		if (!envFile.exists()) {
-			return null;
-		}
-		
-		return envFile.getAbsolutePath();
 	}
 	
 	public static Properties loadProperties(String path) {
@@ -1091,7 +1070,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		if (this.generatedItemCodes == null)
 			this.generatedItemCodes = new ArrayList<>();
 		
-		String newCode = code;
+		String newCode = code + "_001";
 		
 		int i = 1;
 		
@@ -1670,7 +1649,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	@SuppressWarnings("rawtypes")
-	public String getParamValue(String paramName) {
+	public Object getParamValue(String paramName) {
 		if (hasConfiguredParams()) {
 			if (this.getParams().containsKey(paramName)) {
 				return this.getParams().get(paramName);
@@ -1704,7 +1683,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			}
 		}
 		
-		return paramObject.toString();
+		return paramObject;
 	}
 	
 	public String getClassPath() {

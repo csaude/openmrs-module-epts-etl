@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaObjectDAO;
 import org.openmrs.module.epts.etl.etl.model.stage.EtlStageObjectInfo;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParentException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
@@ -56,6 +57,10 @@ public class EtlLoadHelper {
 					}
 				}
 			}
+		}
+		
+		if (utilities.listHasNoElement(this.dstConf)) {
+			throw new EtlExceptionImpl("No dst was found for given src objects!");
 		}
 		
 	}
@@ -124,6 +129,7 @@ public class EtlLoadHelper {
 		
 		if (getEtlOperationConfig().writeOperationHistory()) {
 			EtlStageAreaObjectDAO.saveAll(generateStageInfoForAll(srcConn, dstConn), srcConn);
+			
 		}
 		
 		if (getEtlOperationConfig().getAfterEtlActionType().isDelete()) {

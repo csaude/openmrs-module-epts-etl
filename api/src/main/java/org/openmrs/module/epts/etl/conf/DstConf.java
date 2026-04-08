@@ -874,7 +874,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			}
 			
 			if (!this.prefferredDataSource.contains(getSrcConf().getName()) && useSrcConfAsDataSource()) {
-				this.prefferredDataSource.add(getSrcConf().getName());
+				this.prefferredDataSource.add(getSrcConf().getAlias());
 			}
 		}
 		

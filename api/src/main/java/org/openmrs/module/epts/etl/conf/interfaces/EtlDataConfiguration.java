@@ -52,6 +52,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 			    this.getTemplate().getParameters());
 			
 			this.copyFromTemplate(fromTemplate);
+			
 		}
 	}
 	

@@ -1486,4 +1486,8 @@ public class CommonUtilities implements Serializable {
 		
 		return replaced;
 	}
+	
+	public boolean objectHasValue(Object obj) {
+		return obj != null && this.stringHasValue(obj.toString());
+	}
 }

@@ -61,7 +61,7 @@ public class DbsyncJmsToSyncMsgTransformer implements EtlRecordTransformer {
 		syncMessage.setFieldValue("dateCreated", srcObject.getFieldValue("dateCreated"));
 		
 		Integer id = (Integer) srcObject.getFieldValue("id");
-		Integer syncMsgMaxId = Integer.parseInt(dstConf.getRelatedEtlConf().getParamValue("idIncrementValue"));
+		Integer syncMsgMaxId = Integer.parseInt(dstConf.getRelatedEtlConf().getParamValue("idIncrementValue").toString());
 		
 		syncMessage.setFieldValue("id", (id + syncMsgMaxId));
 		
