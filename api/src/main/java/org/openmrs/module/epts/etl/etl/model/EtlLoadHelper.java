@@ -457,6 +457,7 @@ public class EtlLoadHelper {
 		msg += " Tree Info: [" + tree + "]";
 		
 		etlInfo.getProcessor().logTrace(msg);
+		
 		new EtlLoadHelper(etlInfo.getProcessor(), utilities.parseToList(srcObject), LoadingType.INNER)
 		        .load(etlInfo.getDstConf(), srcConn, dstConn);
 	}

@@ -127,26 +127,28 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 			}
 			
 			EtlDatabaseObject dstParent = null;
-			EtlDatabaseObject recordAsSrc = null;
+			EtlDatabaseObject parentAsSrc = null;
 			
 			for (SrcConf src : avaliableSrcForCurrParent) {
 				DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable(getRelatedEtlOperationConfig(),
 				    parentRefInfo.getTableName());
 				
-				recordAsSrc = src.createRecordInstance();
-				recordAsSrc.setRelatedConfiguration(src);
+				parentAsSrc = src.createRecordInstance();
+				parentAsSrc.setRelatedConfiguration(src);
 				
-				recordAsSrc.copyFrom(recWithDefaultParentInfo.getParentRecordInOrigin());
+				parentAsSrc.copyFrom(recWithDefaultParentInfo.getParentRecordInOrigin());
 				
-				dstParent = dst.getTransformerInstance().transform(this, recordAsSrc, dst, null, TransformationType.INNER,
+				dstParent = dst.getTransformerInstance().transform(this, parentAsSrc, dst, null, TransformationType.INNER,
 				    srcConn, dstConn);
 				
 				if (dstParent != null) {
 					DBException exception = null;
-					recordAsSrc.addDestinationRecord(dstParent);
+					parentAsSrc.addDestinationRecord(dstParent);
 					
 					try {
-						EtlLoadHelper.performeParentLoading(recordAsSrc, srcConn, dstConn);
+						EtlLoadHelper.performeParentLoading(parentAsSrc, srcConn, dstConn);
+						
+						dstParent = parentAsSrc.getDestinationObjects().get(0);
 						
 						dstObject.changeParentValue(recWithDefaultParentInfo.getParentRefInfo(), dstParent);
 					}
@@ -155,8 +157,8 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 					}
 					finally {
 						
-						if (dstParent.getEtlInfo().getResultItem().hasInconsistences()
-						        || exception != null && exception.isIntegrityConstraintViolationException()) {
+						if (dstParent.getEtlInfo().hasParentsWithDefaultValues()
+						        || (exception != null && exception.isIntegrityConstraintViolationException())) {
 							
 							String msg = "The parent for default for parent ["
 							        + recWithDefaultParentInfo.getParentRecordInOrigin()
@@ -164,7 +166,7 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 							
 							logDebug(msg);
 							
-							InconsistenceInfo incInfo = InconsistenceInfo.generate(recWithDefaultParentInfo, parentRefInfo,
+							InconsistenceInfo incInfo = InconsistenceInfo.generate(dstObject, parentRefInfo,
 							    mainSrc.getOriginAppLocationCode());
 							
 							incInfo.save(mainSrc, srcConn);

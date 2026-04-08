@@ -2006,7 +2006,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			}
 		}
 		
-		String updateSQL = "UPDATE " + this.getObjectName() + " SET ";
+		String updateSQL = "UPDATE " + this.getFullTableName() + " SET ";
 		
 		for (Field field : this.getFields()) {
 			AttDefinedElements attElements = field.getAttDefinedElements();

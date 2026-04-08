@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -121,6 +122,14 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		if (this.getDstRelatedObject() == null) {
 			this.setDstRelatedObject(DatabaseObjectDAO.getByOid(dstConf,
 			    Oid.fastCreate(dstConf.getPrimaryKey().asSimpleKey().getName(), this.getDstRecId()), dstConn));
+		}
+		
+		if (this.srcRelatedObject == null) {
+			throw new EtlExceptionImpl("The SrcRelatedObject is not anymore on database: " + this);
+		}
+		
+		if (this.dstRelatedObject == null) {
+			throw new EtlExceptionImpl("The DstRelatedObject is not anymore on database: " + this);
 		}
 		
 		this.parentRecordInOrigin = DatabaseObjectDAO.getByOid(this.parentRefInfo,
