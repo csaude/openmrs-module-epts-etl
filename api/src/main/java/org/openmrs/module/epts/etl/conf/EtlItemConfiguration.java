@@ -698,15 +698,24 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		super.tryToLoadFromTemplate();
 		
-		this.getSrcConf().tryToLoadFromTemplate();
-		this.getSrcConf().setRelatedEtlConfig(this.getRelatedEtlConf());
-		this.getSrcConf().setParentConf(this);
+		if (this.getSrcConf() != null) {
+			this.getSrcConf().setRelatedEtlConfig(getRelatedEtlConf());
+			this.getSrcConf().tryToLoadFromTemplate();
+			this.getSrcConf().setParentConf(this);
+		}
 		
 		if (this.hasDstConf()) {
 			for (DstConf conf : this.getDstConf()) {
-				conf.tryToLoadFromTemplate();
 				conf.setRelatedEtlConfig(getRelatedEtlConf());
+				conf.tryToLoadFromTemplate();
 				conf.setParentConf(this);
+			}
+		}
+		
+		if (hasChildItemConf()) {
+			for (EtlItemConfiguration child : this.getChildItemConf()) {
+				child.setRelatedEtlConfig(getRelatedEtlConf());
+				child.tryToLoadFromTemplate();
 			}
 		}
 		

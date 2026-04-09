@@ -6,9 +6,15 @@ public class EtlTemplateInfo {
 	
 	private String name;
 	
-	private Map<String, String> parameters;
+	private Map<String, Object> parameters;
 	
 	public EtlTemplateInfo() {
+	}
+	
+	public EtlTemplateInfo(String name, Map<String, Object> parameters) {
+		this(name);
+		
+		this.parameters = parameters;
 	}
 	
 	public EtlTemplateInfo(String name) {
@@ -23,11 +29,11 @@ public class EtlTemplateInfo {
 		this.name = name;
 	}
 	
-	public Map<String, String> getParameters() {
+	public Map<String, Object> getParameters() {
 		return parameters;
 	}
 	
-	public void setParameters(Map<String, String> parameters) {
+	public void setParameters(Map<String, Object> parameters) {
 		this.parameters = parameters;
 	}
 	

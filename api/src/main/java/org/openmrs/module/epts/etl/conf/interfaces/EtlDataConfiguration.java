@@ -2,9 +2,12 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,13 +49,47 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	default void tryToLoadFromTemplate() {
 		if (this.getTemplate() != null) {
 			EtlConfigurationTemplate template = EtlConfigurationTemplate.findTemplate(this.getRelatedEtlConf(),
-			    this.getTemplate());
+			    this.getTemplate().getName());
+			
+			EtlDataConfiguration parentFromTemplate = null;
+			
+			if (template.isExtension()) {
+				EtlConfigurationTemplate baseTemplate = EtlConfigurationTemplate.findTemplate(this.getRelatedEtlConf(),
+				    template.getExtendsTemplate());
+				
+				Set<String> childParams = template.getParameters() != null ? template.getParameters() : new HashSet<>();
+				Set<String> parentParams = baseTemplate.getParameters() != null ? baseTemplate.getParameters()
+				        : new HashSet<>();
+				
+				Map<String, Object> inputParams = this.getTemplate().getParameters() != null
+				        ? this.getTemplate().getParameters()
+				        : new HashMap<>();
+				
+				Map<String, Object> params = new HashMap<>();
+				
+				for (String paramFromChild : childParams) {
+					if (parentParams.contains(paramFromChild)) {
+						params.put(paramFromChild, inputParams.get(paramFromChild));
+					}
+				}
+				
+				parentFromTemplate = baseTemplate.parseToEtlDataConfiguration(this.getClass(),
+				    this.getTemplate().getParameters());
+				
+			}
 			
 			EtlDataConfiguration fromTemplate = template.parseToEtlDataConfiguration(this.getClass(),
 			    this.getTemplate().getParameters());
 			
-			this.copyFromTemplate(fromTemplate);
+			fromTemplate.setRelatedEtlConfig(getRelatedEtlConf());
 			
+			fromTemplate.tryToLoadFromTemplate();
+			
+			if (parentFromTemplate != null) {
+				fromTemplate.copyFromTemplate(parentFromTemplate);
+			}
+			
+			this.copyFromTemplate(fromTemplate);
 		}
 	}
 	
@@ -96,19 +133,32 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		}
 	}
 	
-	public static String resolvePlaceholders(String text, Properties fileProps, Properties sysProps,
-	        Map<String, String> env) {
+	public static String resolvePlaceholders(String text, Set<String> allowedPlaceholders, Properties fileProps,
+	        Properties sysProps, Map<String, ?> env) {
+		
+		if (text == null || text.isBlank()) {
+			return text;
+		}
 		
 		Matcher m = PLACEHOLDER.matcher(text);
 		StringBuffer sb = new StringBuffer();
 		
 		while (m.find()) {
+			
 			String key = m.group(1);
 			
-			String value = null;
+			// 🔹 Se há whitelist e key não está nela → ignora
+			if (allowedPlaceholders != null && !allowedPlaceholders.contains(key)) {
+				m.appendReplacement(sb, Matcher.quoteReplacement(m.group(0))); // mantém ${key}
+				continue;
+			}
+			
+			Object value = null;
 			
 			// 1. ENV
-			value = env.get(key);
+			if (env != null) {
+				value = env.get(key);
+			}
 			
 			// 2. System props
 			if (value == null && sysProps != null) {
@@ -124,7 +174,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 				throw new IllegalArgumentException("Missing placeholder value for: " + key);
 			}
 			
-			m.appendReplacement(sb, Matcher.quoteReplacement(value));
+			m.appendReplacement(sb, Matcher.quoteReplacement(value.toString()));
 		}
 		
 		m.appendTail(sb);

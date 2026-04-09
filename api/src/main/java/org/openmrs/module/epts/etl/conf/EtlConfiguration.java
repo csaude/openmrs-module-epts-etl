@@ -656,7 +656,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		Properties fileProps = loadProperties(System.getProperty("etl.env.file"));
 		
 		EtlConfiguration conf = EtlConfiguration.loadFromJSON(
-		    EtlDataConfiguration.resolvePlaceholders(json, fileProps, System.getProperties(), System.getenv()), file);
+		    EtlDataConfiguration.resolvePlaceholders(json, null, fileProps, System.getProperties(), System.getenv()), file);
 		
 		conf.setConfigFilePath(file.getAbsolutePath());
 		
