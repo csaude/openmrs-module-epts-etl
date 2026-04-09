@@ -304,6 +304,10 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 				
 				fm.tryToLoadDataSourceInfoFromSrcField();
 				
+				if (fm.hasTransformer() && fm.isSetToNullValue()) {
+					fm.setSrcValue(null);
+				}
+				
 				if (!fm.hasDataSourceName()) {
 					try {
 						tryToLoadDataSourceToFieldMapping(fm);
@@ -572,7 +576,15 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		
-		if (isInMemoryTable()) {
+		if (!isInMemoryTable()) {
+			this.tryToGenerateTableAlias(getRelatedEtlConf());
+			
+			if (!hasManualMapPrimaryKeyOnField()) {
+				setManualMapPrimaryKeyOnField(getRelatedEtlConf().getManualMapPrimaryKeyOnField());
+			}
+			
+			super.fullLoad(conn);
+		} else {
 			try {
 				this.setFieldsLoaded(true);
 				
@@ -629,14 +641,6 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 				throw new EtlExceptionImpl(e);
 			}
 			
-		} else {
-			this.tryToGenerateTableAlias(getRelatedEtlConf());
-			
-			if (!hasManualMapPrimaryKeyOnField()) {
-				setManualMapPrimaryKeyOnField(getRelatedEtlConf().getManualMapPrimaryKeyOnField());
-			}
-			
-			super.fullLoad(conn);
 		}
 		
 	}

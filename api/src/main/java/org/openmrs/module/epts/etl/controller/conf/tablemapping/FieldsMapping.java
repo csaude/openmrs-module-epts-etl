@@ -597,4 +597,8 @@ public class FieldsMapping extends Field implements TransformableField {
 	public void setDataSource(EtlDataSource dataSource) {
 		this.dataSource = dataSource;
 	}
+	
+	public boolean isSetToNullValue() {
+		return hasSrcValue() && srcValue.toString().toLowerCase().equals("null");
+	}
 }
