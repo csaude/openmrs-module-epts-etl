@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -93,7 +94,9 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	default void copyFromTemplate(EtlDataConfiguration template) {
+		
 		if (template == null) {
 			return;
 		}
@@ -106,12 +109,18 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		Class<?> currentClass = this.getClass();
 		
 		while (currentClass != null && currentClass != Object.class) {
+			
 			Field[] fields = currentClass.getDeclaredFields();
 			
 			for (Field field : fields) {
+				
 				int modifiers = field.getModifiers();
 				
 				if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers)) {
+					continue;
+				}
+				
+				if ("template".equals(field.getName())) {
 					continue;
 				}
 				
@@ -120,9 +129,35 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 					
 					Object templateValue = field.get(template);
 					
-					if (templateValue != null && !field.getName().equals("template")) {
+					if (templateValue == null) {
+						continue;
+					}
+					
+					Object currentValue = field.get(this);
+					
+					if (templateValue instanceof List<?>) {
+						
+						List<?> templateList = (List<?>) templateValue;
+						
+						if (currentValue == null) {
+							field.set(this, new ArrayList<>(templateList));
+						} else if (currentValue instanceof List<?>) {
+							List<Object> currentList = (List<Object>) currentValue;
+							currentList.addAll(templateList);
+						} else {
+							throw new EtlExceptionImpl(
+							        "Field '" + field.getName() + "' is not a List but template provides a List.");
+						}
+						
+					} else {
+						if (currentValue != null) {
+							throw new EtlExceptionImpl("Field '" + field.getName()
+							        + "' already has a value and cannot be overridden by template.");
+						}
+						
 						field.set(this, templateValue);
 					}
+					
 				}
 				catch (IllegalAccessException e) {
 					throw new EtlExceptionImpl("Error copying field '" + field.getName() + "' from template.", e);
