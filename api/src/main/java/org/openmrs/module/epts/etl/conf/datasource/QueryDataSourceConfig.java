@@ -51,13 +51,13 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	private List<Field> fields;
 	
-	private boolean fullLoaded;
+	private Boolean fullLoaded;
 	
 	private SrcConf relatedSrcConf;
 	
 	private Class<? extends EtlDatabaseObject> syncRecordClass;
 	
-	private boolean required;
+	private Boolean required;
 	
 	private DatabaseObjectLoaderHelper loadHealper;
 	
@@ -65,7 +65,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	private EtlTemplateInfo template;
 	
-	private boolean doNotLoadFields;
+	private Boolean doNotLoadFields;
 	
 	public QueryDataSourceConfig() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
@@ -79,11 +79,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		setQuery(query);
 	}
 	
-	public boolean isDoNotLoadFields() {
-		return doNotLoadFields;
+	public Boolean isDoNotLoadFields() {
+		return isTrue(doNotLoadFields);
 	}
 	
-	public void setDoNotLoadFields(boolean doNotLoadFields) {
+	public void setDoNotLoadFields(Boolean doNotLoadFields) {
 		this.doNotLoadFields = doNotLoadFields;
 	}
 	
@@ -107,11 +107,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public boolean isRequired() {
-		return this.required;
+	public Boolean isRequired() {
+		return isTrue(this.required);
 	}
 	
-	public void setRequired(boolean required) {
+	public void setRequired(Boolean required) {
 		this.required = required;
 	}
 	
@@ -176,8 +176,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		this.query = query;
 	}
 	
-	public boolean isFullLoaded() {
-		return fullLoaded;
+	public Boolean isFullLoaded() {
+		return isTrue(fullLoaded);
 	}
 	
 	@Override
@@ -274,13 +274,13 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@JsonIgnore
-	public boolean existsSyncRecordClass(DBConnectionInfo connInfo) {
+	public Boolean existsSyncRecordClass(DBConnectionInfo connInfo) {
 		try {
 			return getSyncRecordClass(connInfo) != null;
 		}
 		catch (ForbiddenOperationException e) {
 			
-			return false;
+			return false_();
 		}
 	}
 	
@@ -318,11 +318,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public boolean allowMultipleSrcObjectsForLoading() {
-		return true;
+	public Boolean allowMultipleSrcObjectsForLoading() {
+		return Boolean.TRUE;
 	}
 	
-	public void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass) {
+	public void generateRecordClass(DBConnectionInfo connInfo, Boolean fullClass) {
 		try {
 			if (fullClass) {
 				this.syncRecordClass = DatabaseEntityPOJOGenerator.generate(this, connInfo);
@@ -412,13 +412,13 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public boolean hasPK() {
-		return false;
+	public Boolean hasPK() {
+		return Boolean.FALSE;
 	}
 	
 	@Override
-	public boolean isMetadata() {
-		return false;
+	public Boolean isMetadata() {
+		return Boolean.FALSE;
 	}
 	
 	@Override
@@ -432,8 +432,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public boolean isDestinationInstallationType() {
-		return false;
+	public Boolean isDestinationInstallationType() {
+		return Boolean.FALSE;
 	}
 	
 	@Override
@@ -468,7 +468,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public boolean hasDateFields() {
+	public Boolean hasDateFields() {
 		for (Field t : this.fields) {
 			if (t.isDateField()) {
 				return true;
@@ -501,8 +501,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public boolean hasPK(Connection conn) {
-		return false;
+	public Boolean hasPK(Connection conn) {
+		return Boolean.FALSE;
 	}
 	
 	@Override
@@ -516,8 +516,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	}
 	
 	@Override
-	public boolean isMustLoadChildrenInfo() {
-		return false;
+	public Boolean isMustLoadChildrenInfo() {
+		return false_();
 	}
 	
 	public static QueryDataSourceConfig fastCreate(String query, SrcConf relatedSrcVonf) {

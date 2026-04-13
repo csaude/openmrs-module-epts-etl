@@ -59,8 +59,59 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
 	}
 	
+	public void init(EtlItemConfiguration relatedItemConf) {
+		this.setRelatedEtlConfig(relatedItemConf.getRelatedEtlConf());
+		this.setParentConf(relatedItemConf);
+		
+		this.tryToLoadFromTemplate();
+		
+		if (!this.hasDstType()) {
+			//We start with the first operation dst type. Eventual this should be changed if the nested operation has different dstType
+			this.setDstType(getRelatedEtlConf().getOperations().get(0).getDstType());
+		}
+		
+		if (this.hasAlias()) {
+			this.setUsingManualDefinedAlias(true);
+			getRelatedEtlConf().tryToAddToBusyTableAliasName(this.getTableAlias());
+		}
+		
+		this.tryToLoadSchemaInfo(getParentConf().getRelatedEtlSchemaObject());
+		
+		List<EtlAdditionalDataSource> allAvaliableDataSources = this.getAvaliableExtraDataSource();
+		
+		for (EtlAdditionalDataSource t : allAvaliableDataSources) {
+			t.tryToLoadFromTemplate();
+			
+			if (t instanceof AbstractTableConfiguration) {
+				TableConfiguration tAsTabConf = (TableConfiguration) t;
+				
+				if (tAsTabConf.hasAlias()) {
+					tAsTabConf.setUsingManualDefinedAlias(true);
+					getRelatedEtlConf().tryToAddToBusyTableAliasName(tAsTabConf.getTableAlias());
+				}
+				
+				getRelatedEtlConf().addConfiguredTable((AbstractTableConfiguration) t);
+				t.setRelatedSrcConf(this);
+			}
+			
+			t.setRelatedSrcConf(this);
+		}
+		
+		if (this.hasAuxExtractTable()) {
+			for (AuxExtractTable t : this.getAuxExtractTable()) {
+				t.tryToLoadFromTemplate();
+				
+				if (t.hasAlias()) {
+					t.setUsingManualDefinedAlias(true);
+					
+					getRelatedEtlConf().tryToAddToBusyTableAliasName(t.getTableAlias());
+				}
+			}
+		}
+	}
+	
 	@Override
-	public boolean doNotUseAsDatasource() {
+	public Boolean doNotUseAsDatasource() {
 		return false;
 	}
 	
@@ -129,11 +180,11 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	}
 	
 	@Override
-	public boolean isGeneric() {
+	public Boolean isGeneric() {
 		return false;
 	}
 	
-	public boolean hasDstType() {
+	public Boolean hasDstType() {
 		return getDstType() != null;
 	}
 	
@@ -304,10 +355,6 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		}
 	}
 	
-	public void setFullLoaded(boolean fullLoaded) {
-		this.fullLoaded = fullLoaded;
-	}
-	
 	public QueryDataSourceConfig findAdditionalDataSrc(String dsName) {
 		if (!hasExtraQueryDataSourceConfig()) {
 			return null;
@@ -320,10 +367,6 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		}
 		
 		throw new ForbiddenOperationException("The table '" + dsName + "'cannot be foud on the mapping src tables");
-	}
-	
-	public boolean isFullLoaded() {
-		return this.fullLoaded;
 	}
 	
 	public static SrcConf fastCreate(AbstractTableConfiguration tableConfig, EtlItemConfiguration itemConf, Connection conn)
@@ -400,20 +443,20 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return fields;
 	}
 	
-	public boolean hasExtraTableDataSourceConfig() {
+	public Boolean hasExtraTableDataSourceConfig() {
 		return utilities.listHasElement(this.getExtraTableDataSource());
 	}
 	
-	public boolean hasExtraQueryDataSourceConfig() {
+	public Boolean hasExtraQueryDataSourceConfig() {
 		return utilities.listHasElement(this.getExtraQueryDataSource());
 		
 	}
 	
-	public boolean hasExtraObjectDataSourceConfig() {
+	public Boolean hasExtraObjectDataSourceConfig() {
 		return utilities.listHasElement(this.getExtraObjectDataSource());
 	}
 	
-	public boolean hasRequiredExtraDataSource() {
+	public Boolean hasRequiredExtraDataSource() {
 		if (hasExtraDataSource()) {
 			return false;
 		} else {
@@ -427,11 +470,11 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return false;
 	}
 	
-	public boolean hasEtlFields() {
+	public Boolean hasEtlFields() {
 		return utilities.listHasElement(this.getEtlFields());
 	}
 	
-	public EtlField getEtlField(String fieldName, List<EtlDataSource> preferredDataSource, boolean deepCheck) {
+	public EtlField getEtlField(String fieldName, List<EtlDataSource> preferredDataSource, Boolean deepCheck) {
 		if (utilities.listHasElement(preferredDataSource)) {
 			for (EtlDataSource ds : preferredDataSource) {
 				EtlField f = getEtlField(fieldName, deepCheck, ds);
@@ -447,7 +490,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return null;
 	}
 	
-	private EtlField getEtlField(String fieldName, boolean deepCheck, EtlDataSource preferredDataSource) {
+	private EtlField getEtlField(String fieldName, Boolean deepCheck, EtlDataSource preferredDataSource) {
 		
 		EtlField found = null;
 		
@@ -499,11 +542,11 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return null;
 	}
 	
-	public boolean hasExtraDataSource() {
+	public Boolean hasExtraDataSource() {
 		return utilities.listHasElement(getAvaliableExtraDataSource());
 	}
 	
-	public boolean isComplex() {
+	public Boolean isComplex() {
 		return hasRequiredExtraDataSource();
 	}
 	
@@ -644,7 +687,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	}
 	
 	@Override
-	public boolean isJoinable() {
+	public Boolean isJoinable() {
 		return this.getParentConf().hasParentItemConf();
 	}
 	
@@ -706,7 +749,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	}
 	
 	@Override
-	public boolean isMainJoiningEntity() {
+	public Boolean isMainJoiningEntity() {
 		return !isJoinable();
 	}
 	

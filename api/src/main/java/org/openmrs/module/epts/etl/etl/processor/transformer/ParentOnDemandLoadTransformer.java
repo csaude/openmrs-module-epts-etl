@@ -382,25 +382,29 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		EtlDatabaseObject dstParent = null;
 		EtlDatabaseObject srcParent = null;
 		
-		try {
-			srcParent = resolveSrcParent(processor, srcObject, transformedRecord, additionalSrcObjects, srcConn, dstConn);
+		if (existingSrcParentIsApplicable()) {
 			
-			dstParent = resolveParent(processor, srcParent, srcObject, transformedRecord, additionalSrcObjects, srcConn,
-			    dstConn);
-		}
-		catch (InconsistentStateException e) {
-			
-			ParentTable parentInfo = ((TableConfiguration) srcObject.getRelatedConfiguration())
-			        .findParentRefInfoByParentTable(parentTableName);
-			
-			parentInfo.setTableName(parentTableName);
-			
-			InconsistenceInfo i = InconsistenceInfo.generate(srcObject, parentInfo,
-			    processor.getRelatedEtlConfiguration().getOriginAppLocationCode());
-			
-			srcObject.setFieldValue(this.parentSourceField, null);
-			
-			i.save(relatedDstConf, srcConn);
+			try {
+				srcParent = resolveSrcParent(processor, srcObject, transformedRecord, additionalSrcObjects, srcConn,
+				    dstConn);
+				
+				dstParent = resolveParent(processor, srcParent, srcObject, transformedRecord, additionalSrcObjects, srcConn,
+				    dstConn);
+			}
+			catch (InconsistentStateException e) {
+				
+				ParentTable parentInfo = ((TableConfiguration) srcObject.getRelatedConfiguration())
+				        .findParentRefInfoByParentTable(parentTableName);
+				
+				parentInfo.setTableName(parentTableName);
+				
+				InconsistenceInfo i = InconsistenceInfo.generate(srcObject, parentInfo,
+				    processor.getRelatedEtlConfiguration().getOriginAppLocationCode());
+				
+				srcObject.setFieldValue(this.parentSourceField, null);
+				
+				i.save(relatedDstConf, srcConn);
+			}
 		}
 		
 		if (dstParent == null) {
@@ -531,18 +535,10 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		SrcConf srcConf = null;
 		DstConf dstConf = null;
 		
-		if (srcObject != null) {
-			ensureDstConfForExistingSrcParentInitialized(dstConn);
-			
-			srcConf = loadSrcConfForExistingSrcParentIfNeeded(srcConn, dstConn);
-			dstConf = getDstConfForExistingSrcParent(srcConn, dstConn);
-			
-		} else {
-			ensureDstConfForNonExistingSrcParentInitialized(srcConn, dstConn);
-			
-			srcConf = loadSrcConfForNonExistingSrcParentIfNeeded(srcConn, dstConn);
-			dstConf = getDstConfForNonExistingSrcParent(srcConn, dstConn);
-		}
+		ensureDstConfForNonExistingSrcParentInitialized(srcConn, dstConn);
+		
+		srcConf = loadSrcConfForNonExistingSrcParentIfNeeded(srcConn, dstConn);
+		dstConf = getDstConfForNonExistingSrcParent(srcConn, dstConn);
 		
 		ensureOnDemandCheckConditionElementsInitialized(srcConn, dstConn);
 		
@@ -665,6 +661,10 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	}
 	
 	void ensureDstConfForExistingSrcParentInitialized(Connection dstConn) throws DBException {
+		if (this.parentSourceIdMapping == null) {
+			throw new EtlExceptionImpl("Existing SrcParent not applicable as no parentSourceIdMapping is defined!");
+		}
+		
 		ensureEtlItemConfForExistingSrcParentInitialized(dstConn, dstConn);
 		
 		DstConf dstConf = getDstConfForExistingSrcParent(dstConn, dstConn);
@@ -739,8 +739,11 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		
 		if (template != null) {
 			template.setParameters(this.templateParams);
+			conf.setSrcConf(null);
 			conf.setTemplate(template);
-			conf.tryToLoadFromTemplate();
+			conf.init(relatedDstConf.getRelatedEtlConf(), false);
+			
+			conf.getRelatedEtlConf().logTrace("Template within transformer loaded!");
 		}
 		
 		conf.setParentItemConf(relatedDstConf.getParentConf());
@@ -750,11 +753,17 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		
 		conf.fullLoad(relatedDstConf.getRelatedEtlConf().getOperations().get(0));
 		
-		conf.getSrcConf().fullLoad(srcConn);
 		return conf;
 	}
 	
+	boolean existingSrcParentIsApplicable() {
+		return this.parentSourceIdMapping != null;
+	}
+	
 	void ensureEtlItemConfForExistingSrcParentInitialized(Connection srcConn, Connection dstConn) throws DBException {
+		if (this.parentSourceIdMapping == null) {
+			throw new EtlExceptionImpl("Existing SrcParent not applicable as no parentSourceIdMapping is defined!");
+		}
 		
 		if (this.existingParentItemConf == null) {
 			synchronized (lock) {

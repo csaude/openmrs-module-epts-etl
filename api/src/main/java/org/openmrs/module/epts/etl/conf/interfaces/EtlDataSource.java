@@ -22,7 +22,7 @@ public interface EtlDataSource extends DatabaseObjectConfiguration {
 	
 	void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery);
 	
-	default boolean isPrepared() {
+	default Boolean isPrepared() {
 		return this.getDefaultPreparedQuery() != null;
 	}
 	
@@ -52,7 +52,7 @@ public interface EtlDataSource extends DatabaseObjectConfiguration {
 		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(engine, srcConn);
 	}
 	
-	default void loadOwnFieldsToEtlFields(List<EtlField> etlFields, boolean presereOriginalNames) {
+	default void loadOwnFieldsToEtlFields(List<EtlField> etlFields, Boolean presereOriginalNames) {
 		if (etlFields == null)
 			throw new ForbiddenOperationException("The 'etlFields' is null");
 		

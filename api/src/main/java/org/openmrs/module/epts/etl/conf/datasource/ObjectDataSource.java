@@ -38,11 +38,11 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	
 	private List<DataSourceField> objectFields;
 	
-	private boolean fullLoaded;
+	private Boolean fullLoaded;
 	
 	private SrcConf relatedSrcConf;
 	
-	private boolean required;
+	private Boolean required;
 	
 	private String fieldsValuesGenerator;
 	
@@ -93,7 +93,7 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 		this.name = name;
 	}
 	
-	public void setRequired(boolean required) {
+	public void setRequired(Boolean required) {
 		this.required = required;
 	}
 	
@@ -103,8 +103,8 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public boolean isFullLoaded() {
-		return this.fullLoaded;
+	public Boolean isFullLoaded() {
+		return isTrue(this.fullLoaded);
 	}
 	
 	@Override
@@ -125,7 +125,7 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 		}
 	}
 	
-	public boolean hasObjectFields() {
+	public Boolean hasObjectFields() {
 		return utilities.listHasElement(this.getObjectFields());
 	}
 	
@@ -201,18 +201,18 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public boolean hasPK() {
-		return false;
+	public Boolean hasPK() {
+		return false_();
 	}
 	
 	@Override
-	public boolean hasPK(Connection conn) throws DBException {
-		return false;
+	public Boolean hasPK(Connection conn) throws DBException {
+		return false_();
 	}
 	
 	@Override
-	public boolean isMetadata() {
-		return false;
+	public Boolean isMetadata() {
+		return false_();
 	}
 	
 	@Override
@@ -226,12 +226,12 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public boolean isDestinationInstallationType() {
-		return false;
+	public Boolean isDestinationInstallationType() {
+		return false_();
 	}
 	
 	@Override
-	public void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass) {
+	public void generateRecordClass(DBConnectionInfo connInfo, Boolean fullClass) {
 	}
 	
 	@Override
@@ -250,8 +250,8 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public boolean isMustLoadChildrenInfo() {
-		return false;
+	public Boolean isMustLoadChildrenInfo() {
+		return false_();
 	}
 	
 	@Override
@@ -314,13 +314,13 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public boolean isRequired() {
-		return required;
+	public Boolean isRequired() {
+		return isTrue(required);
 	}
 	
 	@Override
-	public boolean allowMultipleSrcObjectsForLoading() {
-		return true;
+	public Boolean allowMultipleSrcObjectsForLoading() {
+		return true_();
 	}
 	
 	@Override
@@ -328,7 +328,7 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 		return null;
 	}
 	
-	public boolean hasFieldsValuesGenerator() {
+	public Boolean hasFieldsValuesGenerator() {
 		return utilities.stringHasValue(fieldsValuesGenerator);
 	}
 	

@@ -25,9 +25,9 @@ public interface MainJoiningEntity extends TableConfiguration {
 	 * 
 	 * @return
 	 */
-	boolean isJoinable();
+	Boolean isJoinable();
 	
-	boolean doNotUseAsDatasource();
+	Boolean doNotUseAsDatasource();
 	
 	/**
 	 * @return return this main joining entity as {@link JoinableEntity}
@@ -35,7 +35,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 	 */
 	JoinableEntity parseToJoinable() throws ForbiddenOperationException;
 	
-	default boolean hasAuxExtractTable() {
+	default Boolean hasAuxExtractTable() {
 		return utils.listHasElement(this.getJoiningTable());
 	}
 	

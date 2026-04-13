@@ -30,7 +30,7 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	/*
 	 * Generic setNullDueInconsistency value which will be applied to all auto mapped field if the ref is not specified
 	 */
-	private boolean setNullDueInconsistency;
+	private Boolean setNullDueInconsistency;
 	
 	public ParentTableImpl() {
 	}
@@ -64,8 +64,8 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 	}
 	
 	@Override
-	public boolean isGeneric() {
-		return false;
+	public Boolean isGeneric() {
+		return false_();
 	}
 	
 	@Override
@@ -81,11 +81,11 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 		this.defaultValueDueInconsistency = defaultValueDueInconsistency;
 	}
 	
-	public boolean isSetNullDueInconsistency() {
-		return setNullDueInconsistency;
+	public Boolean isSetNullDueInconsistency() {
+		return isTrue(setNullDueInconsistency);
 	}
 	
-	public void setSetNullDueInconsistency(boolean setNullDueInconsistency) {
+	public void setSetNullDueInconsistency(Boolean setNullDueInconsistency) {
 		this.setNullDueInconsistency = setNullDueInconsistency;
 	}
 	
@@ -127,7 +127,7 @@ public class ParentTableImpl extends AbstractRelatedTable implements ParentTable
 		this.childTableConf = (TableConfiguration) relatedTabConf;
 	}
 	
-	public boolean hasConditionalFields() {
+	public Boolean hasConditionalFields() {
 		return utilities.listHasElement(this.conditionalFields);
 	}
 	

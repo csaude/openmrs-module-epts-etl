@@ -39,8 +39,8 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public boolean isGeneric() {
-		return false;
+	public Boolean isGeneric() {
+		return false_();
 	}
 	
 	@Override
@@ -67,7 +67,7 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public void generateRecordClass(DBConnectionInfo app, boolean fullClass) {
+	public void generateRecordClass(DBConnectionInfo app, Boolean fullClass) {
 		// TODO Auto-generated method stub
 		
 	}

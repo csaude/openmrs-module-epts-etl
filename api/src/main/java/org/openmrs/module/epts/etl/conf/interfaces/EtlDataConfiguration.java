@@ -3,8 +3,6 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -16,6 +14,7 @@ import org.openmrs.module.epts.etl.conf.DefaultEtlValidator;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTemplate;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
+import org.openmrs.module.epts.etl.conf.TemplateOverride;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -48,62 +47,48 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	void setTemplate(EtlTemplateInfo template);
 	
 	default void tryToLoadFromTemplate() {
-		if (this.getTemplate() != null) {
+		if (this.hasTemplate()) {
 			EtlConfigurationTemplate template = EtlConfigurationTemplate.findTemplate(this.getRelatedEtlConf(),
 			    this.getTemplate().getName());
 			
-			EtlDataConfiguration parentFromTemplate = null;
-			
-			if (template.isExtension()) {
-				EtlConfigurationTemplate baseTemplate = EtlConfigurationTemplate.findTemplate(this.getRelatedEtlConf(),
-				    template.getExtendsTemplate());
-				
-				Set<String> childParams = template.getParameters() != null ? template.getParameters() : new HashSet<>();
-				Set<String> parentParams = baseTemplate.getParameters() != null ? baseTemplate.getParameters()
-				        : new HashSet<>();
-				
-				Map<String, Object> inputParams = this.getTemplate().getParameters() != null
-				        ? this.getTemplate().getParameters()
-				        : new HashMap<>();
-				
-				Map<String, Object> params = new HashMap<>();
-				
-				for (String paramFromChild : childParams) {
-					if (parentParams.contains(paramFromChild)) {
-						params.put(paramFromChild, inputParams.get(paramFromChild));
-					}
-				}
-				
-				parentFromTemplate = baseTemplate.parseToEtlDataConfiguration(this.getClass(),
-				    this.getTemplate().getParameters());
-				
-			}
+			template.setRelatedEtlConf(getRelatedEtlConf());
 			
 			EtlDataConfiguration fromTemplate = template.parseToEtlDataConfiguration(this.getClass(),
 			    this.getTemplate().getParameters());
 			
 			fromTemplate.setRelatedEtlConfig(getRelatedEtlConf());
 			
-			fromTemplate.tryToLoadFromTemplate();
+			this.copyFromTemplate(fromTemplate, this.getTemplate().getName());
 			
-			if (parentFromTemplate != null) {
-				fromTemplate.copyFromTemplate(parentFromTemplate);
+			this.ensureTemplateOverride();
+		}
+		
+	}
+	
+	default void ensureTemplateOverride() {
+		if (this.hasTemplate() && this.getTemplate().hasOverride()) {
+			for (TemplateOverride override : this.getTemplate().getOverride()) {
+				override.applyOverride(this);
 			}
-			
-			this.copyFromTemplate(fromTemplate);
 		}
 	}
 	
+	default boolean hasTemplate() {
+		return this.getTemplate() != null;
+	}
+	
 	@SuppressWarnings("unchecked")
-	default void copyFromTemplate(EtlDataConfiguration template) {
+	default void copyFromTemplate(EtlDataConfiguration template, String templateName) {
 		
 		if (template == null) {
 			return;
 		}
 		
+		String errorSufix = "Error happened Within template: " + templateName;
+		
 		if (!this.getClass().isAssignableFrom(template.getClass())
 		        && !template.getClass().isAssignableFrom(this.getClass())) {
-			throw new EtlExceptionImpl("Incompatible template type: " + template.getClass().getName());
+			throw new EtlExceptionImpl(errorSufix + "> Incompatible template type: " + template.getClass().getName());
 		}
 		
 		Class<?> currentClass = this.getClass();
@@ -145,13 +130,13 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 							List<Object> currentList = (List<Object>) currentValue;
 							currentList.addAll(templateList);
 						} else {
-							throw new EtlExceptionImpl(
-							        "Field '" + field.getName() + "' is not a List but template provides a List.");
+							throw new EtlExceptionImpl(errorSufix + "> Field '" + field.getName()
+							        + "' is not a List but template provides a List.");
 						}
 						
 					} else {
-						if (currentValue != null) {
-							throw new EtlExceptionImpl("Field '" + field.getName()
+						if (!canBeOverriten(currentValue, field)) {
+							throw new EtlExceptionImpl(errorSufix + ">  Field '" + field.getName()
 							        + "' already has a value and cannot be overridden by template.");
 						}
 						
@@ -160,12 +145,52 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 					
 				}
 				catch (IllegalAccessException e) {
-					throw new EtlExceptionImpl("Error copying field '" + field.getName() + "' from template.", e);
+					throw new EtlExceptionImpl(
+					        errorSufix + ">  Error copying field '" + field.getName() + "' from template.", e);
 				}
 			}
 			
 			currentClass = currentClass.getSuperclass();
 		}
+	}
+	
+	static String[] SAFE_FIELDS = { "relatedEtlConf", "loadHealper" };
+	
+	public static boolean canBeOverriten(Object value, Field field) {
+		
+		Class<?> type = field.getType();
+		
+		if (value == null) {
+			return true;
+		}
+		
+		if (type.isPrimitive()) {
+			if (type == boolean.class)
+				return !(Boolean) value;
+			if (type == char.class)
+				return ((Character) value) == '\u0000';
+			if (type == byte.class)
+				return ((Byte) value) == 0;
+			if (type == short.class)
+				return ((Short) value) == 0;
+			if (type == int.class)
+				return ((Integer) value) == 0;
+			if (type == long.class)
+				return ((Long) value) == 0L;
+			if (type == float.class)
+				return ((Float) value) == 0f;
+			if (type == double.class)
+				return ((Double) value) == 0d;
+		} else {
+			try {
+				return utilities.getPosOnArray(SAFE_FIELDS, field.getName()) >= 0;
+			}
+			catch (RuntimeException e) {
+				return false;
+			}
+		}
+		
+		return false;
 	}
 	
 	public static String resolvePlaceholders(String text, Set<String> allowedPlaceholders, Properties fileProps,

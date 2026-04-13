@@ -22,8 +22,8 @@ public class EtlItemSrcConf extends SrcConf {
 	private EtlItemConfiguration relatedItemConf;
 	
 	@Override
-	public boolean isGeneric() {
-		return false;
+	public Boolean isGeneric() {
+		return false_();
 	}
 	
 	public List<AuxExtractTable> getAuxExtractTable() {
@@ -66,13 +66,13 @@ public class EtlItemSrcConf extends SrcConf {
 	}
 	
 	@Override
-	public boolean isJoinable() {
-		return false;
+	public Boolean isJoinable() {
+		return false_();
 	}
 	
 	@Override
-	public boolean doNotUseAsDatasource() {
-		return false;
+	public Boolean doNotUseAsDatasource() {
+		return false_();
 	}
 	
 	@Override

@@ -30,11 +30,11 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	
 	private List<Key> fields;
 	
-	private boolean fieldValuesLoaded;
+	private Boolean fieldValuesLoaded;
 	
 	private TableConfiguration tabConf;
 	
-	private boolean manualConfigured;
+	private Boolean manualConfigured;
 	
 	public UniqueKeyInfo() {
 	}
@@ -51,25 +51,25 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	@JsonIgnore
-	public boolean isManualConfigured() {
-		return manualConfigured;
+	public Boolean isManualConfigured() {
+		return manualConfigured != null && manualConfigured;
 	}
 	
-	public void setManualConfigured(boolean manualConfigured) {
+	public void setManualConfigured(Boolean manualConfigured) {
 		this.manualConfigured = manualConfigured;
 	}
 	
 	@JsonIgnore
-	public boolean isFieldValuesLoaded() {
-		return fieldValuesLoaded;
+	public Boolean isFieldValuesLoaded() {
+		return fieldValuesLoaded != null && fieldValuesLoaded;
 	}
 	
-	public void setFieldValuesLoaded(boolean fieldValuesLoaded) {
+	public void setFieldValuesLoaded(Boolean fieldValuesLoaded) {
 		this.fieldValuesLoaded = fieldValuesLoaded;
 	}
 	
 	@JsonIgnore
-	public boolean isCompositeKey() {
+	public Boolean isCompositeKey() {
 		return utilities.arrayHasMoreThanOneElements(this.fields);
 	}
 	
@@ -227,7 +227,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		
 	}
 	
-	private static boolean addUniqueKey(String keyName, List<Key> keyElements, List<UniqueKeyInfo> uniqueKeys,
+	private static Boolean addUniqueKey(String keyName, List<Key> keyElements, List<UniqueKeyInfo> uniqueKeys,
 	        TableConfiguration config, Connection conn) {
 		
 		if (keyElements == null || keyElements.isEmpty())
@@ -252,7 +252,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		}
 	}
 	
-	public boolean isContained(List<UniqueKeyInfo> uniqueKeys) {
+	public Boolean isContained(List<UniqueKeyInfo> uniqueKeys) {
 		if (!utilities.listHasElement(uniqueKeys)) {
 			return false;
 		}
@@ -287,7 +287,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		return false;
 	}
 	
-	public boolean hasSameValues(UniqueKeyInfo otherUniqueKey) {
+	public Boolean hasSameValues(UniqueKeyInfo otherUniqueKey) {
 		
 		if (!this.hasSameFields(otherUniqueKey)) {
 			throw new ForbiddenOperationException("The unique keys has diffents keys");
@@ -310,7 +310,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		
 	}
 	
-	public boolean hasSameFields(UniqueKeyInfo other) {
+	public Boolean hasSameFields(UniqueKeyInfo other) {
 		
 		if (!this.hasFields() || !other.hasFields()) {
 			return false;
@@ -330,7 +330,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	@JsonIgnore
-	public boolean hasName() {
+	public Boolean hasName() {
 		return utilities.stringHasValue(getKeyName());
 	}
 	
@@ -424,7 +424,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	public static List<UniqueKeyInfo> cloneAllAndLoadValues(List<UniqueKeyInfo> uniqueKeysInfo, EtlDatabaseObject obj,
-	        boolean keepUkName) {
+	        Boolean keepUkName) {
 		List<UniqueKeyInfo> uks = cloneAll_(uniqueKeysInfo);
 		
 		if (utilities.listHasElement(uks)) {
@@ -676,7 +676,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		setTabConf(tabConf, true);
 	}
 	
-	public void setTabConf(TableConfiguration tabConf, boolean checkFields) {
+	public void setTabConf(TableConfiguration tabConf, Boolean checkFields) {
 		if (!checkFields) {
 			this.tabConf = tabConf;
 		} else {
@@ -769,17 +769,17 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		return null;
 	}
 	
-	public boolean containsKey(Key key) {
+	public Boolean containsKey(Key key) {
 		return getKey(key.getName()) != null;
 	}
 	
 	@JsonIgnore
-	public boolean hasFields() {
+	public Boolean hasFields() {
 		return utilities.listHasElement(this.fields);
 	}
 	
 	@JsonIgnore
-	public boolean hasNullFields() {
+	public Boolean hasNullFields() {
 		if (!isFieldValuesLoaded())
 			throw new ForbiddenOperationException(
 			        "The values for the fields was not loaded. Please call loadValuesToFields(EtlDatabaseObject object) before you try to call this method");

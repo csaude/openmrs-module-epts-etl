@@ -22,7 +22,7 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	private Extension extension;
 	
-	private boolean dataTypeLoaded;
+	private Boolean dataTypeLoaded;
 	
 	private Object defaultValue;
 	
@@ -117,11 +117,11 @@ public class DataSourceField extends Field implements TransformableField {
 		this.extension = extension;
 	}
 	
-	public boolean isDataTypeLoaded() {
-		return dataTypeLoaded;
+	public Boolean isDataTypeLoaded() {
+		return dataTypeLoaded != null && dataTypeLoaded;
 	}
 	
-	public void setDataTypeLoaded(boolean dataTypeLoaded) {
+	public void setDataTypeLoaded(Boolean dataTypeLoaded) {
 		this.dataTypeLoaded = dataTypeLoaded;
 	}
 	
@@ -133,7 +133,7 @@ public class DataSourceField extends Field implements TransformableField {
 		this.auxFieldMapping = auxFieldMapping;
 	}
 	
-	public boolean hasAuxFieldMapping() {
+	public Boolean hasAuxFieldMapping() {
 		return this.auxFieldMapping != null;
 	}
 	
@@ -160,8 +160,8 @@ public class DataSourceField extends Field implements TransformableField {
 	}
 	
 	@Override
-	public boolean hasSrcField() {
-		return false;
+	public Boolean hasSrcField() {
+		return Boolean.FALSE;
 	}
 	
 	@Override

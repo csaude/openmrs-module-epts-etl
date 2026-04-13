@@ -43,4 +43,15 @@ public abstract class AbstractBaseConfiguration implements BaseConfiguration {
 		return utilities.listHasElement(this.validators);
 	}
 	
+	public static Boolean isTrue(Boolean b) {
+		return b != null && b;
+	}
+	
+	public static Boolean false_() {
+		return Boolean.FALSE;
+	}
+	
+	public static Boolean true_() {
+		return Boolean.TRUE;
+	}
 }

@@ -41,11 +41,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private String sharePkWith;
 	
-	private boolean metadata;
+	private Boolean metadata;
 	
-	protected boolean fullLoaded;
+	protected Boolean fullLoaded;
 	
-	private boolean removeForbidden;
+	private Boolean removeForbidden;
 	
 	/**
 	 * List the field to observe when sync by date (ex: date_created, date_update, etc)
@@ -72,11 +72,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
-	private boolean autoIncrementId;
+	private Boolean autoIncrementId;
 	
-	private boolean disabled;
+	private Boolean disabled;
 	
-	private boolean mustLoadChildrenInfo;
+	private Boolean mustLoadChildrenInfo;
 	
 	private String extraConditionForExtract;
 	
@@ -88,33 +88,33 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	protected DatabaseObjectLoaderHelper loadHealper;
 	
-	private boolean allRelatedTablesFullLoaded;
+	private Boolean allRelatedTablesFullLoaded;
 	
 	private String schema;
 	
-	private boolean usingManualDefinedAlias;
+	private Boolean usingManualDefinedAlias;
 	
 	private String insertSQLQuestionMarksWithObjectId;
 	
 	private String insertSQLQuestionMarksWithoutObjectId;
 	
-	private boolean includePrimaryKeyOnInsert;
+	private Boolean includePrimaryKeyOnInsert;
 	
-	private boolean uniqueKeyInfoLoaded;
+	private Boolean uniqueKeyInfoLoaded;
 	
-	private boolean primaryKeyInfoLoaded;
+	private Boolean primaryKeyInfoLoaded;
 	
-	private boolean fieldsLoaded;
+	private Boolean fieldsLoaded;
 	
-	private boolean tableNameInfoLoaded;
+	private Boolean tableNameInfoLoaded;
 	
-	private boolean parentsLoaded;
+	private Boolean parentsLoaded;
 	
 	private ConflictResolutionType onConflict;
 	
-	private boolean useMysqlInsertIgnore;
+	private Boolean useMysqlInsertIgnore;
 	
-	private boolean ignoreMissingParameters;
+	private Boolean ignoreMissingParameters;
 	
 	private AutoIncrementHandlingType autoIncrementHandlingType;
 	
@@ -122,13 +122,22 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	public AbstractTableConfiguration() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
-		this.onConflict = ConflictResolutionType.MAKE_YOUR_DECISION;
 	}
 	
 	public AbstractTableConfiguration(String tableName) {
 		this();
 		
 		this.tableName = tableName;
+	}
+	
+	@Override
+	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
+		if (this.loadHealper == null) {
+			this.loadHealper = new DatabaseObjectLoaderHelper(this);
+		}
+		if (this.onConflict == null) {
+			this.onConflict = ConflictResolutionType.MAKE_YOUR_DECISION;
+		}
 	}
 	
 	@Override
@@ -151,15 +160,15 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.autoIncrementHandlingType = autoIncrementHandlingType;
 	}
 	
-	public boolean isIgnoreMissingParameters() {
-		return ignoreMissingParameters;
+	public Boolean isIgnoreMissingParameters() {
+		return isTrue(ignoreMissingParameters);
 	}
 	
-	public boolean ignoreMissingParameters() {
-		return ignoreMissingParameters;
+	public Boolean ignoreMissingParameters() {
+		return isTrue(ignoreMissingParameters);
 	}
 	
-	public void setIgnoreMissingParameters(boolean ignoreMissingParameters) {
+	public void setIgnoreMissingParameters(Boolean ignoreMissingParameters) {
 		this.ignoreMissingParameters = ignoreMissingParameters;
 	}
 	
@@ -171,81 +180,81 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.manualMapPrimaryKeyOnField = manualMapPrimaryKeyOnField;
 	}
 	
-	public boolean isUseMysqlInsertIgnore() {
-		return useMysqlInsertIgnore;
+	public Boolean isUseMysqlInsertIgnore() {
+		return isTrue(useMysqlInsertIgnore);
 	}
 	
 	@Override
-	public boolean useMysqlInsertIgnore() {
+	public Boolean useMysqlInsertIgnore() {
 		return isUseMysqlInsertIgnore();
 	}
 	
-	public void setUseMysqlInsertIgnore(boolean useMysqlInsertIgnore) {
+	public void setUseMysqlInsertIgnore(Boolean useMysqlInsertIgnore) {
 		this.useMysqlInsertIgnore = useMysqlInsertIgnore;
 	}
 	
 	@Override
-	public boolean isParentsLoaded() {
-		return parentsLoaded;
+	public Boolean isParentsLoaded() {
+		return isTrue(parentsLoaded);
 	}
 	
 	@Override
-	public void setParentsLoaded(boolean parentsLoaded) {
+	public void setParentsLoaded(Boolean parentsLoaded) {
 		this.parentsLoaded = parentsLoaded;
 	}
 	
 	@Override
-	public boolean isFieldsLoaded() {
-		return fieldsLoaded;
+	public Boolean isFieldsLoaded() {
+		return isTrue(fieldsLoaded);
 	}
 	
 	@Override
-	public void setFieldsLoaded(boolean fieldsLoaded) {
+	public void setFieldsLoaded(Boolean fieldsLoaded) {
 		this.fieldsLoaded = fieldsLoaded;
 	}
 	
 	@Override
-	public boolean isTableNameInfoLoaded() {
-		return tableNameInfoLoaded;
+	public Boolean isTableNameInfoLoaded() {
+		return isTrue(tableNameInfoLoaded);
 	}
 	
 	@Override
-	public void setTableNameInfoLoaded(boolean tableNameInfoLoaded) {
+	public void setTableNameInfoLoaded(Boolean tableNameInfoLoaded) {
 		this.tableNameInfoLoaded = tableNameInfoLoaded;
 	}
 	
 	@Override
-	public boolean isPrimaryKeyInfoLoaded() {
-		return primaryKeyInfoLoaded;
+	public Boolean isPrimaryKeyInfoLoaded() {
+		return isTrue(primaryKeyInfoLoaded);
 	}
 	
 	@Override
-	public void setPrimaryKeyInfoLoaded(boolean primaryKeyInfoLoaded) {
+	public void setPrimaryKeyInfoLoaded(Boolean primaryKeyInfoLoaded) {
 		this.primaryKeyInfoLoaded = primaryKeyInfoLoaded;
 	}
 	
 	@Override
-	public boolean isUniqueKeyInfoLoaded() {
-		return uniqueKeyInfoLoaded;
+	public Boolean isUniqueKeyInfoLoaded() {
+		return isTrue(uniqueKeyInfoLoaded);
 	}
 	
 	@Override
-	public void setUniqueKeyInfoLoaded(boolean uniqueKeyInfoLoaded) {
+	public void setUniqueKeyInfoLoaded(Boolean uniqueKeyInfoLoaded) {
 		this.uniqueKeyInfoLoaded = uniqueKeyInfoLoaded;
 	}
 	
 	@Override
-	public boolean includePrimaryKeyOnInsert() {
-		return includePrimaryKeyOnInsert;
+	public Boolean includePrimaryKeyOnInsert() {
+		return isTrue(includePrimaryKeyOnInsert);
 	}
 	
 	@Override
-	public void setIncludePrimaryKeyOnInsert(boolean includePrimaryKeyOnInsert) {
+	public void setIncludePrimaryKeyOnInsert(Boolean includePrimaryKeyOnInsert) {
 		this.includePrimaryKeyOnInsert = includePrimaryKeyOnInsert;
 	}
 	
-	public boolean isIncludePrimaryKeyOnInsert() {
-		return includePrimaryKeyOnInsert;
+	public Boolean isIncludePrimaryKeyOnInsert() {
+		return isTrue(includePrimaryKeyOnInsert);
 	}
 	
 	@Override
@@ -268,13 +277,13 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.insertSQLQuestionMarksWithoutObjectId = insertSQLQuestionMarksWithoutObjectId;
 	}
 	
-	public void setUsingManualDefinedAlias(boolean usingManualDefinedAlias) {
+	public void setUsingManualDefinedAlias(Boolean usingManualDefinedAlias) {
 		this.usingManualDefinedAlias = usingManualDefinedAlias;
 	}
 	
 	@Override
-	public boolean isUsingManualDefinedAlias() {
-		return this.usingManualDefinedAlias;
+	public Boolean isUsingManualDefinedAlias() {
+		return isTrue(this.usingManualDefinedAlias);
 	}
 	
 	@Override
@@ -386,11 +395,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		}
 	}
 	
-	public boolean isAllRelatedTablesFullLoaded() {
-		return allRelatedTablesFullLoaded;
+	public Boolean isAllRelatedTablesFullLoaded() {
+		return isTrue(allRelatedTablesFullLoaded);
 	}
 	
-	public void setAllRelatedTablesFullLoaded(boolean allRelatedTablesFullLoaded) {
+	public void setAllRelatedTablesFullLoaded(Boolean allRelatedTablesFullLoaded) {
 		this.allRelatedTablesFullLoaded = allRelatedTablesFullLoaded;
 	}
 	
@@ -403,7 +412,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		return syncRecordClass;
 	}
 	
-	public void setFullLoaded(boolean fullLoaded) {
+	public void setFullLoaded(Boolean fullLoaded) {
 		this.fullLoaded = fullLoaded;
 	}
 	
@@ -464,19 +473,19 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.extraConditionForExtract = extraConditionForExtract;
 	}
 	
-	public boolean isMustLoadChildrenInfo() {
-		return mustLoadChildrenInfo;
+	public Boolean isMustLoadChildrenInfo() {
+		return isTrue(mustLoadChildrenInfo);
 	}
 	
-	public void setMustLoadChildrenInfo(boolean mustLoadChildrenInfo) {
+	public void setMustLoadChildrenInfo(Boolean mustLoadChildrenInfo) {
 		this.mustLoadChildrenInfo = mustLoadChildrenInfo;
 	}
 	
-	public boolean isAutoIncrementId() {
-		return autoIncrementId;
+	public Boolean isAutoIncrementId() {
+		return isTrue(autoIncrementId);
 	}
 	
-	public void setAutoIncrementId(boolean autoIncrementId) {
+	public void setAutoIncrementId(Boolean autoIncrementId) {
 		this.autoIncrementId = autoIncrementId;
 	}
 	
@@ -488,7 +497,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.winningRecordFieldsInfo = winningRecordFieldsInfo;
 	}
 	
-	public boolean hasWinningRecordsInfo() {
+	public Boolean hasWinningRecordsInfo() {
 		return this.winningRecordFieldsInfo != null;
 	}
 	
@@ -530,11 +539,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.observationDateFields = observationDateFields;
 	}
 	
-	public boolean isRemoveForbidden() {
+	public Boolean isRemoveForbidden() {
 		return removeForbidden;
 	}
 	
-	public void setRemoveForbidden(boolean removeForbidden) {
+	public void setRemoveForbidden(Boolean removeForbidden) {
 		this.removeForbidden = removeForbidden;
 	}
 	
@@ -585,29 +594,30 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.syncRecordClass = syncRecordClass;
 	}
 	
-	public boolean isMetadata() {
-		return metadata;
+	@Override
+	public Boolean isMetadata() {
+		return isTrue(metadata);
 	}
 	
-	public void setMetadata(boolean metadata) {
+	public void setMetadata(Boolean metadata) {
 		this.metadata = metadata;
 	}
 	
 	@JsonIgnore
-	public boolean isFullLoaded() {
-		return fullLoaded;
+	public Boolean isFullLoaded() {
+		return isTrue(fullLoaded);
 	}
 	
-	public boolean isDisabled() {
-		return disabled;
+	public Boolean isDisabled() {
+		return isTrue(disabled);
 	}
 	
-	public void setDisabled(boolean disabled) {
+	public void setDisabled(Boolean disabled) {
 		this.disabled = disabled;
 	}
 	
 	@Override
-	public boolean hasPK() {
+	public Boolean hasPK() {
 		return this.primaryKey != null;
 	}
 	

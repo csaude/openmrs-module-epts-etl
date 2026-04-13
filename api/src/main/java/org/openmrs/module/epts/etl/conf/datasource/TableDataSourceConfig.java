@@ -59,8 +59,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public boolean doNotUseAsDatasource() {
-		return false;
+	public Boolean doNotUseAsDatasource() {
+		return Boolean.FALSE;
 	}
 	
 	@Override
@@ -91,7 +91,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public boolean isRequired() {
+	public Boolean isRequired() {
 		return this.joinType.isInnerJoin();
 	}
 	
@@ -181,8 +181,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public boolean allowMultipleSrcObjectsForLoading() {
-		return false;
+	public Boolean allowMultipleSrcObjectsForLoading() {
+		return Boolean.FALSE;
 	}
 	
 	public String generateJoinCondition() {
@@ -200,8 +200,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public boolean isGeneric() {
-		return false;
+	public Boolean isGeneric() {
+		return Boolean.FALSE;
 	}
 	
 	@Override
@@ -228,13 +228,13 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public boolean isJoinable() {
-		return true;
+	public Boolean isJoinable() {
+		return Boolean.TRUE;
 	}
 	
 	@Override
-	public boolean isMainJoiningEntity() {
-		return true;
+	public Boolean isMainJoiningEntity() {
+		return Boolean.TRUE;
 	}
 	
 	@Override

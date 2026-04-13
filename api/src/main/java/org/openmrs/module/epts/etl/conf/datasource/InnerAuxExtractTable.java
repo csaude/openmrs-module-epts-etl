@@ -36,7 +36,7 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	
 	private AuxExtractTable mainExtractTable;
 	
-	private boolean doNotUseAsDatasource;
+	private Boolean doNotUseAsDatasource;
 	
 	public InnerAuxExtractTable() {
 		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
@@ -52,22 +52,22 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 		this.joinExtraConditionScope = joinExtraConditionScope;
 	}
 	
-	public boolean isDoNotUseAsDatasource() {
-		return doNotUseAsDatasource;
+	public Boolean isDoNotUseAsDatasource() {
+		return  isTrue(doNotUseAsDatasource);
 	}
 	
 	@Override
-	public boolean doNotUseAsDatasource() {
+	public Boolean doNotUseAsDatasource() {
 		return isDoNotUseAsDatasource();
 	}
 	
-	public void setDoNotUseAsDatasource(boolean doNotUseAsDatasource) {
+	public void setDoNotUseAsDatasource(Boolean doNotUseAsDatasource) {
 		this.doNotUseAsDatasource = doNotUseAsDatasource;
 	}
 	
 	@Override
-	public boolean isGeneric() {
-		return false;
+	public Boolean isGeneric() {
+		return false_();
 	}
 	
 	@Override
@@ -124,8 +124,8 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	}
 	
 	@Override
-	public boolean isMainJoiningEntity() {
-		return false;
+	public Boolean isMainJoiningEntity() {
+		return false_();
 	}
 	
 	@Override

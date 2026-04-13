@@ -17,10 +17,8 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.regex.Matcher;
 
-import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.datasource.EtlConfigurationSrcConf;
 import org.openmrs.module.epts.etl.conf.datasource.EtlItemSrcConf;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -818,7 +816,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 						for (EtlItemConfiguration dItem : dynamicItems) {
 							allItem.add(dItem);
 							
-							initItem(dItem, false);
+							dItem.init(this, false);
 						}
 						
 					} else {
@@ -836,14 +834,18 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					
 					allItem.add(item);
 					
-					initItem(item, false);
+					logInfo("Starting initialization of item");
+					
+					item.init(this, false);
+					
+					logInfo("Item initialized: " + item.getConfigCode());
 				}
 			}
 			
 			this.setEtlItemConfiguration(allItem);
 			
 			if (this.hasTestingItem()) {
-				initItem(this.getTestingEtlItemConfiguration(), true);
+				this.getTestingEtlItemConfiguration().init(this, true);
 			}
 			
 			if (this.relatedEtlSrcTables != null) {
@@ -946,124 +948,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return this.getTestingEtlItemConfiguration() != null && !this.getTestingEtlItemConfiguration().isDisabled();
 	}
 	
-	public void initItem(EtlItemConfiguration item, boolean testing) {
-		item.tryToLoadFromTemplate();
-		
-		item.setRelatedEtlConfig(this);
-		item.getSrcConf().setParentConf(item);
-		
-		item.setTesting(testing);
-		
-		if (!item.getSrcConf().hasDstType()) {
-			//We start with the first operation dst type. Eventual this should be changed if the nested operation has different dstType
-			item.getSrcConf().setDstType(this.getOperations().get(0).getDstType());
-		}
-		
-		if (item.getSrcConf().hasAlias()) {
-			item.getSrcConf().setUsingManualDefinedAlias(true);
-			tryToAddToBusyTableAliasName(item.getSrcConf().getTableAlias());
-		}
-		
-		addConfiguredTable(item.getSrcConf());
-		
-		item.getSrcConf().tryToLoadSchemaInfo(item.getRelatedEtlSchemaObject());
-		
-		List<EtlAdditionalDataSource> allAvaliableDataSources = item.getSrcConf().getAvaliableExtraDataSource();
-		
-		for (EtlAdditionalDataSource t : allAvaliableDataSources) {
-			t.tryToLoadFromTemplate();
-			
-			if (t instanceof AbstractTableConfiguration) {
-				TableConfiguration tAsTabConf = (TableConfiguration) t;
-				
-				if (tAsTabConf.hasAlias()) {
-					tAsTabConf.setUsingManualDefinedAlias(true);
-					tryToAddToBusyTableAliasName(tAsTabConf.getTableAlias());
-				}
-				
-				addConfiguredTable((AbstractTableConfiguration) t);
-				t.setRelatedSrcConf(item.getSrcConf());
-			}
-			
-			t.setRelatedSrcConf(item.getSrcConf());
-		}
-		
-		if (item.getSrcConf().hasAuxExtractTable()) {
-			for (AuxExtractTable t : item.getSrcConf().getAuxExtractTable()) {
-				t.tryToLoadFromTemplate();
-				
-				if (t.hasAlias()) {
-					t.setUsingManualDefinedAlias(true);
-					
-					tryToAddToBusyTableAliasName(t.getTableAlias());
-				}
-			}
-		}
-		
-		String code = "";
-		
-		List<String> alreadyIncludedTables = new ArrayList<>();
-		
-		if (utilities.listHasElement(item.getDstConf())) {
-			for (DstConf dst : item.getDstConf()) {
-				dst.tryToLoadFromTemplate();
-				
-				dst.tryToLoadSchemaInfo(item.getRelatedEtlSchemaObject());
-				
-				if (dst.hasAlias()) {
-					dst.setUsingManualDefinedAlias(true);
-					
-					tryToAddToBusyTableAliasName(dst.getTableAlias());
-				}
-				
-				addConfiguredTable(dst);
-				
-				dst.setParentConf(item);
-				
-				if (!alreadyIncludedTables.contains(dst.getTableName())) {
-					alreadyIncludedTables.add(dst.getTableName());
-					
-					code = utilities.stringHasValue(code) ? code + "_and_" + dst.getTableName() : dst.getTableName();
-				}
-			}
-		}
-		
-		code = utilities.stringHasValue(code) ? code : item.getSrcConf().getTableName();
-		
-		code = item.getSrcConf().getTableName() + "_to_" + code;
-		
-		item.setShortCode(code);
-		
-		code += "_on_" + this.generateProcessId()
-		        + (item.hasParentItemConf() ? "_within_" + item.getParentItemConf().getShortCode() : "");
-		
-		item.setConfigCode(finalizeItemCodeGeneration(code));
-		
-		tryToLoadChildItemConf(item, testing);
-	}
-	
-	private void tryToLoadChildItemConf(EtlItemConfiguration item, boolean testing) {
-		if (item.hasChildItemConf()) {
-			for (EtlItemConfiguration childItem : item.getChildItemConf()) {
-				childItem.setParentItemConf(item);
-				childItem.setRelatedEtlConfig(this);
-				
-				if (!utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
-					if (utilities.arrayHasExactlyOneElement(item.getDstConf())) {
-						childItem.setRelatedParentDstConfName(item.getDstConf().get(0).getName());
-					} else {
-						throw new ForbiddenOperationException(
-						        "The relatedParentDstConfName was not defined for the conf " + item.getConfigCode());
-					}
-				}
-				
-				childItem.setRelatedParentDstConf(item.findDstConf(childItem.getRelatedParentDstConfName()));
-				
-				initItem(childItem, testing);
-			}
-		}
-	}
-	
 	synchronized String finalizeItemCodeGeneration(String code) {
 		if (this.generatedItemCodes == null)
 			this.generatedItemCodes = new ArrayList<>();
@@ -1081,7 +965,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return newCode;
 	}
 	
-	private void addConfiguredTable(AbstractTableConfiguration tableConfiguration) {
+	public void addConfiguredTable(AbstractTableConfiguration tableConfiguration) {
 		if (!this.configuredTables.contains(tableConfiguration)) {
 			this.configuredTables.add(tableConfiguration);
 		}
@@ -1733,7 +1617,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return null;
 	}
 	
-	private void tryToAddToBusyTableAliasName(String tableAlias) {
+	public void tryToAddToBusyTableAliasName(String tableAlias) {
 		if (this.busyTableAliasName == null) {
 			this.busyTableAliasName = new ArrayList<>();
 		}
@@ -1985,10 +1869,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@Override
 	public void setTemplate(EtlTemplateInfo template) {
-	}
-	
-	@Override
-	public void copyFromTemplate(EtlDataConfiguration template) {
 	}
 	
 	@Override

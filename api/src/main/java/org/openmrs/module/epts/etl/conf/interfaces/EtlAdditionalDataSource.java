@@ -58,7 +58,7 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 *
 	 * @return {@code true} if the data source is required; {@code false} otherwise
 	 */
-	boolean isRequired();
+	Boolean isRequired();
 	
 	/**
 	 * Indicates whether multiple source objects can be used when loading related data.
@@ -68,6 +68,6 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 *
 	 * @return {@code true} if multiple source objects are allowed; {@code false} otherwise
 	 */
-	boolean allowMultipleSrcObjectsForLoading();
+	Boolean allowMultipleSrcObjectsForLoading();
 	
 }

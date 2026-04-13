@@ -41,7 +41,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	
 	private List<InnerAuxExtractTable> auxExtractTable;
 	
-	private boolean doNotUseAsDatasource;
+	private Boolean doNotUseAsDatasource;
 	
 	public AuxExtractTable() {
 		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
@@ -61,16 +61,16 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 		return auxExtractTable;
 	}
 	
-	public boolean isDoNotUseAsDatasource() {
-		return doNotUseAsDatasource;
+	public Boolean isDoNotUseAsDatasource() {
+		return isTrue(doNotUseAsDatasource);
 	}
 	
 	@Override
-	public boolean doNotUseAsDatasource() {
+	public Boolean doNotUseAsDatasource() {
 		return isDoNotUseAsDatasource();
 	}
 	
-	public void setDoNotUseAsDatasource(boolean doNotUseAsDatasource) {
+	public void setDoNotUseAsDatasource(Boolean doNotUseAsDatasource) {
 		this.doNotUseAsDatasource = doNotUseAsDatasource;
 	}
 	
@@ -142,8 +142,8 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public boolean isGeneric() {
-		return false;
+	public Boolean isGeneric() {
+		return false_();
 	}
 	
 	@Override
@@ -156,8 +156,8 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public boolean isMainJoiningEntity() {
-		return true;
+	public Boolean isMainJoiningEntity() {
+		return true_();
 	}
 	
 	@Override
@@ -166,8 +166,8 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public boolean isJoinable() {
-		return true;
+	public Boolean isJoinable() {
+		return true_();
 	}
 	
 	@Override

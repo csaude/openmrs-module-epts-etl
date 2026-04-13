@@ -31,14 +31,24 @@ public class EtlConfigurationTemplate {
 	private JsonNode template;
 	
 	@JsonProperty("extends")
-	private String extendsTemplate;
+	private EtlTemplateInfo extendsTemplate;
 	
-	public void setExtendsTemplate(String extendsTemplate) {
-		this.extendsTemplate = extendsTemplate;
+	private EtlConfiguration relatedEtlConf;
+	
+	public EtlConfiguration getRelatedEtlConf() {
+		return relatedEtlConf;
 	}
 	
-	public String getExtendsTemplate() {
+	public void setRelatedEtlConf(EtlConfiguration relatedEtlConf) {
+		this.relatedEtlConf = relatedEtlConf;
+	}
+	
+	public EtlTemplateInfo getExtendsTemplate() {
 		return extendsTemplate;
+	}
+	
+	public void setExtendsTemplate(EtlTemplateInfo extendsTemplate) {
+		this.extendsTemplate = extendsTemplate;
 	}
 	
 	public String getName() {
@@ -65,23 +75,43 @@ public class EtlConfigurationTemplate {
 		this.template = template;
 	}
 	
-	public boolean isExtension() {
-		return utilities.stringHasValue(this.getExtendsTemplate());
+	public Boolean isExtension() {
+		return this.getExtendsTemplate() != null;
 	}
 	
 	public <T extends EtlDataConfiguration> T parseToEtlDataConfiguration(Class<T> clazz, Map<String, Object> inputParams) {
 		String json = null;
 		
 		try {
-			
 			validateAllowedParanms(inputParams);
 			validateMissingParanms(inputParams);
 			
 			json = EtlDataConfiguration.resolvePlaceholders(this.template.toString(), this.getParameters(), null, null,
 			    inputParams);
 			
-			return new ObjectMapperProvider().getContext(clazz).readValue(json, clazz);
+			EtlDataConfiguration parentFromTemplate = null;
 			
+			if (this.isExtension()) {
+				EtlConfigurationTemplate baseTemplate = EtlConfigurationTemplate.findTemplate(this.getRelatedEtlConf(),
+				    this.getExtendsTemplate().getName());
+				
+				this.getExtendsTemplate().ensureReplacementOfParametersPlaceHolders(inputParams);
+				
+				baseTemplate.setRelatedEtlConf(getRelatedEtlConf());
+				
+				parentFromTemplate = baseTemplate.parseToEtlDataConfiguration(clazz,
+				    this.getExtendsTemplate().getParameters());
+				
+				parentFromTemplate.ensureTemplateOverride();
+			}
+			
+			T etlDataConf = new ObjectMapperProvider().getContext(clazz).readValue(json, clazz);
+			
+			if (parentFromTemplate != null) {
+				etlDataConf.copyFromTemplate(parentFromTemplate, this.getName());
+			}
+			
+			return etlDataConf;
 		}
 		catch (IOException | IllegalArgumentException e) {
 			throw new EtlExceptionImpl("Error happened loading template " + this.name, e);

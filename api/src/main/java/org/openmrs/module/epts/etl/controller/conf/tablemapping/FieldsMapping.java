@@ -45,7 +45,7 @@ public class FieldsMapping extends Field implements TransformableField {
 	
 	private String dstField;
 	
-	private boolean mapToNullValue;
+	private Boolean mapToNullValue;
 	
 	private String transformer;
 	
@@ -53,7 +53,7 @@ public class FieldsMapping extends Field implements TransformableField {
 	
 	private Extension extension;
 	
-	private boolean dataTypeLoaded;
+	private Boolean dataTypeLoaded;
 	
 	private List<String> possibleSrc;
 	
@@ -76,7 +76,7 @@ public class FieldsMapping extends Field implements TransformableField {
 		this.possibleSrc = new ArrayList<>(5);
 	}
 	
-	public FieldsMapping(String srcFieldFullName, String dstField, boolean tryToLoadTransformer) {
+	public FieldsMapping(String srcFieldFullName, String dstField, Boolean tryToLoadTransformer) {
 		this();
 		
 		this.setOriginalSrcFieldDefinition(srcFieldFullName);
@@ -223,20 +223,20 @@ public class FieldsMapping extends Field implements TransformableField {
 		this.possibleSrc = possibleSrc;
 	}
 	
-	public boolean isDataTypeLoaded() {
-		return dataTypeLoaded;
+	public Boolean isDataTypeLoaded() {
+		return dataTypeLoaded != null && dataTypeLoaded;
 	}
 	
-	public void setDataTypeLoaded(boolean dataTypeLoaded) {
+	public void setDataTypeLoaded(Boolean dataTypeLoaded) {
 		this.dataTypeLoaded = dataTypeLoaded;
 	}
 	
-	public static FieldsMapping fastCreate(String srcField, String destField, boolean tryToLoadTYransformer) {
+	public static FieldsMapping fastCreate(String srcField, String destField, Boolean tryToLoadTYransformer) {
 		return new FieldsMapping(srcField, destField, tryToLoadTYransformer);
 	}
 	
 	public static FieldsMapping fastCreate(String fieldName) {
-		boolean loadTransformer = SQLUtilities.checkIfFieldDefinitionIncludeQualifier(fieldName);
+		Boolean loadTransformer = SQLUtilities.checkIfFieldDefinitionIncludeQualifier(fieldName);
 		
 		return fastCreate(fieldName, fieldName, loadTransformer);
 	}
@@ -292,7 +292,7 @@ public class FieldsMapping extends Field implements TransformableField {
 		this.extension = extension;
 	}
 	
-	public boolean useDefaultTransformer() {
+	public Boolean useDefaultTransformer() {
 		return getTransformerInstance() instanceof DefaultFieldTransformer;
 	}
 	
@@ -391,12 +391,12 @@ public class FieldsMapping extends Field implements TransformableField {
 		return "[" + str + "]";
 	}
 	
-	public void setMapToNullValue(boolean b) {
+	public void setMapToNullValue(Boolean b) {
 		mapToNullValue = b;
 	}
 	
-	public boolean isMapToNullValue() {
-		return mapToNullValue;
+	public Boolean isMapToNullValue() {
+		return mapToNullValue != null && mapToNullValue;
 	}
 	
 	/**
@@ -447,19 +447,19 @@ public class FieldsMapping extends Field implements TransformableField {
 		return parsed;
 	}
 	
-	public boolean hasSrcField() {
+	public Boolean hasSrcField() {
 		return utilities.stringHasValue(this.getSrcField());
 	}
 	
-	public boolean hasSrcValue() {
+	public Boolean hasSrcValue() {
 		return this.getSrcValue() != null;
 	}
 	
-	public boolean hasDstField() {
+	public Boolean hasDstField() {
 		return utilities.stringHasValue(this.getDstField());
 	}
 	
-	public boolean hasDstValue() {
+	public Boolean hasDstValue() {
 		return this.getDstValue() != null;
 	}
 	
@@ -520,7 +520,7 @@ public class FieldsMapping extends Field implements TransformableField {
 		
 	}
 	
-	public boolean hasDataSourceName() {
+	public Boolean hasDataSourceName() {
 		return utilities.stringHasValue(this.getDataSourceName());
 	}
 	
@@ -598,7 +598,7 @@ public class FieldsMapping extends Field implements TransformableField {
 		this.dataSource = dataSource;
 	}
 	
-	public boolean isSetToNullValue() {
+	public Boolean isSetToNullValue() {
 		return hasSrcValue() && srcValue.toString().toLowerCase().equals("null");
 	}
 }

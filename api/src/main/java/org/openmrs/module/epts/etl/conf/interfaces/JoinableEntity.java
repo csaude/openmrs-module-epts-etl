@@ -34,7 +34,7 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 	
 	void setJoinExtraConditionScope(ConditionClauseScope joinExtraConditionScope);
 	
-	boolean doNotUseAsDatasource();
+	Boolean doNotUseAsDatasource();
 	
 	void setJoinFields(List<FieldsMapping> joinFields);
 	
@@ -50,7 +50,7 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 	 * 
 	 * @return 'true' if this joinable entity is also main joining entity
 	 */
-	boolean isMainJoiningEntity();
+	Boolean isMainJoiningEntity();
 	
 	/**
 	 * @return return this joinable entity as {@link MainJoiningEntity}
@@ -60,7 +60,7 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 	
 	MainJoiningEntity getMainExtractTable();
 	
-	default boolean hasJoinExtraCondition() {
+	default Boolean hasJoinExtraCondition() {
 		return utilities.stringHasValue(this.getJoinExtraCondition());
 	}
 	
@@ -72,11 +72,11 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 		this.getJoinFields().add(fm);
 	}
 	
-	default boolean hasJoinType() {
+	default Boolean hasJoinType() {
 		return this.getJoinType() != null;
 	}
 	
-	default boolean hasJoinFields() {
+	default Boolean hasJoinFields() {
 		return this.getJoinFields() != null && this.getJoinFields().size() > 0;
 	}
 	

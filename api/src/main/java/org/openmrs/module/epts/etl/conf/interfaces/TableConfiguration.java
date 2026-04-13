@@ -1,7 +1,6 @@
 package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.io.IOException;
-import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -86,13 +85,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	void setExtraConditionForExtract(String extraConditionForExtract);
 	
-	boolean isMustLoadChildrenInfo();
+	Boolean isMustLoadChildrenInfo();
 	
-	void setMustLoadChildrenInfo(boolean mustLoadChildrenInfo);
+	void setMustLoadChildrenInfo(Boolean mustLoadChildrenInfo);
 	
-	boolean isAutoIncrementId();
+	Boolean isAutoIncrementId();
 	
-	void setAutoIncrementId(boolean autoIncrementId);
+	void setAutoIncrementId(Boolean autoIncrementId);
 	
 	void loadManualConfiguredPk(Connection conn) throws ForbiddenOperationException, DBException;
 	
@@ -104,29 +103,29 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	void setIgnorableFields(List<String> ignorable);
 	
-	boolean includePrimaryKeyOnInsert();
+	Boolean includePrimaryKeyOnInsert();
 	
-	void setIncludePrimaryKeyOnInsert(boolean includePrimaryKeyOnInsert);
+	void setIncludePrimaryKeyOnInsert(Boolean includePrimaryKeyOnInsert);
 	
-	boolean isUniqueKeyInfoLoaded();
+	Boolean isUniqueKeyInfoLoaded();
 	
-	void setUniqueKeyInfoLoaded(boolean uniqueKeyInfoLoaded);
+	void setUniqueKeyInfoLoaded(Boolean uniqueKeyInfoLoaded);
 	
-	boolean isPrimaryKeyInfoLoaded();
+	Boolean isPrimaryKeyInfoLoaded();
 	
-	void setPrimaryKeyInfoLoaded(boolean primaryKeyInfoLoaded);
+	void setPrimaryKeyInfoLoaded(Boolean primaryKeyInfoLoaded);
 	
-	boolean isFieldsLoaded();
+	Boolean isFieldsLoaded();
 	
-	void setFieldsLoaded(boolean fieldsLoaded);
+	void setFieldsLoaded(Boolean fieldsLoaded);
 	
-	boolean isTableNameInfoLoaded();
+	Boolean isTableNameInfoLoaded();
 	
-	void setTableNameInfoLoaded(boolean tableNameInfoLoaded);
+	void setTableNameInfoLoaded(Boolean tableNameInfoLoaded);
 	
-	boolean isParentsLoaded();
+	Boolean isParentsLoaded();
 	
-	void setParentsLoaded(boolean parentsLoaded);
+	void setParentsLoaded(Boolean parentsLoaded);
 	
 	ConflictResolutionType onConflict();
 	
@@ -146,17 +145,17 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	void setObservationDateFields(List<String> observationDateFields);
 	
-	boolean isRemoveForbidden();
+	Boolean isRemoveForbidden();
 	
-	boolean ignoreMissingParameters();
+	Boolean ignoreMissingParameters();
 	
-	public void setRemoveForbidden(boolean removeForbidden);
+	public void setRemoveForbidden(Boolean removeForbidden);
 	
 	List<ParentTable> getParents();
 	
-	boolean isUsingManualDefinedAlias();
+	Boolean isUsingManualDefinedAlias();
 	
-	void setUsingManualDefinedAlias(boolean usingManualDefinedAlias);
+	void setUsingManualDefinedAlias(Boolean usingManualDefinedAlias);
 	
 	void setParents(List<ParentTable> parents);
 	
@@ -166,15 +165,15 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	void setPrimaryKey(PrimaryKey primaryKey);
 	
-	void setMetadata(boolean metadata);
+	void setMetadata(Boolean metadata);
 	
-	public boolean isDisabled();
+	public Boolean isDisabled();
 	
-	public void setDisabled(boolean disabled);
+	public void setDisabled(Boolean disabled);
 	
 	void setFields(List<Field> tableFields);
 	
-	void setFullLoaded(boolean fullLoaded);
+	void setFullLoaded(Boolean fullLoaded);
 	
 	void setInsertSQLQuestionMarksWithObjectId(String insertQuestionMarks);
 	
@@ -188,9 +187,9 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	void setSchema(String schema);
 	
-	boolean isAllRelatedTablesFullLoaded();
+	Boolean isAllRelatedTablesFullLoaded();
 	
-	void setAllRelatedTablesFullLoaded(boolean b);
+	void setAllRelatedTablesFullLoaded(Boolean b);
 	
 	/**
 	 * If present, the value from this method will be mapped as a primary key for this table if the
@@ -200,13 +199,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	void setManualMapPrimaryKeyOnField(String manualMapPrimaryKeyOnField);
 	
-	boolean useMysqlInsertIgnore();
+	Boolean useMysqlInsertIgnore();
 	
 	@Override
 	PrimaryKey getPrimaryKey();
 	
 	@Override
-	default boolean hasPK(Connection conn) throws DBException {
+	default Boolean hasPK(Connection conn) throws DBException {
 		
 		if (!this.isPrimaryKeyInfoLoaded()) {
 			this.loadPrimaryKeyInfo(conn);
@@ -215,7 +214,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return this.getPrimaryKey() != null;
 	}
 	
-	default boolean hasTableName() {
+	default Boolean hasTableName() {
 		return this.getTableName() != null && !this.getTableName().isEmpty();
 	}
 	
@@ -294,15 +293,15 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default boolean useManualGeneratedObjectId() {
+	default Boolean useManualGeneratedObjectId() {
 		return !this.isAutoIncrementId() && this.useSimpleNumericPk();
 	}
 	
-	default boolean hasAlias() {
+	default Boolean hasAlias() {
 		return utilities.stringHasValue(this.getTableAlias());
 	}
 	
-	default boolean hasWinningRecordsInfo() {
+	default Boolean hasWinningRecordsInfo() {
 		return this.getWinningRecordFieldsInfo() != null;
 	}
 	
@@ -311,7 +310,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return this.getRelatedEtlConf().getDesignation() + "_" + this.getTableName();
 	}
 	
-	default boolean hasExtraConditionForExtract() {
+	default Boolean hasExtraConditionForExtract() {
 		return utilities.stringHasValue(this.getExtraConditionForExtract());
 	}
 	
@@ -433,16 +432,16 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		
 	}
 	
-	default boolean hasDynamicAlias() {
+	default Boolean hasDynamicAlias() {
 		return this.hasAlias() && this.getAlias().contains("@");
 	}
 	
-	default boolean useDynamicTableName() {
+	default Boolean useDynamicTableName() {
 		return this.getTableName().contains("@");
 	}
 	
 	@JsonIgnore
-	default boolean useSharedPKKey() {
+	default Boolean useSharedPKKey() {
 		return utilities.stringHasValue(this.getSharePkWith());
 	}
 	
@@ -498,7 +497,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default boolean hasManualMapPrimaryKeyOnField() {
+	default Boolean hasManualMapPrimaryKeyOnField() {
 		return this.getManualMapPrimaryKeyOnField() != null;
 	}
 	
@@ -661,7 +660,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
+	default Boolean checkIfisIgnorableParentByClassAttName(String parentAttName, Connection conn) {
 		for (ParentTable parent : this.getParentRefInfo()) {
 			RefMapping map = parent.getRefMappingByChildClassAttName(parentAttName);
 			
@@ -949,7 +948,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default boolean hasParents() {
+	default Boolean hasParents() {
 		return utilities.listHasElement(this.getParents());
 	}
 	
@@ -1055,7 +1054,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			        "The field '" + fieldName + "' was not found on '" + this.getTableName() + "' fields!!!");
 		}
 		
-		boolean ignorable = DBUtilities.isTableColumnAllowNull(this.getTableName(), this.getSchema(), fieldName, conn);
+		Boolean ignorable = DBUtilities.isTableColumnAllowNull(this.getTableName(), this.getSchema(), fieldName, conn);
 		
 		RefMapping map = RefMapping.fastCreate(childFieldname, parentFieldName);
 		
@@ -1111,13 +1110,13 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	 * @return
 	 */
 	@JsonIgnore
-	default boolean isRemovableMetadata() {
+	default Boolean isRemovableMetadata() {
 		return utilities.existOnArray(utilities.parseArrayToList(TableConfiguration.REMOVABLE_METADATA),
 		    this.getTableName());
 	}
 	
 	@JsonIgnore
-	default boolean existsSyncRecordClass(DBConnectionInfo connInfo) {
+	default Boolean existsSyncRecordClass(DBConnectionInfo connInfo) {
 		try {
 			return this.getSyncRecordClass(connInfo) != null;
 		}
@@ -1127,7 +1126,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass) {
+	default void generateRecordClass(DBConnectionInfo connInfo, Boolean fullClass) {
 		try {
 			if (fullClass) {
 				this.setSyncRecordClass(DatabaseEntityPOJOGenerator.generate(this, connInfo));
@@ -1275,7 +1274,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	@JsonIgnore
-	default boolean existRelatedExportStageTable(Connection conn) {
+	default Boolean existRelatedExportStageTable(Connection conn) {
 		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = this.generateRelatedStageTableName();
@@ -1290,7 +1289,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default boolean existRelatedDstStageTable(Connection conn) {
+	default Boolean existRelatedDstStageTable(Connection conn) {
 		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = this.generateRelatedDstStageTableName();
@@ -1305,7 +1304,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default boolean existRelatedStageSrcUniqueKeysTable(Connection conn) {
+	default Boolean existRelatedStageSrcUniqueKeysTable(Connection conn) {
 		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = this.generateRelatedStageSrcUniqueKeysTableName();
@@ -1320,7 +1319,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default boolean existRelatedStageDstUniqueKeysTable(Connection conn) {
+	default Boolean existRelatedStageDstUniqueKeysTable(Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = this.generateRelatedStageDstUniqueKeysTableName();
@@ -1336,7 +1335,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	@JsonIgnore
-	default boolean isConfigured() {
+	default Boolean isConfigured() {
 		for (TableConfiguration tabConf : this.getRelatedEtlConf().getConfiguredTables()) {
 			if (tabConf.getTableName().equals(this.getTableName()))
 				return true;
@@ -1424,7 +1423,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default boolean overrideAutoIncrement() {
+	default Boolean overrideAutoIncrement() {
 		return this.getAutoIncrementHandlingType() != null && this.getAutoIncrementHandlingType().isIgnoreSchemaDefinition();
 	}
 	
@@ -1539,7 +1538,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			this.setSchema(DBUtilities.determineSchemaName(conn));
 		}
 		
-		boolean exists = DBUtilities.isTableExists(this.getSchema(), this.getTableName(), conn);
+		Boolean exists = DBUtilities.isTableExists(this.getSchema(), this.getTableName(), conn);
 		
 		if (!exists)
 			throw new DatabaseResourceDoesNotExists(this.generateFullTableName(conn));
@@ -1735,32 +1734,32 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	@JsonIgnore
-	default boolean isDestinationInstallationType() {
+	default Boolean isDestinationInstallationType() {
 		return getRelatedEtlConf().isDataBaseMergeFromJSONProcess();
 	}
 	
 	@JsonIgnore
-	default boolean isDataReconciliationProcess() {
+	default Boolean isDataReconciliationProcess() {
 		return this.getRelatedEtlConf().isDataReconciliationProcess();
 	}
 	
 	@JsonIgnore
-	default boolean isDBQuickLoad() {
+	default Boolean isDBQuickLoad() {
 		return this.getRelatedEtlConf().isDBQuickLoadProcess();
 	}
 	
 	@JsonIgnore
-	default boolean isDataBasesMergeFromSourceDBProcess() {
+	default Boolean isDataBasesMergeFromSourceDBProcess() {
 		return this.getRelatedEtlConf().isDataBaseMergeFromSourceDBProcess();
 	}
 	
 	@JsonIgnore
-	default boolean hasNoDateVoidedField() {
+	default Boolean hasNoDateVoidedField() {
 		return utilities.isStringIn(getTableName(), "note");
 	}
 	
 	@JsonIgnore
-	default boolean hasNotDateChangedField() {
+	default Boolean hasNotDateChangedField() {
 		return utilities.isStringIn(getTableName(), "obs");
 	}
 	
@@ -1847,19 +1846,19 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return conditionFields;
 	}
 	
-	default boolean hasUniqueKeys() {
+	default Boolean hasUniqueKeys() {
 		return utilities.listHasElement(this.getUniqueKeys());
 	}
 	
-	default boolean useSimpleNumericPk() {
+	default Boolean useSimpleNumericPk() {
 		return this.getPrimaryKey() != null && ((PrimaryKey) this.getPrimaryKey()).isSimpleNumericKey();
 	}
 	
-	default boolean useSimplePk() {
+	default Boolean useSimplePk() {
 		return this.getPrimaryKey() != null && ((PrimaryKey) this.getPrimaryKey()).isSimpleNumericKey();
 	}
 	
-	default boolean useAutoIncrementId(Connection conn) throws DBException {
+	default Boolean useAutoIncrementId(Connection conn) throws DBException {
 		
 		if (this.getPrimaryKey() == null || this.getPrimaryKey().isCompositeKey()) {
 			return false;
@@ -2094,7 +2093,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return insertValuesWithObjectIdDefinition;
 	}
 	
-	public abstract boolean isGeneric();
+	public abstract Boolean isGeneric();
 	
 	/**
 	 * Generate a select columns content using the alias {@link #tableAlias}
@@ -2143,7 +2142,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return fromClause;
 	}
 	
-	default boolean hasSchema() {
+	default Boolean hasSchema() {
 		return utilities.stringHasValue(getSchema());
 	}
 	
@@ -2356,7 +2355,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default boolean containsField(String fieldName) {
+	default Boolean containsField(String fieldName) {
 		if (!this.hasFields())
 			return false;
 		
@@ -2369,7 +2368,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return false;
 	}
 	
-	default boolean isIgnorableField(Field field) {
+	default Boolean isIgnorableField(Field field) {
 		if (!this.hasIgnorableField())
 			return false;
 		
@@ -2382,7 +2381,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return false;
 	}
 	
-	default boolean hasIgnorableField() {
+	default Boolean hasIgnorableField() {
 		return utilities.listHasElement(this.getIgnorableFields());
 	}
 	
@@ -2404,7 +2403,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return sql;
 	}
 	
-	default boolean checkIfFieldIsForeignKey(Field field) {
+	default Boolean checkIfFieldIsForeignKey(Field field) {
 		
 		if (!this.hasParentRefInfo())
 			return false;
@@ -2473,7 +2472,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		
 	}
 	
-	default boolean hasObservationDateFields() {
+	default Boolean hasObservationDateFields() {
 		return utilities.listHasElement(this.getObservationDateFields());
 	}
 	
@@ -2493,7 +2492,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		
 	}
 	
-	default boolean containsAllFields(List<Field> fields) {
+	default Boolean containsAllFields(List<Field> fields) {
 		if (!this.hasFields() || fields == null)
 			return false;
 		
@@ -2549,7 +2548,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	 * @return true if this table configuration has its own unique keys rather that the keys from
 	 *         the shared key parent or false in contrary
 	 */
-	default boolean hasItsOwnKeys() {
+	default Boolean hasItsOwnKeys() {
 		
 		if (!this.hasUniqueKeys())
 			return false;
@@ -2901,7 +2900,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return sql;
 	}
 	
-	default boolean isExistRelatedTriggers(Connection conn) throws SQLException {
+	default Boolean isExistRelatedTriggers(Connection conn) throws SQLException {
 		return DBUtilities.isResourceExist(conn.getCatalog(), getTableName(), DBUtilities.RESOURCE_TYPE_TRIGGER,
 		    generateLastUpdateDateInsertTriggerMonitor(), conn);
 	}

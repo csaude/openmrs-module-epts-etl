@@ -41,15 +41,15 @@ public class Field implements Serializable {
 	
 	private AttDefinedElements attDefinedElements;
 	
-	private boolean allowNull;
+	private Boolean allowNull;
 	
-	private boolean timeStamp;
+	private Boolean timeStamp;
 	
 	private TypePrecision precision;
 	
 	private Class<?> typeClass;
 	
-	private boolean autoIncrement;
+	private Boolean autoIncrement;
 	
 	private FieldTransformingInfo transformingInfo;
 	
@@ -82,16 +82,16 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
-	public boolean allowNull() {
-		return this.allowNull;
+	public Boolean allowNull() {
+		return isAllowNull();
 	}
 	
 	@JsonIgnore
-	public boolean isAllowNull() {
-		return allowNull;
+	public Boolean isAllowNull() {
+		return this.allowNull != null && allowNull;
 	}
 	
-	public void setAllowNull(boolean allowNull) {
+	public void setAllowNull(Boolean allowNull) {
 		this.allowNull = allowNull;
 	}
 	
@@ -158,7 +158,7 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
-	public boolean hasDataType() {
+	public Boolean hasDataType() {
 		return getDataType() != null;
 	}
 	
@@ -317,37 +317,37 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
-	public boolean isDateField() {
+	public Boolean isDateField() {
 		return AttDefinedElements.isDateType(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public boolean isNumericColumnType() {
+	public Boolean isNumericColumnType() {
 		return AttDefinedElements.isNumeric(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public boolean isBooleanColumnType() {
+	public Boolean isBooleanColumnType() {
 		return AttDefinedElements.isBooleanType(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public boolean isIntegerField() {
+	public Boolean isIntegerField() {
 		return AttDefinedElements.isInteger(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public boolean isLongField() {
+	public Boolean isLongField() {
 		return AttDefinedElements.isLong(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public boolean isString() {
+	public Boolean isString() {
 		return AttDefinedElements.isString(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public boolean isSmallIntType() {
+	public Boolean isSmallIntType() {
 		return AttDefinedElements.isSmallInt(this.getDataType());
 	}
 	
@@ -418,7 +418,7 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
-	public boolean hasValue() {
+	public Boolean hasValue() {
 		return getValue() != null;
 	}
 	
@@ -473,12 +473,12 @@ public class Field implements Serializable {
 	}
 	
 	@JsonIgnore
-	public boolean isTimeStamp() {
-		return timeStamp;
+	public Boolean isTimeStamp() {
+		return timeStamp != null && timeStamp;
 	}
 	
 	@JsonIgnore
-	public void setTimeStamp(boolean timeStamp) {
+	public void setTimeStamp(Boolean timeStamp) {
 		this.timeStamp = timeStamp;
 	}
 	
@@ -538,23 +538,23 @@ public class Field implements Serializable {
 		}
 	}
 	
-	public void setAutoIncrement(boolean autoIncrement) {
+	public void setAutoIncrement(Boolean autoIncrement) {
 		this.autoIncrement = autoIncrement;
 	}
 	
-	public boolean isAutoIncrement() {
-		return autoIncrement;
+	public Boolean isAutoIncrement() {
+		return autoIncrement != null && autoIncrement;
 	}
 	
-	public boolean isTextField() {
+	public Boolean isTextField() {
 		return utilities.isStringIn(this.getDataType(), "TEXT");
 	}
 	
-	public boolean isClob() {
+	public Boolean isClob() {
 		return AttDefinedElements.isClob(this.getDataType());
 	}
 	
-	public boolean isDecimalField() {
+	public Boolean isDecimalField() {
 		return AttDefinedElements.isDecimal(this.getDataType());
 	}
 	

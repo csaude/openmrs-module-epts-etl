@@ -26,6 +26,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
+	private String id;
+	
 	private String configCode;
 	
 	private EtlItemSrcConf etlItemSrcConf;
@@ -34,9 +36,9 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private List<DstConf> dstConf;
 	
-	private boolean disabled;
+	private Boolean disabled;
 	
-	private boolean fullLoaded;
+	private Boolean fullLoaded;
 	
 	/**
 	 * If present, the value from this field will be mapped as a primary key for all tables under
@@ -47,9 +49,9 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	 */
 	private String manualMapPrimaryKeyOnField;
 	
-	private boolean createDstTableIfNotExists;
+	private Boolean createDstTableIfNotExists;
 	
-	private boolean testing;
+	private Boolean testing;
 	
 	private EtlDatabaseObject relatedEtlSchemaObject;
 	
@@ -74,7 +76,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	private String relatedParentDstConfName;
 	
-	private boolean doNotFullLoadDstConf;
+	private Boolean doNotFullLoadDstConf;
 	
 	private String shortCode;
 	
@@ -89,11 +91,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.shortCode = shortCode;
 	}
 	
-	public boolean isDoNotFullLoadDstConf() {
-		return doNotFullLoadDstConf;
+	public Boolean isDoNotFullLoadDstConf() {
+		return doNotFullLoadDstConf != null && doNotFullLoadDstConf;
 	}
 	
-	public void setDoNotFullLoadDstConf(boolean doNotFullLoadDstConf) {
+	public void setDoNotFullLoadDstConf(Boolean doNotFullLoadDstConf) {
 		this.doNotFullLoadDstConf = doNotFullLoadDstConf;
 	}
 	
@@ -153,7 +155,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.threadingMode = threadingMode;
 	}
 	
-	public boolean hasThreadingMode() {
+	public Boolean hasThreadingMode() {
 		return this.getThreadingMode() != null;
 	}
 	
@@ -169,11 +171,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return etlItemSrcConf;
 	}
 	
-	public boolean isTesting() {
-		return testing;
+	public Boolean isTesting() {
+		return testing != null && testing;
 	}
 	
-	public void setTesting(boolean testing) {
+	public void setTesting(Boolean testing) {
 		this.testing = testing;
 	}
 	
@@ -181,15 +183,15 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.etlItemSrcConf = srcOfSrc;
 	}
 	
-	public void setCreateDstTableIfNotExists(boolean createDstTableIfNotExists) {
+	public void setCreateDstTableIfNotExists(Boolean createDstTableIfNotExists) {
 		this.createDstTableIfNotExists = createDstTableIfNotExists;
 	}
 	
-	public boolean isCreateDstTableIfNotExists() {
-		return createDstTableIfNotExists;
+	public Boolean isCreateDstTableIfNotExists() {
+		return createDstTableIfNotExists != null && createDstTableIfNotExists;
 	}
 	
-	public boolean createDstTableIfNotExists() {
+	public Boolean createDstTableIfNotExists() {
 		return this.isCreateDstTableIfNotExists();
 	}
 	
@@ -238,16 +240,86 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return etl;
 	}
 	
-	public boolean isFullLoaded() {
-		return fullLoaded;
+	public Boolean isFullLoaded() {
+		return fullLoaded != null && fullLoaded;
 	}
 	
-	public void setFullLoaded(boolean fullLoaded) {
+	public void setFullLoaded(Boolean fullLoaded) {
 		this.fullLoaded = fullLoaded;
 	}
 	
-	public boolean hasDstConf() {
+	public Boolean hasDstConf() {
 		return utilities.listHasElement(this.getDstConf());
+	}
+	
+	public String getId() {
+		return id;
+	}
+	
+	public void setId(String id) {
+		this.id = id;
+	}
+	
+	public void init(EtlConfiguration relatedEtlConf, boolean testing) {
+		
+		this.tryToLoadFromTemplate();
+		this.setRelatedEtlConfig(relatedEtlConf);
+		this.setTesting(testing);
+		
+		relatedEtlConf.addConfiguredTable(this.getSrcConf());
+		
+		this.getSrcConf().init(this);
+		
+		String code = "";
+		
+		List<String> alreadyIncludedTables = new ArrayList<>();
+		
+		if (utilities.listHasElement(this.getDstConf())) {
+			for (DstConf dst : this.getDstConf()) {
+				dst.init(this);
+				
+				if (!alreadyIncludedTables.contains(dst.getTableName())) {
+					alreadyIncludedTables.add(dst.getTableName());
+					
+					code = utilities.stringHasValue(code) ? code + "_and_" + dst.getTableName() : dst.getTableName();
+				}
+			}
+		}
+		
+		code = utilities.stringHasValue(code) ? code : this.getSrcConf().getTableName();
+		
+		code = this.getSrcConf().getTableName() + "_to_" + code;
+		
+		this.setShortCode(code);
+		
+		code += "_on_" + getRelatedEtlConf().generateProcessId()
+		        + (this.hasParentItemConf() ? "_within_" + this.getParentItemConf().getShortCode() : "");
+		
+		this.setConfigCode(getRelatedEtlConf().finalizeItemCodeGeneration(code));
+		
+		this.tryToLoadChildItemConf(testing);
+	}
+	
+	private void tryToLoadChildItemConf(boolean testing) {
+		
+		if (this.hasChildItemConf()) {
+			for (EtlItemConfiguration childItem : this.getChildItemConf()) {
+				childItem.setParentItemConf(this);
+				
+				if (!utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
+					if (utilities.arrayHasExactlyOneElement(this.getDstConf())) {
+						childItem.setRelatedParentDstConfName(this.getDstConf().get(0).getName());
+					} else {
+						throw new ForbiddenOperationException(
+						        "The relatedParentDstConfName was not defined for the conf " + this.getConfigCode());
+					}
+				}
+				
+				childItem.setRelatedParentDstConf(this.findDstConf(childItem.getRelatedParentDstConfName()));
+				childItem.setRelatedEtlConfig(getRelatedEtlConf());
+				childItem.init(getRelatedEtlConf(), testing);
+			}
+		}
 	}
 	
 	public void tryToCreateDefaultRecordsForAllTables() throws DBException {
@@ -310,7 +382,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 	}
 	
-	public boolean hasManualMapPrimaryKeyOnField() {
+	public Boolean hasManualMapPrimaryKeyOnField() {
 		return getManualMapPrimaryKeyOnField() != null;
 	}
 	
@@ -466,11 +538,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return null;
 	}
 	
-	public boolean hasChildItemConf() {
+	public Boolean hasChildItemConf() {
 		return utilities.listHasElement(this.childItemConf);
 	}
 	
-	public boolean hasParentItemConf() {
+	public Boolean hasParentItemConf() {
 		return this.parentItemConf != null;
 	}
 	
@@ -490,11 +562,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		}
 	}
 	
-	public boolean isDisabled() {
-		return disabled;
+	public Boolean isDisabled() {
+		return disabled != null && disabled;
 	}
 	
-	public void setDisabled(boolean disabled) {
+	public void setDisabled(Boolean disabled) {
 		this.disabled = disabled;
 	}
 	
@@ -514,7 +586,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return getRelatedEtlConf().getSrcConnInfo();
 	}
 	
-	public boolean hasDstWithJoinFieldsToSrc() {
+	public Boolean hasDstWithJoinFieldsToSrc() {
 		for (DstConf dst : this.dstConf) {
 			if (dst.hasJoinFields()) {
 				return true;
@@ -557,7 +629,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		}
 	}
 	
-	public boolean containsDstTable(String tableName) {
+	public Boolean containsDstTable(String tableName) {
 		if (utilities.listHasElement(getDstConf())) {
 			for (DstConf dst : getDstConf()) {
 				if (dst.getTableName().equals(tableName)) {
@@ -590,7 +662,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return null;
 	}
 	
-	public boolean isDynamic() {
+	public Boolean isDynamic() {
 		return this.getEtlItemSrcConf() != null;
 	}
 	
@@ -650,7 +722,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public void copyFromOther(EtlItemConfiguration toCopyFrom, EtlConfiguration relatedEtlConf,
-	        boolean ignoreMissingParamsOnElements, Connection conn) throws DBException {
+	        Boolean ignoreMissingParamsOnElements, Connection conn) throws DBException {
 		
 		this.setSrcConf(new SrcConf());
 		this.setRelatedEtlConfig(relatedEtlConf);
@@ -694,30 +766,9 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	@Override
 	public void tryToLoadFromTemplate() {
-		boolean disabled = this.isDisabled();
+		Boolean disabled = this.isDisabled();
 		
 		super.tryToLoadFromTemplate();
-		
-		if (this.getSrcConf() != null) {
-			this.getSrcConf().setRelatedEtlConfig(getRelatedEtlConf());
-			this.getSrcConf().tryToLoadFromTemplate();
-			this.getSrcConf().setParentConf(this);
-		}
-		
-		if (this.hasDstConf()) {
-			for (DstConf conf : this.getDstConf()) {
-				conf.setRelatedEtlConfig(getRelatedEtlConf());
-				conf.tryToLoadFromTemplate();
-				conf.setParentConf(this);
-			}
-		}
-		
-		if (hasChildItemConf()) {
-			for (EtlItemConfiguration child : this.getChildItemConf()) {
-				child.setRelatedEtlConfig(getRelatedEtlConf());
-				child.tryToLoadFromTemplate();
-			}
-		}
 		
 		setDisabled(disabled);
 	}

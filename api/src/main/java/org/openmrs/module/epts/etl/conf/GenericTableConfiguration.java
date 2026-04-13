@@ -49,8 +49,8 @@ public class GenericTableConfiguration extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public boolean isGeneric() {
-		return true;
+	public Boolean isGeneric() {
+		return true_();
 	}
 	
 	@Override
