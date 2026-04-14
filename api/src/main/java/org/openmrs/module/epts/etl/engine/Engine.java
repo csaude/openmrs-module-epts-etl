@@ -320,7 +320,6 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				}
 				
 				this.setSearchParams(controller.initMainSearchParams(t, this));
-				this.getSearchParams().setRelatedEngine(this);
 				
 				changeStatusToRunning();
 				
@@ -511,6 +510,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 		if (getThreadRecordIntervalsManager().getFinalCheckIntervalsManager() == null) {
 			getThreadRecordIntervalsManager().initializeFinalCheckIntervalManager();
 		}
+		
+		getSearchParams().setFinalCheckStatus(finalCheckStatus);
 		
 		getSearchParams().setThreadRecordIntervalsManager(getThreadRecordIntervalsManager().getFinalCheckIntervalsManager());
 		
@@ -768,8 +769,8 @@ public class Engine<T extends EtlDatabaseObject> implements MonitoredOperation {
 				} else {
 					logDebug("Loading from Database...");
 					
-					total = getSearchParams().countAllRecords(conn);
-					remaining = getSearchParams().countNotProcessedRecords(conn);
+					total = getSearchParams().countAllRecords(this.getController(), conn);
+					remaining = getSearchParams().countNotProcessedRecords(this.getController(), conn);
 				}
 				
 				processed = total - remaining;

@@ -2270,4 +2270,25 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 	}
 	
+	public boolean checkIfIsValidDumpScript(String path) {
+		File scriptDir = getSqlScriptsDirectory();
+		
+		File fileToCheck = new File(scriptDir.getAbsoluteFile() + File.separator + path);
+		
+		return fileToCheck.exists();
+	}
+	
+	public String readDumpScriptContent(String path) {
+		File scriptDir = getSqlScriptsDirectory();
+		
+		File file = new File(scriptDir.getAbsoluteFile() + File.separator + path);
+		
+		try {
+			return FileUtilities.realAllFileAsString(file);
+		}
+		catch (IOException e) {
+			throw new EtlExceptionImpl(e);
+		}
+	}
+	
 }

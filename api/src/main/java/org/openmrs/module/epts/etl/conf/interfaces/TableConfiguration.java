@@ -19,6 +19,7 @@ import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.RefMapping;
 import org.openmrs.module.epts.etl.conf.RefType;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
+import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
@@ -2223,7 +2224,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 					}
 				}
 				
-				conditionFields += AttDefinedElements.defineSqlAtribuitionString(field.getSrcField(), value);
+				conditionFields += AttDefinedElements
+				        .defineSqlAtribuitionString(tryToConvertFieldToAlias(field.getSrcField()), value);
 			}
 		}
 		
@@ -2232,6 +2234,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 		
 		return utilities.stringHasValue(conditionFields) ? conditionFields : "1=1";
+	}
+	
+	default String tryToConvertFieldToAlias(String fieldName) {
+		if (this.containsField(fieldName)) {
+			return getTableAlias() + "." + fieldName;
+		}
+		
+		return fieldName;
 	}
 	
 	default String generateJoinCondition(TableConfiguration joiningTable, List<FieldsMapping> joinFields,
@@ -2244,8 +2254,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			
 			FieldsMapping field = joinFields.get(i);
 			
-			conditionFields += this.getTableAlias() + "." + field.getSrcField() + " = " + joiningTable.getTableAlias() + "."
-			        + field.getDstField();
+			conditionFields += this.tryToConvertFieldToAlias(field.getSrcField()) + " = "
+			        + joiningTable.tryToConvertFieldToAlias(field.getDstField());
 		}
 		
 		if (utilities.stringHasValue(joinExtraCondition)) {
@@ -2905,15 +2915,29 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		    generateLastUpdateDateInsertTriggerMonitor(), conn);
 	}
 	
-	@SuppressWarnings("unchecked")
 	default long getExtremeRecord(Engine<? extends EtlDatabaseObject> engine, SqlFunctionType function, Connection conn)
 	        throws DBException {
 		
-		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams((Engine<EtlDatabaseObject>) engine,
-		        null);
+		SrcConf srcConf = null;
+		
+		if (this instanceof SrcConf) {
+			srcConf = (SrcConf) this;
+		} else {
+			srcConf = this.cloneToSrcConf(engine.getEtlItemConfiguration(), conn);
+		}
+		
+		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(srcConf, null);
 		
 		return searchParams.retrieveExtremeRecord(function, conn);
 		
+	}
+	
+	default SrcConf cloneToSrcConf(EtlItemConfiguration relatedItemConf, Connection conn) throws DBException {
+		SrcConf srcConf = new SrcConf();
+		
+		srcConf.copyFromOther(this, null, relatedItemConf, conn);
+		
+		return srcConf;
 	}
 	
 	default long getMinRecordId(Engine<? extends EtlDatabaseObject> engine, Connection conn) throws DBException {

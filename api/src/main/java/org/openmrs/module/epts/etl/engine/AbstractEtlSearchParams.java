@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
 import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
@@ -44,26 +45,18 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	
 	private SearchSourceType searchSourceType;
 	
-	private Engine<T> relatedEngine;
-	
 	protected int savedCount;
 	
-	public AbstractEtlSearchParams(Engine<T> relatedEtlEngine, ThreadRecordIntervalsManager<T> limits) {
+	protected SrcConf srcConf;
+	
+	private MigrationFinalCheckStatus finalCheckStatus;
+	
+	public AbstractEtlSearchParams(SrcConf srcConf, ThreadRecordIntervalsManager<T> limits) {
 		this.threadRecordIntervalsManager = limits;
 		this.searchSourceType = SearchSourceType.SOURCE;
-		this.relatedEngine = relatedEtlEngine;
-	}
-	
-	public Engine<T> getRelatedEngine() {
-		return relatedEngine;
-	}
-	
-	public void setRelatedEngine(Engine<T> relatedEngine) {
-		this.relatedEngine = relatedEngine;
-	}
-	
-	public OperationController<T> getRelatedController() {
-		return getRelatedEngine().getRelatedOperationController();
+		this.srcConf = srcConf;
+		
+		this.finalCheckStatus = MigrationFinalCheckStatus.NOT_INITIALIZED;
 	}
 	
 	public void setSearchSourceType(SearchSourceType searchSourceType) {
@@ -83,7 +76,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	}
 	
 	public EtlItemConfiguration getConfig() {
-		return getRelatedEngine().getEtlItemConfiguration();
+		return getSrcConf().getParentConf();
 	}
 	
 	public ThreadRecordIntervalsManager<T> getThreadRecordIntervalsManager() {
@@ -102,14 +95,25 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		this.threadRecordIntervalsManager = null;
 	}
 	
-	/**
-	 * @param searchClauses
-	 */
-	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses, DbmsType dbmsType) {
-		if (this.getSrcConf().getExtraConditionForExtract() != null) {
-			String extraContidion = getSrcConf().getExtraConditionForExtract();
+	public MigrationFinalCheckStatus getFinalCheckStatus() {
+		return finalCheckStatus;
+	}
+	
+	public void setFinalCheckStatus(MigrationFinalCheckStatus finalCheckStatus) {
+		this.finalCheckStatus = finalCheckStatus;
+	}
+	
+	private void tryToAddExtraCondition(String extraCondition, SearchClauses<EtlDatabaseObject> searchClauses,
+	        EtlDatabaseObject parentObject, DbmsType dbmsType) {
+		
+		if (parentObject != null) {
+			getRelatedEtlConf().logTrace("Search for parentObject..." + parentObject);
+		}
+		
+		if (extraCondition != null) {
+			String extraContidion = extraCondition;
 			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraContidion, getSrcConf()),
-			    getRelatedEtlConf(), true, dbmsType);
+			    getRelatedEtlConf(), utilities.parseToList(parentObject), true, dbmsType);
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			
@@ -121,8 +125,34 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		}
 	}
 	
+	/**
+	 * @param searchClauses
+	 */
+	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses,
+	        EtlDatabaseObject parentObject, DbmsType dbmsType) {
+		
+		tryToAddExtraCondition(this.srcConf.getExtraConditionForExtract(), searchClauses, parentObject, dbmsType);
+	}
+	
+	public void tryToAddExtraJoinExtraConditions(SearchClauses<EtlDatabaseObject> searchClauses,
+	        EtlDatabaseObject parentObject, DbmsType dbmsType) {
+		
+		if (!srcConf.isJoinable()) {
+			return;
+		}
+		
+		if (parentObject == null) {
+			throw new EtlExceptionImpl("The joinable srcConf requires the parent object!");
+		}
+		
+		String extraCondition = srcConf.generateConditionsFields(parentObject, srcConf.getJoinFields(),
+		    srcConf.getJoinExtraCondition());
+		
+		tryToAddExtraCondition(extraCondition, searchClauses, parentObject, dbmsType);
+	}
+	
 	public EtlConfiguration getRelatedEtlConf() {
-		return getConfig().getRelatedEtlConf();
+		return srcConf.getRelatedEtlConf();
 	}
 	
 	/**
@@ -148,31 +178,35 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	}
 	
 	public SrcConf getSrcConf() {
-		return this.getConfig().getSrcConf();
+		return this.srcConf;
+	}
+	
+	public void setSrcConf(SrcConf srcConf) {
+		this.srcConf = srcConf;
 	}
 	
 	/**
 	 * @return
 	 */
 	public List<TableDataSourceConfig> getExtraTableDataSource() {
-		return this.getConfig().getSrcConf().getExtraTableDataSource();
+		return getSrcConf().getExtraTableDataSource();
 	}
 	
 	/**
 	 * @return
 	 */
 	public AbstractTableConfiguration getDstLastTableConfiguration() {
-		return utilities.getLastRecordOnArray(getConfig().getDstConf());
+		return utilities.getLastRecordOnArray(srcConf.getParentConf().getDstConf());
 	}
 	
-	public int countAllRecords(Connection conn) throws DBException {
+	public int countAllRecords(OperationController<T> controller, Connection conn) throws DBException {
 		TableOperationProgressInfo progressInfo = null;
 		
 		try {
-			progressInfo = this.getRelatedController().getProgressInfo().retrieveProgressInfo(getConfig());
+			progressInfo = controller.getProgressInfo().retrieveProgressInfo(getConfig());
 		}
 		catch (NullPointerException e) {
-			throw new EtlExceptionImpl("Error on thread " + this.getRelatedController().getControllerId()
+			throw new EtlExceptionImpl("Error on thread " + controller.getControllerId()
 			        + ": Progress meter not found for Etl Confinguration [" + getConfig().getConfigCode() + "].");
 		}
 		
@@ -180,6 +214,10 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		long maxRecordId = progressInfo.getProgressMeter().getMaxRecordId();
 		
 		return countAllRecords(minRecordId, maxRecordId, conn);
+	}
+	
+	public EtlOperationConfig getRelatedEtlOperationConfig() {
+		return getRelatedEtlConf().getOperations().get(0);
 	}
 	
 	public int countAllRecords(long minRecordId, long maxRecordId, Connection conn) throws DBException {
@@ -190,8 +228,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		
 		int qtyProcessors = utilities.getAvailableProcessors();
 		
-		if (this.getRelatedEngine() != null
-		        && this.getRelatedEngine().getRelatedEtlOperationConfig().isDisableMultithreadingSearch()) {
+		if (getRelatedEtlOperationConfig().isDisableMultithreadingSearch()) {
 			qtyProcessors = 1;
 		}
 		
@@ -249,12 +286,14 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		
 		String sql = searchClauses.generateSQL(srcConn);
 		
-		if (getRelatedEngine() != null) {
-			getRelatedEngine().logTrace("Using query for intervals " + intervalExtremeRecord + " > \n------------ \n "
+		if (getRelatedEtlConf() != null) {
+			getRelatedEtlConf().logTrace("Using query for intervals " + intervalExtremeRecord + " > \n------------ \n "
 			        + this.generateFulfilledQuery(intervalExtremeRecord, srcConn, dstCOnn) + "\n----------------");
 		}
 		
-		return BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, searchClauses.getParameters(), srcConn);
+		Object[] params = searchClauses.getParameters();
+		
+		return BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, params, srcConn);
 	}
 	
 	public long retrieveExtremeRecord(SqlFunctionType sqlFunction, Connection conn) throws DBException {
@@ -318,7 +357,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	
 	protected abstract VOLoaderHelper getLoaderHealper();
 	
-	public abstract int countNotProcessedRecords(Connection conn) throws DBException;
+	public abstract int countNotProcessedRecords(OperationController<T> controller, Connection conn) throws DBException;
 	
 	public abstract String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException;
 	

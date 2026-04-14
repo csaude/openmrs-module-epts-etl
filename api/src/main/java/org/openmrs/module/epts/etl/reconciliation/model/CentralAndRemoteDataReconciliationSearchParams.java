@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.reconciliation.model;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -22,11 +23,18 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	
 	private EtlOperationType type;
 	
+	private Engine<EtlDatabaseObject> relatedEngine;
+	
 	public CentralAndRemoteDataReconciliationSearchParams(Engine<EtlDatabaseObject> engine,
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits, EtlOperationType type) {
-		super(engine, limits);
+		super(engine.getSrcConf(), limits);
 		
 		this.type = type;
+		this.relatedEngine = engine;
+	}
+	
+	public Engine<EtlDatabaseObject> getRelatedEngine() {
+		return relatedEngine;
 	}
 	
 	@Override
@@ -133,7 +141,7 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	}
 	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
+	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
 		CentralAndRemoteDataReconciliationSearchParams auxSearchParams = new CentralAndRemoteDataReconciliationSearchParams(
 		        this.getRelatedEngine(), this.getThreadRecordIntervalsManager(), this.type);
 		auxSearchParams.selectAllRecords = true;
@@ -142,7 +150,8 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
+	public synchronized int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
 		ThreadRecordIntervalsManager<EtlDatabaseObject> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();

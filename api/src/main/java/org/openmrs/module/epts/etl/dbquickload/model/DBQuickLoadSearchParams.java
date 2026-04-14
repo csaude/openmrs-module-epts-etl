@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.dbquickload.controller.DBQuickLoadController;
 import org.openmrs.module.epts.etl.dbquickload.processor.QuickLoadLimits;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -31,8 +32,12 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	 */
 	private SyncJSONInfo currJSONInfo;
 	
+	private Engine<EtlDatabaseObject> engine;
+	
 	public DBQuickLoadSearchParams(Engine<EtlDatabaseObject> engine, QuickLoadLimits limits) {
-		super(engine, limits);
+		super(engine.getSrcConf(), limits);
+		
+		this.engine = engine;
 	}
 	
 	public SyncJSONInfo getCurrJSONInfo() {
@@ -43,9 +48,8 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 		return currJSONSourceFile;
 	}
 	
-	@Override
 	public DBQuickLoadController getRelatedController() {
-		return (DBQuickLoadController) super.getRelatedController();
+		return (DBQuickLoadController) engine.getController();
 	}
 	
 	@Override
@@ -103,19 +107,20 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	}
 	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
-		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(getRelatedEngine(), null,
+	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
+		LoadedRecordsSearchParams syncSearchParams = new LoadedRecordsSearchParams(engine, null,
 		        getRelatedController().getAppOriginLocationCode());
 		
-		int processed = syncSearchParams.countAllRecords(conn);
+		int processed = syncSearchParams.countAllRecords(controller, conn);
 		
-		int notProcessed = countNotProcessedRecords(conn);
+		int notProcessed = countNotProcessedRecords(controller, conn);
 		
 		return processed + notProcessed;
 	}
 	
 	@Override
-	public int countNotProcessedRecords(Connection conn) throws DBException {
+	public int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
 		try {
 			File[] files = getSyncDirectory().listFiles(new FilenameFilter() {
 				

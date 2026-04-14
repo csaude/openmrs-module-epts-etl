@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -19,7 +20,7 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	
 	public PojoGenerationSearchParams(Engine<PojoGenerationRecord> engine,
 	    ThreadRecordIntervalsManager<PojoGenerationRecord> limits) {
-		super(engine, limits);
+		super(engine.getSrcConf(), limits);
 		
 	}
 	
@@ -49,12 +50,13 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	}
 	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
+	public int countAllRecords(OperationController<PojoGenerationRecord> controller, Connection conn) throws DBException {
 		return 1;
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
+	public synchronized int countNotProcessedRecords(OperationController<PojoGenerationRecord> controller, Connection conn)
+	        throws DBException {
 		return processor.isPojoGenerated() ? 0 : 1;
 	}
 	

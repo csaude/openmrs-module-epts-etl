@@ -6,7 +6,6 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
-import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
@@ -23,20 +22,19 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 	public DetectMissingRecordsSearchParams(Engine<EtlDatabaseObject> relatedEngine,
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		
-		super(relatedEngine, limits);
+		super(relatedEngine.getSrcConf(), limits);
 		
 		this.excludedRecords = null;
 		
 		this.relatedDstConf = new DstConf();
 		this.relatedDstConf.setTableName(getSrcConf().getTableName());
 		this.relatedDstConf.setParentConf(relatedEngine.getEtlItemConfiguration());
-		this.relatedDstConf
-		        .setRelatedEtlConfig(relatedEngine.getEtlItemConfiguration().getRelatedEtlConf());
+		this.relatedDstConf.setRelatedEtlConfig(relatedEngine.getEtlItemConfiguration().getRelatedEtlConf());
 		
 		OpenConnection dstConn = null;
 		
 		try {
-			dstConn = getRelatedController().tryToOpenDstConn();
+			dstConn = relatedEngine.tryToOpenDstConn();
 			
 			this.relatedDstConf.fullLoad(dstConn);
 		}
@@ -48,11 +46,6 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 				dstConn.finalizeConnection();
 		}
 		
-	}
-	
-	@Override
-	public DetectMissingRecordsController getRelatedController() {
-		return (DetectMissingRecordsController) super.getRelatedController();
 	}
 	
 	@Override
@@ -90,7 +83,7 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 			searchClauses.addToClauseFrom(clauseFrom);
 		}
 		
-		tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());

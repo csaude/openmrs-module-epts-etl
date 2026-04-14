@@ -18,6 +18,8 @@ import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.engine.Engine;
+import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -550,7 +552,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return hasRequiredExtraDataSource();
 	}
 	
-	public void copyFromOther(AbstractTableConfiguration toClone, EtlDatabaseObject schemaInfoSrc,
+	public void copyFromOther(TableConfiguration toClone, EtlDatabaseObject schemaInfoSrc,
 	        EtlItemConfiguration relatedItemConf, Connection conn) throws DBException {
 		super.clone(toClone, schemaInfoSrc, conn);
 		
@@ -806,6 +808,19 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		}
 		
 		throw new EtlExceptionImpl("Datasource not found within the srcConf " + this);
+	}
+	
+	@Override
+	public List<EtlDatabaseObject> searchRecords(Engine<? extends EtlDatabaseObject> engine,
+	        EtlDatabaseObject parentSrcObject, Connection srcConn) throws DBException {
+		
+		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(this, null);
+		
+		searchParams.setQtdRecordPerSelected(1);
+		
+		searchParams.setParentObject(parentSrcObject);
+		
+		return searchParams.search(null, srcConn, srcConn);
 	}
 	
 }

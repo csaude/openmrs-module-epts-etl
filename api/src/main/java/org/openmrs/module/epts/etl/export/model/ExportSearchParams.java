@@ -4,6 +4,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -18,8 +19,16 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 	
 	private boolean selectAllRecords;
 	
+	private Engine<EtlDatabaseObject> relatedEngine;
+	
 	public ExportSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
-		super(engine, limits);
+		super(engine.getSrcConf(), limits);
+		
+		this.relatedEngine = engine;
+	}
+	
+	public Engine<EtlDatabaseObject> getRelatedEngine() {
+		return relatedEngine;
 	}
 	
 	@Override
@@ -46,7 +55,7 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 	}
 	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
+	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
 		ExportSearchParams auxSearchParams = new ExportSearchParams(getRelatedEngine(),
 		        this.getThreadRecordIntervalsManager());
 		
@@ -56,7 +65,8 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
+	public synchronized int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
 		ThreadRecordIntervalsManager<EtlDatabaseObject> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();

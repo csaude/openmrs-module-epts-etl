@@ -43,6 +43,15 @@ public class DataSourceField extends Field implements TransformableField {
 		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
 	}
 	
+	public static DataSourceField fastCreate(String name, Object value) {
+		DataSourceField ds = new DataSourceField();
+		
+		ds.setValue(value);
+		ds.setName(name);
+		
+		return ds;
+	}
+	
 	public RelationshipResolutionStrategy getRelationshipResolutionStrategy() {
 		return relationshipResolutionStrategy;
 	}

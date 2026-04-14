@@ -207,7 +207,7 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 			
 			getRelatedEtlConf().logDebug("Initializing full loading of QueryDataSourceConfig [" + this.getName() + "]");
 			
-			query = PreparedQuery.prepare(this, getRelatedEtlConf(), true, DbmsType.determineFromConnection(conn));
+			query = PreparedQuery.prepare(this, getRelatedEtlConf(), null, true, DbmsType.determineFromConnection(conn));
 			
 			getRelatedEtlConf().logTrace("Determining fields for query...");
 			
@@ -520,8 +520,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		return false_();
 	}
 	
-	public static QueryDataSourceConfig fastCreate(String query, SrcConf relatedSrcVonf) {
-		return new QueryDataSourceConfig(query, relatedSrcVonf);
+	public static QueryDataSourceConfig fastCreate(String query, SrcConf relatedSrcConf) {
+		return new QueryDataSourceConfig(query, relatedSrcConf);
 	}
 	
 	@Override

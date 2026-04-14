@@ -2,9 +2,10 @@ package org.openmrs.module.epts.etl.synchronization.model;
 
 import java.sql.Connection;
 
-import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
+import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -22,14 +23,15 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	
 	private DatabaseMergeFromJSONController relatedController;
 	
-	public DataBaseMergeFromJSONSearchParams(Engine<EtlStageRecordVO> engine, ThreadRecordIntervalsManager<EtlStageRecordVO> limits) {
+	public DataBaseMergeFromJSONSearchParams(Engine<EtlStageRecordVO> engine,
+	    ThreadRecordIntervalsManager<EtlStageRecordVO> limits) {
 		super(engine, limits);
 		
 		setOrderByFields("id");
 	}
 	
-	public DataBaseMergeFromJSONSearchParams(Engine<EtlStageRecordVO> config, ThreadRecordIntervalsManager<EtlStageRecordVO> limits,
-	    String appOriginLocationCode) {
+	public DataBaseMergeFromJSONSearchParams(Engine<EtlStageRecordVO> config,
+	    ThreadRecordIntervalsManager<EtlStageRecordVO> limits, String appOriginLocationCode) {
 		super(config, limits, appOriginLocationCode);
 		setOrderByFields("id");
 	}
@@ -82,7 +84,7 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	}
 	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
+	public int countAllRecords(OperationController<EtlStageRecordVO> controller, Connection conn) throws DBException {
 		
 		throw new ForbiddenOperationException("review this method!");
 		
@@ -97,7 +99,8 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 	}
 	
 	@Override
-	public int countNotProcessedRecords(Connection conn) throws DBException {
+	public int countNotProcessedRecords(OperationController<EtlStageRecordVO> controller, Connection conn)
+	        throws DBException {
 		return SearchParamsDAO.countAll(this, null, conn);
 	}
 	

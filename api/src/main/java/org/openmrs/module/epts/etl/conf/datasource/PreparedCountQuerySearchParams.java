@@ -3,6 +3,7 @@ package org.openmrs.module.epts.etl.conf.datasource;
 import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -45,12 +46,6 @@ public class PreparedCountQuerySearchParams extends AbstractEtlSearchParams<EtlD
 	}
 	
 	@Override
-	public int countNotProcessedRecords(Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-	
-	@Override
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
@@ -80,6 +75,13 @@ public class PreparedCountQuerySearchParams extends AbstractEtlSearchParams<EtlD
 		searchClauses.addToParameters(intervalExtremeRecord.getMaxRecordId());
 		
 		return searchClauses;
+	}
+	
+	@Override
+	public int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 	
 }

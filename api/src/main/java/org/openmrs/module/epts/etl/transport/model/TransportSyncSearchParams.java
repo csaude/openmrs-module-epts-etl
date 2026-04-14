@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -24,8 +25,10 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	
 	private String fileNamePathern;
 	
+	private Engine<TransportRecord> relatedEngine;
+	
 	public TransportSyncSearchParams(Engine<TransportRecord> engine, ThreadRecordIntervalsManager<TransportRecord> limits) {
-		super(engine, limits);
+		super(engine.getSrcConf(), limits);
 		
 		if (limits != null) {
 			this.firstFileName = getSrcConf().getTableName() + "_"
@@ -35,11 +38,13 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
+		
+		this.relatedEngine = engine;
 	}
 	
 	@Override
-	public List<TransportRecord> search(IntervalExtremeRecord intervalExtremeRecord,
-	        Connection srcConn, Connection dstCOnn) throws DBException {
+	public List<TransportRecord> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn, Connection dstCOnn)
+	        throws DBException {
 		
 		try {
 			File[] files = getSyncDirectory().listFiles(this);
@@ -103,12 +108,13 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	}
 	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
-		return countNotProcessedRecords(conn);
+	public int countAllRecords(OperationController<TransportRecord> controller, Connection conn) throws DBException {
+		return countNotProcessedRecords(controller, conn);
 	}
 	
 	@Override
-	public int countNotProcessedRecords(Connection conn) throws DBException {
+	public int countNotProcessedRecords(OperationController<TransportRecord> controller, Connection conn)
+	        throws DBException {
 		File[] files = getSyncDirectory().listFiles(this);
 		
 		if (files != null)
@@ -117,9 +123,8 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 		return 0;
 	}
 	
-	@Override
 	public TransportController getRelatedController() {
-		return (TransportController) super.getRelatedController();
+		return (TransportController) relatedEngine.getController();
 	}
 	
 	private File getSyncDirectory() {

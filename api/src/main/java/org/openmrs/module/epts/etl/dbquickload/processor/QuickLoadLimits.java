@@ -7,7 +7,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class QuickLoadLimits extends ThreadRecordIntervalsManager <EtlDatabaseObject>{
+public class QuickLoadLimits extends ThreadRecordIntervalsManager<EtlDatabaseObject> {
 	
 	private DBQuickLoadSearchParams searchParams;
 	
@@ -17,7 +17,7 @@ public class QuickLoadLimits extends ThreadRecordIntervalsManager <EtlDatabaseOb
 	@Override
 	public boolean canGoNext() {
 		try {
-			return searchParams.countNotProcessedRecords(null) > 0;
+			return searchParams.countNotProcessedRecords(getEngine().getController(), null) > 0;
 		}
 		catch (DBException e) {
 			throw new RuntimeException(e);

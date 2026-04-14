@@ -4,6 +4,7 @@ import java.sql.Connection;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -18,8 +19,17 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 	
 	private boolean selectAllRecords;
 	
-	public InconsistenceSolverSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
-		super(engine, limits);
+	private Engine<EtlDatabaseObject> relatedEngine;
+	
+	public InconsistenceSolverSearchParams(Engine<EtlDatabaseObject> engine,
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
+		super(engine.getSrcConf(), limits);
+		
+		this.relatedEngine = engine;
+	}
+	
+	public Engine<EtlDatabaseObject> getRelatedEngine() {
+		return relatedEngine;
 	}
 	
 	@Override
@@ -45,7 +55,7 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 	}
 	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
+	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
 		InconsistenceSolverSearchParams auxSearchParams = new InconsistenceSolverSearchParams(this.getRelatedEngine(),
 		        this.getThreadRecordIntervalsManager());
 		auxSearchParams.selectAllRecords = true;
@@ -54,7 +64,8 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
+	public synchronized int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
 		
 		ThreadRecordIntervalsManager<EtlDatabaseObject> bkpLimits = this.getThreadRecordIntervalsManager();
 		

@@ -67,6 +67,7 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 		
 		super(parameters, dstConf, field);
 		
+		
 		this.coalesceFields = new ArrayList<>();
 		
 		for (Object obj : parameters) {
@@ -107,6 +108,8 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 			
 			this.coalesceFields.add(fm);
 		}
+		
+		dstConf.getRelatedEtlConf().logTrace("CoalesceFieldTransformer initialized");
 	}
 	
 	private static String buildCacheKey(List<Object> parameters, DstConf dstConf, TransformableField field) {

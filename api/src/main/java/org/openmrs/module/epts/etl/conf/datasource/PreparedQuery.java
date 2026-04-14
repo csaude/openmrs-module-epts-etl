@@ -339,8 +339,9 @@ public class PreparedQuery {
 	}
 	
 	public static PreparedQuery prepare(EtlAdditionalDataSource queryDs, EtlConfiguration etlConfig,
-	        boolean ignoreMissingParameters, DbmsType dbmsType) throws ForbiddenOperationException {
-		return new PreparedQuery(queryDs, etlConfig, ignoreMissingParameters, dbmsType);
+	        List<EtlDatabaseObject> auxLoadObjects, boolean ignoreMissingParameters, DbmsType dbmsType)
+	        throws ForbiddenOperationException {
+		return new PreparedQuery(queryDs, auxLoadObjects, etlConfig, ignoreMissingParameters, dbmsType);
 	}
 	
 	public PreparedQuery cloneAndLoadValues(List<EtlDatabaseObject> srcObject) {

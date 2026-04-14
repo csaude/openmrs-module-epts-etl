@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.dbquickload.model;
 
 import java.sql.Connection;
 
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -16,9 +17,9 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<EtlDataba
 	
 	private String appOriginLocationCode;
 	
-	public LoadedRecordsSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits,
-	    String appOriginLocationCode) {
-		super(engine, limits);
+	public LoadedRecordsSearchParams(Engine<EtlDatabaseObject> engine,
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits, String appOriginLocationCode) {
+		super(engine.getSrcConf(), limits);
 		
 		setOrderByFields("id");
 		
@@ -50,12 +51,13 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<EtlDataba
 	}
 	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
-		return SearchParamsDAO.countAll(this,  null, conn);
+	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
+		return SearchParamsDAO.countAll(this, null, conn);
 	}
 	
 	@Override
-	public int countNotProcessedRecords(Connection conn) throws DBException {
+	public int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
 		return 0;
 	}
 	
