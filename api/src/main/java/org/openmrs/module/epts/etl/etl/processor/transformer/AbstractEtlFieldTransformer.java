@@ -22,6 +22,10 @@ public abstract class AbstractEtlFieldTransformer implements EtlFieldTransformer
 		this.field = field;
 	}
 	
+	public String getTransformerDsc() {
+		return field.getTransformer();
+	}
+	
 	@Override
 	public Connection getOverrideConnection() {
 		return overrideConnection;
@@ -38,6 +42,10 @@ public abstract class AbstractEtlFieldTransformer implements EtlFieldTransformer
 	
 	@Override
 	public String toString() {
-		return field.getTransformer();
+		return this.getTransformerDsc();
+	}
+	
+	public boolean isTransformerExpression(String value) {
+		return value != null && value.contains("(") && value.endsWith(")");
 	}
 }

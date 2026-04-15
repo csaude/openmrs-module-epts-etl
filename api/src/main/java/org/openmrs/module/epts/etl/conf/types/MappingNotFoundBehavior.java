@@ -15,7 +15,13 @@ public enum MappingNotFoundBehavior {
 	/**
 	 * Aborts the ETL process by throwing an exception.
 	 */
-	ABORT_PROCESS;
+	ABORT_PROCESS,
+	
+	USE_INPUT;
+	
+	public boolean useInputOnMissingMapping() {
+		return this.equals(USE_INPUT);
+	}
 	
 	public boolean markRecordAsFailed() {
 		return this.equals(MARK_RECORD_AS_FAILED);

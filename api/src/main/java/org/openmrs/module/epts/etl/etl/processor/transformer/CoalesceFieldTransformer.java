@@ -67,7 +67,6 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 		
 		super(parameters, dstConf, field);
 		
-		
 		this.coalesceFields = new ArrayList<>();
 		
 		for (Object obj : parameters) {
@@ -103,7 +102,7 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 			}
 			
 			if (!fm.hasDataSourceName()) {
-				fm.setSrcValue(obj.toString());
+				fm.setSrcValue(obj);
 			}
 			
 			this.coalesceFields.add(fm);

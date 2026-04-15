@@ -405,10 +405,6 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		EtlDatabaseObject dstParent = null;
 		EtlDatabaseObject srcParent = null;
 		
-		if (field.getDstField().equals("order_group_id")) {
-			logTrace("Transforming 'order_group_id' on demand!");
-		}
-		
 		if (existingSrcParentIsApplicable()) {
 			
 			try {

@@ -88,7 +88,11 @@ public class FieldsMapping extends Field implements TransformableField {
 				this.dataSourceName = fieldParts[0];
 				this.srcField = fieldParts[1];
 			} else {
-				this.srcField = fieldParts[0];
+				if (utilities.isNumeric(fieldParts[0])) {
+					this.srcValue = fieldParts[0];
+				} else {
+					this.srcField = fieldParts[0];
+				}
 			}
 		} else {
 			setMapToNullValue(true);
