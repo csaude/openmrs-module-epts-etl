@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.MissingFieldException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -186,9 +187,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			}
 		}
 		
-		String tableName = this.relatedConfiguration != null ? this.relatedConfiguration.getObjectName() : "Aknown Object";
-		
-		throw new ForbiddenOperationException("The field " + fieldName + " was not found on entity " + tableName);
+		throw new MissingFieldException(fieldName, this.getRelatedConfiguration());
 	}
 	
 	@Override

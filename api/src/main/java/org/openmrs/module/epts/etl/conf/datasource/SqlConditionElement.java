@@ -47,4 +47,12 @@ public class SqlConditionElement {
 	public String parseToQuestionMarked() {
 		return field + " " + operator + (this.value != null ? " ?" : "");
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof SqlConditionElement))
+			return false;
+		
+		return this.field.equals(((SqlConditionElement) obj).getField());
+	}
 }

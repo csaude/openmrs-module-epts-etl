@@ -32,4 +32,12 @@ public abstract class AbstractEtlFieldTransformer implements EtlFieldTransformer
 		this.overrideConnection = overrideConnection;
 	}
 	
+	protected void logTrace(String msg) {
+		this.relatedDstConf.getRelatedEtlConf().logTrace(msg);
+	}
+	
+	@Override
+	public String toString() {
+		return field.getTransformer();
+	}
 }

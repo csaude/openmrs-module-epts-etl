@@ -859,50 +859,190 @@ public class SQLUtilities {
 		return sb.toString();
 	}
 	
-	public static List<SqlConditionElement> extractSqlConditionElements(String condition) {
+	public static List<SqlConditionElement> extractSqlConditionElements(String sql) {
 		
 		List<SqlConditionElement> result = new ArrayList<>();
 		
-		if (condition == null || condition.isBlank()) {
+		if (sql == null || sql.isBlank()) {
 			return result;
 		}
 		
-		String[] parts = condition.split("(?i)\\s+and\\s+|\\s+or\\s+");
-		
-		Pattern normalPattern = Pattern.compile("\\s*([a-zA-Z_][a-zA-Z0-9_\\.]*)\\s*(=|!=|<>|<=|>=|<|>)\\s*(.+?)\\s*$");
-		
-		Pattern isNullPattern = Pattern.compile("\\s*([a-zA-Z_][a-zA-Z0-9_\\.]*)\\s+is\\s+null\\s*$",
+		Pattern normalPattern = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_\\.]*)\\s*(=|!=|<>|<=|>=|<|>)\\s*(.+)",
 		    Pattern.CASE_INSENSITIVE);
 		
-		Pattern isNotNullPattern = Pattern.compile("\\s*([a-zA-Z_][a-zA-Z0-9_\\.]*)\\s+is\\s+not\\s+null\\s*$",
+		Pattern isNullPattern = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_\\.]*)\\s+is\\s+null", Pattern.CASE_INSENSITIVE);
+		
+		Pattern isNotNullPattern = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_\\.]*)\\s+is\\s+not\\s+null",
 		    Pattern.CASE_INSENSITIVE);
 		
-		for (String part : parts) {
+		// 🔥 1. Extrair WHEREs
+		List<String> whereClauses = extractWhereClauses(sql);
+		
+		for (String where : whereClauses) {
 			
-			String trimmed = part.trim();
+			// 🔥 2. Split correto
+			List<String> parts = splitConditions(where);
 			
-			// 🔹 IS NOT NULL
-			Matcher mNotNull = isNotNullPattern.matcher(trimmed);
-			if (mNotNull.find()) {
-				result.add(new SqlConditionElement(mNotNull.group(1).trim(), "IS NOT NULL", null));
-				continue;
-			}
-			
-			// 🔹 IS NULL
-			Matcher mNull = isNullPattern.matcher(trimmed);
-			if (mNull.find()) {
-				result.add(new SqlConditionElement(mNull.group(1).trim(), "IS NULL", null));
-				continue;
-			}
-			
-			// 🔹 Operadores normais
-			Matcher m = normalPattern.matcher(trimmed);
-			if (m.find()) {
-				result.add(new SqlConditionElement(m.group(1).trim(), m.group(2).trim(), m.group(3).trim()));
+			for (String part : parts) {
+				
+				String trimmed = part.trim();
+				
+				Matcher mNotNull = isNotNullPattern.matcher(trimmed);
+				if (mNotNull.find()) {
+					result.add(new SqlConditionElement(mNotNull.group(1), "IS NOT NULL", null));
+					continue;
+				}
+				
+				Matcher mNull = isNullPattern.matcher(trimmed);
+				if (mNull.find()) {
+					result.add(new SqlConditionElement(mNull.group(1), "IS NULL", null));
+					continue;
+				}
+				
+				Matcher m = normalPattern.matcher(trimmed);
+				if (m.find()) {
+					result.add(new SqlConditionElement(m.group(1), m.group(2), cleanValue(m.group(3))));
+				}
 			}
 		}
 		
 		return result;
+	}
+	
+	private static String cleanValue(String value) {
+		
+		if (value == null)
+			return null;
+		
+		String v = value.trim();
+		
+		// remove parênteses exteriores
+		if (v.startsWith("(") && v.endsWith(")")) {
+			v = v.substring(1, v.length() - 1).trim();
+		}
+		
+		return v;
+	}
+	
+	private static List<String> extractWhereClauses(String sql) {
+		
+		List<String> result = new ArrayList<>();
+		
+		Pattern pattern = Pattern.compile("(?i)\\bwhere\\b");
+		
+		Matcher matcher = pattern.matcher(sql);
+		
+		while (matcher.find()) {
+			
+			int start = matcher.end();
+			
+			int end = findEndOfWhereClause(sql, start);
+			
+			String whereContent = sql.substring(start, end).trim();
+			
+			result.add(whereContent);
+		}
+		
+		return result;
+	}
+	
+	private static int findEndOfWhereClause(String sql, int start) {
+		
+		int parentheses = 0;
+		boolean inSingleQuote = false;
+		boolean inDoubleQuote = false;
+		
+		for (int i = start; i < sql.length(); i++) {
+			
+			char c = sql.charAt(i);
+			
+			if (c == '\'' && !inDoubleQuote) {
+				inSingleQuote = !inSingleQuote;
+			} else if (c == '"' && !inSingleQuote) {
+				inDoubleQuote = !inDoubleQuote;
+			}
+			
+			if (inSingleQuote || inDoubleQuote)
+				continue;
+			
+			if (c == '(')
+				parentheses++;
+			else if (c == ')') {
+				if (parentheses == 0) {
+					return i;
+				}
+				parentheses--;
+			}
+			
+			// parar em keywords comuns (fora de subqueries)
+			if (parentheses == 0) {
+				if (startsWithKeyword(sql, i, "group by") || startsWithKeyword(sql, i, "order by")
+				        || startsWithKeyword(sql, i, "limit")) {
+					return i;
+				}
+			}
+		}
+		
+		return sql.length();
+	}
+	
+	private static List<String> splitConditions(String condition) {
+		
+		List<String> parts = new ArrayList<>();
+		StringBuilder current = new StringBuilder();
+		
+		int parentheses = 0;
+		boolean inSingleQuote = false;
+		boolean inDoubleQuote = false;
+		
+		String lower = condition.toLowerCase();
+		
+		for (int i = 0; i < condition.length(); i++) {
+			
+			char c = condition.charAt(i);
+			
+			if (c == '\'' && !inDoubleQuote)
+				inSingleQuote = !inSingleQuote;
+			else if (c == '"' && !inSingleQuote)
+				inDoubleQuote = !inDoubleQuote;
+			
+			if (!inSingleQuote && !inDoubleQuote) {
+				
+				if (c == '(')
+					parentheses++;
+				else if (c == ')')
+					parentheses--;
+				
+				if (parentheses == 0) {
+					
+					if (lower.startsWith(" and ", i)) {
+						parts.add(current.toString().trim());
+						current.setLength(0);
+						i += 4;
+						continue;
+					}
+					
+					if (lower.startsWith(" or ", i)) {
+						parts.add(current.toString().trim());
+						current.setLength(0);
+						i += 3;
+						continue;
+					}
+				}
+			}
+			
+			current.append(c);
+		}
+		
+		if (!current.isEmpty()) {
+			parts.add(current.toString().trim());
+		}
+		
+		return parts;
+	}
+	
+	private static boolean startsWithKeyword(String sql, int index, String keyword) {
+		return sql.regionMatches(true, index, keyword, 0, keyword.length());
 	}
 	
 	public static boolean checkIfFieldDefinitionIncludeQualifier(String fieldName) {
@@ -910,6 +1050,137 @@ public class SQLUtilities {
 		
 		return fieldParts.length > 1;
 		
+	}
+	
+	public static boolean isValidSqlCondition(String str) {
+		
+		if (str == null || str.isBlank()) {
+			return false;
+		}
+		
+		String s = str.trim();
+		
+		if (!areParenthesesBalanced(s) || !areQuotesBalanced(s)) {
+			return false;
+		}
+		
+		String normalized = s.replaceAll("\\s+", " ").trim().toLowerCase();
+		
+		if (normalized.startsWith("and ") || normalized.startsWith("or ")) {
+			return false;
+		}
+		
+		if (normalized.endsWith(" and") || normalized.endsWith(" or")) {
+			return false;
+		}
+		
+		// aceita EXISTS (...)
+		if (normalized.matches("^exists\\s*\\(.+\\)$")) {
+			return true;
+		}
+		
+		// aceita FIELD IS NULL / IS NOT NULL
+		if (normalized.matches("^[a-zA-Z_][a-zA-Z0-9_.]*\\s+is\\s+(not\\s+)?null$")) {
+			return true;
+		}
+		
+		// aceita FIELD IN (...)
+		if (normalized.matches("^[a-zA-Z_][a-zA-Z0-9_.]*\\s+in\\s*\\(.+\\)$")) {
+			return true;
+		}
+		
+		// aceita comparação simples ou com subquery/expressão à direita
+		if (normalized.matches("^[a-zA-Z_][a-zA-Z0-9_.]*\\s*(=|!=|<>|>=|<=|>|<|like|between)\\s+.+$")) {
+			return true;
+		}
+		
+		// aceita múltiplas condições ligadas por AND/OR sem tentar parsear o conteúdo interno
+		if (containsTopLevelLogicalOperator(s)) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	private static boolean areParenthesesBalanced(String s) {
+		int count = 0;
+		boolean inSingleQuote = false;
+		boolean inDoubleQuote = false;
+		
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			
+			if (c == '\'' && !inDoubleQuote) {
+				inSingleQuote = !inSingleQuote;
+			} else if (c == '"' && !inSingleQuote) {
+				inDoubleQuote = !inDoubleQuote;
+			} else if (!inSingleQuote && !inDoubleQuote) {
+				if (c == '(')
+					count++;
+				if (c == ')')
+					count--;
+				if (count < 0)
+					return false;
+			}
+		}
+		
+		return count == 0 && !inSingleQuote && !inDoubleQuote;
+	}
+	
+	private static boolean areQuotesBalanced(String s) {
+		boolean inSingleQuote = false;
+		boolean inDoubleQuote = false;
+		
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			
+			if (c == '\'' && !inDoubleQuote) {
+				inSingleQuote = !inSingleQuote;
+			} else if (c == '"' && !inSingleQuote) {
+				inDoubleQuote = !inDoubleQuote;
+			}
+		}
+		
+		return !inSingleQuote && !inDoubleQuote;
+	}
+	
+	private static boolean containsTopLevelLogicalOperator(String s) {
+		int parentheses = 0;
+		boolean inSingleQuote = false;
+		boolean inDoubleQuote = false;
+		
+		String lower = s.toLowerCase();
+		
+		for (int i = 0; i < lower.length(); i++) {
+			char c = lower.charAt(i);
+			
+			if (c == '\'' && !inDoubleQuote) {
+				inSingleQuote = !inSingleQuote;
+				continue;
+			}
+			
+			if (c == '"' && !inSingleQuote) {
+				inDoubleQuote = !inDoubleQuote;
+				continue;
+			}
+			
+			if (inSingleQuote || inDoubleQuote) {
+				continue;
+			}
+			
+			if (c == '(')
+				parentheses++;
+			else if (c == ')')
+				parentheses--;
+			
+			if (parentheses == 0) {
+				if (lower.startsWith(" and ", i) || lower.startsWith(" or ", i)) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 	
 }
