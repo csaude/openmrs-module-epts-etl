@@ -402,6 +402,11 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
+		if (transformedRecord.getRelatedConfiguration().hasTemplate() && transformedRecord.getRelatedConfiguration()
+		        .getTemplateName().equals("closest_previous_lab_order_request")) {
+			logTrace("Starting order on demand!");
+		}
+		
 		EtlDatabaseObject dstParent = null;
 		EtlDatabaseObject srcParent = null;
 		
@@ -552,13 +557,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		srcParent.setAuxLoadObject(!srcParent.hasAuxLoadObject() ? new ArrayList<>() : srcParent.getAuxLoadObject());
 		srcParent.getAuxLoadObject().addAll(additionalSrcObjects);
 		
-		EtlLoadHelper loadHelper;
-		try {
-			loadHelper = EtlLoadHelper.fastLoadRecord(processor, srcParent, dstConf, transformationType, srcConn, dstConn);
-		}
-		catch (Exception e) {
-			loadHelper = EtlLoadHelper.fastLoadRecord(processor, srcParent, dstConf, transformationType, srcConn, dstConn);
-		}
+		EtlLoadHelper loadHelper = EtlLoadHelper.fastLoadRecord(processor, srcParent, dstConf, transformationType, srcConn,
+		    dstConn);
 		
 		List<EtlDatabaseObject> migratedRecs = loadHelper.getAllSuccedTransformedObjects(dstConf);
 		

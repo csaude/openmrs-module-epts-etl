@@ -46,6 +46,10 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	
 	void setTemplate(EtlTemplateInfo template);
 	
+	default String getTemplateName() {
+		return hasTemplate() ? getTemplate().getName() : null;
+	}
+	
 	default void tryToLoadFromTemplate() {
 		if (this.hasTemplate()) {
 			EtlConfigurationTemplate template = EtlConfigurationTemplate.findTemplate(this.getRelatedEtlConf(),
