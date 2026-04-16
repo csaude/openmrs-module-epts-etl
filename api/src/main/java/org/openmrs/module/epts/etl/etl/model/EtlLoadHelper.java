@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlActionType;
@@ -466,19 +467,9 @@ public class EtlLoadHelper {
 	        TransformationType transformationType, Connection srcConn, Connection dstConn)
 	        throws ParentNotYetMigratedException, DBException {
 		
-		EtlDatabaseObject dstObject = dstConf.getTransformerInstance().transform(processor, srcRecord, dstConf, null,
-		    transformationType, srcConn, dstConn);
+		EtlItemConfiguration conf = dstConf.getParentConf();
 		
-		srcRecord.addDestinationRecord(dstObject);
-		
-		String msg = "Initializing the load of record [" + dstConf.getFullTableDescription() + dstObject + "]";
-		
-		processor.logTrace(msg);
-		
-		EtlLoadHelper lp = new EtlLoadHelper(processor, utilities.parseToList(srcRecord), LoadingType.INNER);
-		
-		lp.load(dstConf, srcConn, dstConn);
-		
-		return lp;
+		return processor.perform(conf, utilities.parseToList(srcRecord), null, LoadingType.INNER, srcConn,
+		    dstConn);
 	}
 }

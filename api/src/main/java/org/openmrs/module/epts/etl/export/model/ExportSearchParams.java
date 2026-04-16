@@ -46,7 +46,7 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 		
 		if (!this.selectAllRecords) {
 			tryToAddLimits(limits, searchClauses);
-			tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
+			tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
 		}
 		
 		searchClauses.addToClauses("consistent = 1");

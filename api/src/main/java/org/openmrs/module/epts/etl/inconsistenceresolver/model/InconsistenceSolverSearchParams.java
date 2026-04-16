@@ -48,7 +48,7 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 			        + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey() + ")");
 			tryToAddLimits(recordLimits, searchClauses);
 			
-			tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
+			tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
 		}
 		
 		return searchClauses;

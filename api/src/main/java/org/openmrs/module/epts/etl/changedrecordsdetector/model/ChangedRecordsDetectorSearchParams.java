@@ -73,7 +73,7 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 			tryToAddLimits(limits, searchClauses);
 		}
 		
-		tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
 		
 		return searchClauses;
 	}

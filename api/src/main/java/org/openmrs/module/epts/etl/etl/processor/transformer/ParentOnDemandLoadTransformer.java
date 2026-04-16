@@ -401,12 +401,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	public FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
-		
-		if (transformedRecord.getRelatedConfiguration().hasTemplate() && transformedRecord.getRelatedConfiguration()
-		        .getTemplateName().equals("closest_previous_lab_order_request")) {
-			logTrace("Starting order on demand!");
-		}
-		
+	
 		EtlDatabaseObject dstParent = null;
 		EtlDatabaseObject srcParent = null;
 		
@@ -819,7 +814,6 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 			template.setParameters(this.templateParams);
 			conf.setSrcConf(null);
 			conf.setTemplate(template);
-			conf.init(relatedDstConf.getRelatedEtlConf(), false);
 			
 			conf.getRelatedEtlConf().logTrace("Template within transformer loaded!");
 		}
@@ -828,6 +822,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		conf.setRelatedParentDstConfName(relatedDstConf.getTableAlias());
 		
 		conf.setDoNotFullLoadDstConf(true);
+		
+		conf.init(relatedDstConf.getRelatedEtlConf(), false);
 		
 		conf.fullLoad(relatedDstConf.getRelatedEtlConf().getOperations().get(0));
 		

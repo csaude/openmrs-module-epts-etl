@@ -211,6 +211,7 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 		return mappingTable;
 	}
 	
+	@SuppressWarnings("null")
 	public static MappingFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
 	        TransformableField field) {
 		
