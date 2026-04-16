@@ -149,7 +149,7 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 						this.input.tryToLoadTransformer(relatedDstConf);
 						
 					} else {
-						this.input = FieldsMapping.fastCreate(paramValue, paramValue, false);
+						this.input = FieldsMapping.fastCreate(paramValue, paramValue, relatedDstConf);
 					}
 				} else if (paramName.equals("extra_condition")) {
 					this.extraCondition = paramValue;
@@ -296,19 +296,22 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 		
 		buildMappingCache(additionalSrcObjects, srcConn);
 		
-		Object valueToTransform;
+		Object valueToTransform = null;
 		
 		FieldTransformingInfo transformingInfo = null;
 		
 		if (this.hasInput()) {
 			transformingInfo = this.input.getTransformerInstance().transform(processor, srcObject, transformedRecord,
-			    additionalSrcObjects, field, srcConn, dstConn);
+			    additionalSrcObjects, this.input, srcConn, dstConn);
 			
 			valueToTransform = transformingInfo.getTransformedValue();
 			
 		} else {
 			valueToTransform = field.getValueToTransform();
 		}
+		
+		if (valueToTransform == null)
+			return null;
 		
 		String srcValueWithParamsReplaced = EtlFieldTransformer
 		        .tryToReplaceParametersOnSrcValue(additionalSrcObjects, valueToTransform).toString();
