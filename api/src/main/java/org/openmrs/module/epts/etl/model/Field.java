@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
@@ -21,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author JP. Boane
  * @version 1.0 29/10/2012
  */
-public class Field implements Serializable {
+public class Field extends AbstractEtlDataConfiguration implements Serializable {
 	
 	public static final Integer DEFAULT_INT_VALUE = -1;
 	
@@ -594,6 +596,12 @@ public class Field implements Serializable {
 				f.tryToReplacePlaceholders(schemaInfoSrc);
 			}
 		}
+	}
+	
+	@Override
+	public EtlDataConfiguration getParentConf() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }

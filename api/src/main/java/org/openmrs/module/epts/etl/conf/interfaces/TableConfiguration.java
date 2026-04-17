@@ -1094,14 +1094,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				
 				this.getChildRefInfo().add((ChildTable) ref);
 			}
-			
 		}
 		
 		try {
-			ref.addMapping(map);
+			if (ref != null) {
+				ref.addMapping(map);
+			}
 		}
 		catch (DuplicateMappingException e) {}
-		
 	}
 	
 	/**
@@ -2212,6 +2212,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				
 				FieldsMapping field = joinFields.get(i);
 				
+				if (!field.hasSrcField()) {
+					field.setSrcField(field.getDstField());
+				}
+				
 				//By default the joining value is marked as parameter 
 				Object value = "@" + field.getDstField();
 				
@@ -2642,7 +2646,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	default EtlConfigurationTableConf generateRelatedSrcStageTableConf(Connection conn) throws DBException {
-		
 		if (!existRelatedExportStageTable(conn)) {
 			createRelatedSrcStageAreaTable(conn);
 		}
@@ -2855,7 +2858,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				sql += DBUtilities.generateTableDateTimeField("record_date_voided", nullConstraint, conn) + endLineMarker;
 				
 				String checkCondition = "migration_status in (-1,0,1,2)";
-				String keyName = "CHK_" + this.generateRelatedStageTableName() + "_MIG_STATUS".toUpperCase();
+				String keyName = ("CHK_" + this.generateRelatedStageTableName() + "_MIG_STATUS").toLowerCase();
 				
 				sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
 				
@@ -2865,7 +2868,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
 				sql += ")";
 				
-				String indexName = tableName + "location_idx";
+				String indexName = tableName + "_location_idx";
 				String indexFields = "record_origin_location_code";
 				
 				String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullStageTableName(), indexName,

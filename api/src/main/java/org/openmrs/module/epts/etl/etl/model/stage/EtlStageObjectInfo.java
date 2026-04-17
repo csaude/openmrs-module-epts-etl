@@ -28,7 +28,7 @@ public class EtlStageObjectInfo {
 		}
 		
 		this.setDstStageInfoObject(
-		    EtlStageAreaObject.generateDst(srcStageInfoObject, srcObj.getDestinationObjects(), dstConn, srcConn));
+		    EtlStageAreaObject.generateDst(srcStageInfoObject, srcObj.getDestinationObjects(), srcConn, dstConn));
 	}
 	
 	public static EtlStageObjectInfo generate(EtlDatabaseObject rec, Connection srcConn, Connection dstConn)

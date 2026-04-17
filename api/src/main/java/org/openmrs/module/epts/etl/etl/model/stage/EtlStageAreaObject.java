@@ -86,6 +86,10 @@ public class EtlStageAreaObject extends GenericDatabaseObject {
 			
 			this.setRelatedConfiguration(dstStageTable);
 			
+			if (dstStageTable.getTableName().equals("orders_dst_stage")) {
+				((DstConf) etlTable).getRelatedEtlConf().logTrace("Starting orders");
+			}
+			
 			EtlConfigurationTableConf srcStageTable = ((DstConf) etlTable).getSrcConf()
 			        .generateRelatedSrcStageTableConf(srcConn);
 			

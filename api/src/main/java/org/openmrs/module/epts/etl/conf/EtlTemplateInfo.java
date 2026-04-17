@@ -5,9 +5,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
-public class EtlTemplateInfo {
+public class EtlTemplateInfo extends AbstractEtlDataConfiguration {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -69,6 +70,18 @@ public class EtlTemplateInfo {
 				e.setValue(EtlDataConfiguration.resolvePlaceholders(e.getValue().toString(), null, null, null, params));
 			}
 		}
+	}
+	
+	@Override
+	public EtlDataConfiguration getParentConf() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

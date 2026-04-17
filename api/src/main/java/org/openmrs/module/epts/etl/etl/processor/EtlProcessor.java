@@ -73,7 +73,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 			
 			for (DstConf mappingInfo : etlItemConf.getDstConf()) {
 				if (mappingInfo.isDisabled()) {
-					continue;	
+					continue;
 				}
 				
 				try {
@@ -137,8 +137,15 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	private void performeEtlOnChildItem(EtlItemConfiguration itemConf, EtlDatabaseObject transformedParent,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
-		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(this.getEngine(),
-		    transformedParent.getEtlInfo().getRelatedSrcObject(), srcConn);
+		List<EtlDatabaseObject> etlObjects = null;
+		try {
+			etlObjects = itemConf.getSrcConf().searchRecords(this.getEngine(),
+			    transformedParent.getEtlInfo().getRelatedSrcObject(), srcConn);
+		}
+		catch (Exception e) {
+			etlObjects = itemConf.getSrcConf().searchRecords(this.getEngine(),
+			    transformedParent.getEtlInfo().getRelatedSrcObject(), srcConn);
+		}
 		
 		if (!etlObjects.isEmpty()) {
 			perform(itemConf, etlObjects, transformedParent, LoadingType.INNER, srcConn, dstConn);
