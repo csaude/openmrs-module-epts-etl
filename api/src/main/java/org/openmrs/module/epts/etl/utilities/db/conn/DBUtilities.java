@@ -962,11 +962,28 @@ public class DBUtilities {
 		return normalized;
 	}
 	
+	private static boolean containsSelectWildcard(String selectClause) {
+		
+		// remove conteúdo entre parênteses (funções, subqueries)
+		String cleaned = selectClause.replaceAll("\\([^)]*\\)", "");
+		
+		// 🔹 SELECT *
+		if (cleaned.matches("(?i)^\\s*\\*\\s*$")) {
+			return true;
+		}
+		
+		// 🔹 SELECT table.*
+		if (cleaned.matches("(?i).*\\b\\w+\\.\\*\\b.*")) {
+			return true;
+		}
+		
+		return false;
+	}
+	
 	public static List<Field> determineFieldsFromQuery(String query) {
 		
 		String normalizedQuery = normalizeQuery(query);
 		
-		// Regular  expression to match fields in the SELECT clause
 		String selectRegex = "(?i)select\\s+(.+?)\\s+from";
 		Pattern selectPattern = Pattern.compile(selectRegex);
 		Matcher selectMatcher = selectPattern.matcher(normalizedQuery);
@@ -974,39 +991,66 @@ public class DBUtilities {
 		List<Field> fields = new ArrayList<>();
 		
 		if (selectMatcher.find()) {
+			
 			String selectClause = selectMatcher.group(1).trim();
 			
-			String[] fieldsName = selectClause.split(",");
+			// 🔥 NOVA VALIDAÇÃO
+			if (containsSelectWildcard(selectClause)) {
+				throw new IllegalArgumentException("Query contains a wildcard '*' in the SELECT clause");
+			}
+			
+			// 🔥 split seguro (respeitando parênteses)
+			List<String> fieldsName = splitSelectFields(selectClause);
 			
 			for (String s : fieldsName) {
-				// Check if the select clause contains "*" outside of count(*)
-				Pattern invalidAsteriskPattern = Pattern.compile("\\*(?!\\s*\\))");
-				Matcher invalidAsteriskMatcher = invalidAsteriskPattern.matcher(selectClause);
-				if (invalidAsteriskMatcher.find()) {
-					throw new IllegalArgumentException("Query contains a wildcard '*' in the SELECT clause");
-				}
 				
 				s = utilities.removeDuplicatedEmptySpace(s.trim());
 				
-				String fieldName = null;
+				String fieldName;
 				
-				if (s.split(" as ").length > 1) {
-					fieldName = s.split(" as ")[1];
-				} else if (s.split(" ").length > 1) {
-					fieldName = s.split(" ")[s.split(" ").length - 1];
-				} else if (s.split("\\.").length > 1) {
-					fieldName = s.split("\\.")[1];
+				if (s.toLowerCase().contains(" as ")) {
+					fieldName = s.split("(?i) as ")[1];
 				} else {
-					fieldName = s;
+					String[] parts = s.split("\\s+");
+					fieldName = parts[parts.length - 1];
 				}
 				
 				fields.add(new Field(fieldName.trim()));
-				
 			}
 		}
 		
 		return fields;
+	}
+	
+	private static List<String> splitSelectFields(String selectClause) {
 		
+		List<String> result = new ArrayList<>();
+		
+		StringBuilder current = new StringBuilder();
+		
+		int parentheses = 0;
+		
+		for (char c : selectClause.toCharArray()) {
+			
+			if (c == '(')
+				parentheses++;
+			else if (c == ')')
+				parentheses--;
+			
+			if (c == ',' && parentheses == 0) {
+				result.add(current.toString());
+				current.setLength(0);
+				continue;
+			}
+			
+			current.append(c);
+		}
+		
+		if (!current.isEmpty()) {
+			result.add(current.toString());
+		}
+		
+		return result;
 	}
 	
 	public static String determineDataBaseFromConnection(Connection conn) throws DBException {

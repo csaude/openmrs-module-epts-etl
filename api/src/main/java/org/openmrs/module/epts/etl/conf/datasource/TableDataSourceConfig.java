@@ -153,8 +153,9 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public void setExtraConditionForExtract(String extraConditionForExtract) {
-		throw new ForbiddenOperationException(
-		        "Forbiden method for auxExtractTable(" + this + ") please use joinExtraCondition parameter!!!");
+		if (extraConditionForExtract != null)
+			throw new ForbiddenOperationException(
+			        "Forbiden method for auxExtractTable(" + this + ") please use joinExtraCondition parameter!!!");
 	}
 	
 	@Override

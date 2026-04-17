@@ -165,6 +165,9 @@ public class OpenConnection implements Connection, Closeable {
 			}
 			
 			this.close();
+			
+			connService.removeOpenConnection(this);
+			
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
@@ -606,5 +609,13 @@ public class OpenConnection implements Connection, Closeable {
 	@Override
 	public String toString() {
 		return "id[" + id + "] url:[" + this.connService.getDbConnInfo().getConnectionURI() + "]";
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof OpenConnection))
+			return false;
+		
+		return this.id.equals(((OpenConnection) obj).id);
 	}
 }

@@ -199,7 +199,10 @@ public abstract class AbstractSearchParams<T extends VO> {
 		
 		for (int i = 0; i < query.length(); i++) {
 			if (query.charAt(i) == '?') {
-				fulfiledQuery += parseParamToString(searchClauses.getParameters()[currParam], srcConn);
+				Object[] params = searchClauses.getParameters();
+				
+				fulfiledQuery += parseParamToString(params[currParam], srcConn);
+				
 				currParam++;
 			} else
 				fulfiledQuery += query.charAt(i);

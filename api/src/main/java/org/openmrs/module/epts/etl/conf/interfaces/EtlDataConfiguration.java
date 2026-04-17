@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,8 @@ import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public interface EtlDataConfiguration extends BaseConfiguration {
 	
@@ -79,6 +82,21 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	
 	default boolean hasTemplate() {
 		return this.getTemplate() != null;
+	}
+	
+	default OpenConnection replicateConnection(Connection conn) throws DBException {
+		
+		if (!(conn instanceof OpenConnection)) {
+			throw new EtlExceptionImpl("Only OpenConnection");
+		}
+		
+		return ((OpenConnection) conn).getDbConnInfo().openConnection();
+	}
+	
+	default void finalizeConnection(OpenConnection conn) {
+		if (conn != null) {
+			conn.finalizeConnection();
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -245,4 +263,5 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		
 		return sb.toString();
 	}
+	
 }

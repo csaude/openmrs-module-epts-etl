@@ -17,17 +17,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class DBConnectionService {
 	
-	static int openConnections;
+	static int qtyOpenedConnections;
 	
-	static int closedConnections;
+	static int qtyClosedConnections;
 	
 	private static final EptsEtlLogger logger = EptsEtlLogger.getLogger(DBConnectionService.class);
+	
+	private static final Object LOCK = new Object();
 	
 	private static List<DBConnectionService> services = new ArrayList<DBConnectionService>();
 	
 	private DBConnectionInfo dbConnInfo;
 	
 	private DataSource dataSource;
+	
+	private List<OpenConnection> openConnections;
 	
 	private DBConnectionService(DBConnectionInfo dbConnInfo) {
 		this.dbConnInfo = dbConnInfo;
@@ -47,6 +51,8 @@ public class DBConnectionService {
 		this.dataSource.setMinEvictableIdleTimeMillis(15 * 60000);
 		this.dataSource.getPoolProperties().getDbProperties().setProperty("connectRetryCount", "" + 255);
 		this.dataSource.getPoolProperties().getDbProperties().setProperty("connectRetryInterval", "" + 15);
+		
+		this.openConnections = new ArrayList<>();
 	}
 	
 	public void finalize() {
@@ -122,7 +128,21 @@ public class DBConnectionService {
 	public OpenConnection openConnection() throws DBException {
 		OpenConnection conn = new OpenConnection(openConnection(50, null), this);
 		
+		addOpenConnection(conn);
+		
 		return conn;
+	}
+	
+	private void addOpenConnection(OpenConnection conn) {
+		synchronized (LOCK) {
+			this.openConnections.add(conn);
+		}
+	}
+	
+	void removeOpenConnection(OpenConnection conn) {
+		synchronized (LOCK) {
+			this.openConnections.remove(conn);
+		}
 	}
 	
 	private Connection openConnection(int qtyTry, SQLException e) throws DBException {
