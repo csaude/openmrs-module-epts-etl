@@ -802,6 +802,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			int pos = 0;
 			
 			for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
+				if (item.isDisabled())
+					continue;
+				
 				pos++;
 				
 				item.setRelatedEtlConfig(this);

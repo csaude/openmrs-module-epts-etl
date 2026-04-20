@@ -160,7 +160,9 @@ public interface EtlFieldTransformer {
 				return paramValue;
 			}
 			
-			matcher.appendReplacement(buffer, Matcher.quoteReplacement(paramValue.toString()));
+			if (paramValue != null) {
+				matcher.appendReplacement(buffer, Matcher.quoteReplacement(paramValue.toString()));
+			}
 		}
 		
 		matcher.appendTail(buffer);
