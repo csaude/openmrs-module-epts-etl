@@ -50,6 +50,17 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	
 	private EtlTemplateInfo template;
 	
+	private List<String> dynamicElements;
+	
+	@Override
+	public List<String> getDynamicElements() {
+		return dynamicElements;
+	}
+	
+	public void setDynamicElements(List<String> dynamicElements) {
+		this.dynamicElements = dynamicElements;
+	}
+	
 	@Override
 	public EtlTemplateInfo getTemplate() {
 		return template;

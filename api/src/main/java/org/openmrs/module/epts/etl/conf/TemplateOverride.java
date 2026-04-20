@@ -10,11 +10,12 @@ import java.util.Objects;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class TemplateOverride {
+public class TemplateOverride extends AbstractEtlDataConfiguration {
 	
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 	
@@ -25,6 +26,8 @@ public class TemplateOverride {
 	private JsonNode value;
 	
 	private EtlActionType type;
+	
+	private EtlTemplateInfo parent;
 	
 	public String getPath() {
 		return path;
@@ -106,7 +109,7 @@ public class TemplateOverride {
 				
 				if (matchedIndex < 0) {
 					throw new EtlExceptionImpl("No matching element found in list '" + targetField.getName()
-					        + "' for override path: " + this.path);
+					        + "' for override path: '" + this.path + "' within the template " + this.getParentConf());
 				}
 				
 				if (this.type == EtlActionType.UPDATE) {
@@ -253,6 +256,17 @@ public class TemplateOverride {
 			}
 		}
 		
+		if (List.class.isAssignableFrom(currentObject.getClass())) {
+			List<?> targetList = (List<?>) currentObject;
+			
+			if (utilities.listHasExactlyOneElement(targetList)) {
+				currentObject = targetList.get(0);
+			} else {
+				throw new EtlExceptionImpl("");
+			}
+			
+		}
+		
 		Field targetField = findField(currentObject.getClass(), parts[parts.length - 1]);
 		
 		if (targetField == null) {
@@ -313,5 +327,23 @@ public class TemplateOverride {
 			this.parentObject = parentObject;
 			this.field = field;
 		}
+	}
+	
+	@Override
+	public EtlTemplateInfo getParentConf() {
+		return this.parent;
+	}
+	
+	public void setParent(EtlTemplateInfo parent) {
+		this.parent = parent;
+	}
+	
+	@Override
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+	}
+	
+	@Override
+	public String toString() {
+		return this.getParentConf().getName() + " " + this.path;
 	}
 }

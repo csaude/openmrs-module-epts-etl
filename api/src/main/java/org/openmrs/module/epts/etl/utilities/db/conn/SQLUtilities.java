@@ -39,7 +39,8 @@ public class SQLUtilities {
 		
 		Statement st = null;
 		ResultSet rs = null;
-		ArrayList<String> logs = new ArrayList<String>();
+		
+		List<String> logs = new ArrayList<String>();
 		
 		try {
 			
@@ -58,19 +59,7 @@ public class SQLUtilities {
 			e.printStackTrace();
 		}
 		finally {
-			try {
-				st.close();
-				logs.add("Closed st");
-				rs.close();
-				logs.add("Closed rs");
-			}
-			catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			finally {
-				//File.write("C:\\sqlHelperLogs.txt", logs);
-			}
+			ensureResourceAreClosed(logs, (PreparedStatement) st, rs);
 		}
 		
 		return nKeyNova;
@@ -106,19 +95,7 @@ public class SQLUtilities {
 			e.printStackTrace();
 		}
 		finally {
-			try {
-				st.close();
-				logs.add("Closed st");
-				rs.close();
-				logs.add("Closed rs");
-			}
-			catch (Exception e) {
-				//e.printStackTrace();
-				throw new RuntimeException(e);
-			}
-			finally {
-				//File.write("C:\\sqlHelperLogs.txt", logs);
-			}
+			ensureResourceAreClosed(logs, st, rs);
 		}
 		
 		if (!(codigo.equals("0") || codigo.isEmpty()))
@@ -152,19 +129,7 @@ public class SQLUtilities {
 			throw new DBException(e);
 		}
 		finally {
-			try {
-				st.close();
-				logs.add("Closed st");
-				rs.close();
-				logs.add("Closed rs");
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-				throw new RuntimeException(e);
-			}
-			finally {
-				//File.write("C:\\sqlHelperLogs.txt", logs);
-			}
+			ensureResourceAreClosed(logs, st, rs);
 		}
 		
 		if (!codigo.equals("0"))
@@ -207,18 +172,7 @@ public class SQLUtilities {
 			throw new DBException(e);
 		}
 		finally {
-			try {
-				st.close();
-				logs.add("Closed st");
-				rs.close();
-				logs.add("Closed rs");
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-			finally {
-				//File.write("C:\\sqlHelperLogs.txt", logs);
-			}
+			ensureResourceAreClosed(logs, st, rs);
 			
 			rs = null;
 			st = null;
@@ -274,18 +228,7 @@ public class SQLUtilities {
 			throw new DBException(e);
 		}
 		finally {
-			try {
-				st.close();
-				logs.add("Closed st");
-				rs.close();
-				logs.add("Closed rs");
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-			finally {
-				//File.write("C:\\sqlHelperLogs.txt", logs);
-			}
+			ensureResourceAreClosed(logs, st, rs);
 			
 			rs = null;
 			st = null;
@@ -318,18 +261,7 @@ public class SQLUtilities {
 			throw new DBException(e);
 		}
 		finally {
-			try {
-				st.close();
-				logs.add("Closed st");
-				rs.close();
-				logs.add("Closed rs");
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-			finally {
-				//File.write("C:\\sqlHelperLogs.txt", logs);
-			}
+			ensureResourceAreClosed(logs, st, rs);
 			
 			rs = null;
 			st = null;
@@ -386,18 +318,7 @@ public class SQLUtilities {
 			throw new DBException(e);
 		}
 		finally {
-			try {
-				st.close();
-				logs.add("Closed st");
-				rs.close();
-				logs.add("Closed rs");
-			}
-			catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			finally {
-				//File.write("C:\\sqlHelperLogs.txt", logs);
-			}
+			ensureResourceAreClosed(logs, st, rs);
 			
 			rs = null;
 			st = null;
@@ -440,27 +361,33 @@ public class SQLUtilities {
 			throw new DBException(e);
 		}
 		finally {
-			try {
-				st.close();
-				logs.add("Closed st");
-				if (rs != null)
-					rs.close();
-				
-				logs.add("Closed rs");
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-				throw new RuntimeException(e);
-			}
-			finally {
-				//File.write("C:\\sqlHelperLogs.txt", logs);
-			}
+			ensureResourceAreClosed(logs, st, rs);
 		}
 		
 		rs = null;
 		st = null;
 		
 		return isInUse;
+	}
+	
+	private static void ensureResourceAreClosed(List<String> logs, PreparedStatement st, ResultSet rs) {
+		try {
+			if (st != null) {
+				st.close();
+				logs.add("Closed st");
+			}
+			
+			if (rs != null) {
+				rs.close();
+				logs.add("Closed rs");
+			}
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		finally {
+			//File.write("C:\\sqlHelperLogs.txt", logs);
+		}
 	}
 	
 	/**
@@ -489,21 +416,7 @@ public class SQLUtilities {
 			throw new DBException(e);
 		}
 		finally {
-			try {
-				if (st != null)
-					st.close();
-				logs.add("Closed st");
-				if (rs != null)
-					rs.close();
-				logs.add("Closed rs");
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-				throw new RuntimeException(e);
-			}
-			finally {
-				//File.write("C:\\sqlHelperLogs.txt", logs);
-			}
+			ensureResourceAreClosed(logs, st, rs);
 		}
 		return codigo + 1;
 	}

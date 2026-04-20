@@ -75,6 +75,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	default void ensureTemplateOverride() {
 		if (this.hasTemplate() && this.getTemplate().hasOverride()) {
 			for (TemplateOverride override : this.getTemplate().getOverride()) {
+				override.setParent( this.getTemplate());
 				override.applyOverride(this);
 			}
 		}
@@ -263,5 +264,4 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		
 		return sb.toString();
 	}
-	
 }

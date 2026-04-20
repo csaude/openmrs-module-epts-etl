@@ -13,6 +13,7 @@ import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.PrimaryKey;
@@ -2156,7 +2157,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		
 		if (utilities.listHasElement(pInfo)) {
 			
-			if (utilities.arrayHasExactlyOneElement(pInfo)) {
+			if (utilities.listHasExactlyOneElement(pInfo)) {
 				
 				ParentTable ref = pInfo.get(0);
 				
@@ -2176,7 +2177,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			pInfo = this.findAllRefToParent(relatedTabConf.getTableName());
 			
 			if (utilities.listHasElement(pInfo)) {
-				if (utilities.arrayHasExactlyOneElement(pInfo)) {
+				if (utilities.listHasExactlyOneElement(pInfo)) {
 					
 					ParentTable ref = pInfo.get(0);
 					
@@ -2449,7 +2450,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		List<ParentTable> parents = findAllRefToParent(parentTable);
 		
 		if (utilities.listHasElement(parents)) {
-			if (utilities.arrayHasExactlyOneElement(parents)) {
+			if (utilities.listHasExactlyOneElement(parents)) {
 				return parents.get(0);
 			}
 			
@@ -2949,6 +2950,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	default long getMaxRecordId(Engine<? extends EtlDatabaseObject> engine, Connection conn) throws DBException {
 		return this.getExtremeRecord(engine, SqlFunctionType.MAX, conn);
+	}
+	
+	default EtlTemplateInfo retrieveNearestTemplate() {
+		return this.getTemplate();
 	}
 	
 }

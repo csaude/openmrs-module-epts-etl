@@ -306,7 +306,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				childItem.setParentItemConf(this);
 				
 				if (!utilities.stringHasValue(childItem.getRelatedParentDstConfName())) {
-					if (utilities.arrayHasExactlyOneElement(this.getDstConf())) {
+					if (utilities.listHasExactlyOneElement(this.getDstConf())) {
 						childItem.setRelatedParentDstConfName(this.getDstConf().get(0).getName());
 					} else {
 						throw new ForbiddenOperationException(
@@ -482,7 +482,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			if (this.hasParentItemConf() && this.getRelatedParentDstConf() == null) {
 				
 				if (!utilities.stringHasValue(this.getRelatedParentDstConfName())) {
-					if (utilities.arrayHasExactlyOneElement(this.getParentItemConf().getDstConf())) {
+					if (utilities.listHasExactlyOneElement(this.getParentItemConf().getDstConf())) {
 						this.setRelatedParentDstConfName(this.getParentItemConf().getDstConf().get(0).getName());
 					} else {
 						throw new ForbiddenOperationException("The relatedParentDstConfName was not defined for the conf "
@@ -768,5 +768,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		super.tryToLoadFromTemplate();
 		
 		setDisabled(disabled);
+	}
+	
+	@Override
+	public EtlTemplateInfo retrieveNearestTemplate() {
+		return this.hasTemplate() ? this.getTemplate()
+		        : (this.hasParentItemConf() ? this.getParentItemConf().retrieveNearestTemplate() : null);
 	}
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlField;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
@@ -821,6 +822,11 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		searchParams.setParentObject(parentSrcObject);
 		
 		return searchParams.search(null, srcConn, srcConn);
+	}
+	
+	@Override
+	public EtlTemplateInfo retrieveNearestTemplate() {
+		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
 	}
 	
 }

@@ -288,14 +288,6 @@ public class FieldsMapping extends Field implements TransformableField {
 		return this.transformerInstance;
 	}
 	
-	public Extension getExtension() {
-		return extension;
-	}
-	
-	public void setExtension(Extension extension) {
-		this.extension = extension;
-	}
-	
 	public Boolean useDefaultTransformer() {
 		return getTransformerInstance() instanceof DefaultFieldTransformer;
 	}

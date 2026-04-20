@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
@@ -167,7 +168,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects)
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(processor, srcObject, dstObject, avaliableSrcObjects, srcConn)
 		        .query(processor.getEngine(), srcConn);
 		
 		if (utilities.listHasNoElement(list)) {
@@ -312,5 +313,10 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		
 		AuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);
 		
+	}
+	
+	@Override
+	public EtlTemplateInfo retrieveNearestTemplate() {
+		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
 	}
 }

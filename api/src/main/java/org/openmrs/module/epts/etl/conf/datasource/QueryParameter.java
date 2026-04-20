@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.conf.types.ParameterContextType;
 import org.openmrs.module.epts.etl.conf.types.ParameterValueType;
@@ -189,6 +190,19 @@ public class QueryParameter extends Field {
 		String selectRegex = "(?i)\\s*select\\s+.+?\\s*";
 		
 		return query.toLowerCase().matches(selectRegex);
+	}
+	
+	public boolean isDynamicElement(EtlDataSource ds) {
+		if (!ds.hasDynamicElements())
+			return false;
+		
+		for (String element : ds.getDynamicElements()) {
+			if (this.getName().equals(element) || this.getName().equals( "(" +element + ")")) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 }

@@ -124,12 +124,7 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 		
 		if (itemConf.hasChildItemConf()) {
 			for (EtlItemConfiguration childItemConf : itemConf.getChildItemConf()) {
-				try {
-					childItemConf.fullLoad(this.getRelatedEtlOperationConfig());
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
+				childItemConf.fullLoad(this.getRelatedEtlOperationConfig());
 				
 				for (EtlDatabaseObject rec : loadHelper
 				        .getAllSuccedTransformedObjects(childItemConf.getRelatedParentDstConf())) {
@@ -142,8 +137,8 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	private void performeEtlOnChildItem(EtlItemConfiguration itemConf, EtlDatabaseObject transformedParent,
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
-		List<EtlDatabaseObject> etlObjects  = itemConf.getSrcConf().searchRecords(this.getEngine(),
-			    transformedParent.getEtlInfo().getRelatedSrcObject(), srcConn);
+		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(this.getEngine(),
+		    transformedParent.getEtlInfo().getRelatedSrcObject(), srcConn);
 		
 		if (!etlObjects.isEmpty()) {
 			perform(itemConf, etlObjects, transformedParent, LoadingType.INNER, srcConn, dstConn);

@@ -430,7 +430,7 @@ public class CommonUtilities implements Serializable {
 		return FuncoesGenericas.arraySize(list);
 	}
 	
-	public boolean arrayHasExactlyOneElement(List<?> list) {
+	public boolean listHasExactlyOneElement(List<?> list) {
 		return FuncoesGenericas.arrayHasExactlyOneElement(list);
 	}
 	

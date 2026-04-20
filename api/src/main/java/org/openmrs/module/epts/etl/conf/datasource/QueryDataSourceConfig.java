@@ -9,13 +9,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
@@ -39,7 +39,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * Represents a query configuration. A query is used on data mapping between source and destination
  * table
  */
-public class QueryDataSourceConfig extends AbstractBaseConfiguration implements DatabaseObjectConfiguration, EtlAdditionalDataSource {
+public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implements DatabaseObjectConfiguration, EtlAdditionalDataSource {
 	
 	private final String stringLock = new String("LOCK_STRING");
 	
@@ -67,6 +67,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	
 	private Boolean doNotLoadFields;
 	
+	private List<String> dynamicElements;
+	
 	public QueryDataSourceConfig() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
@@ -77,6 +79,14 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		setRelatedSrcConf(relatedSrcVonf);
 		
 		setQuery(query);
+	}
+	
+	public List<String> getDynamicElements() {
+		return dynamicElements;
+	}
+	
+	public void setDynamicElements(List<String> dynamicElements) {
+		this.dynamicElements = dynamicElements;
 	}
 	
 	public Boolean isDoNotLoadFields() {
@@ -165,7 +175,16 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 		String pathToScript = getRelatedEtlConf().getSqlScriptsDirectory().getAbsolutePath() + File.separator + this.script;
 		
 		try {
-			this.setQuery(new String(Files.readAllBytes(Paths.get(pathToScript))));
+			
+			String query = new String(Files.readAllBytes(Paths.get(pathToScript)));
+			
+			if (retrieveNearestTemplate() != null) {
+				query = EtlDataConfiguration.resolvePlaceholders(query, null, null, null,
+				    retrieveNearestTemplate().getParameters());
+			}
+			
+			this.setQuery(query);
+			
 		}
 		catch (IOException e) {
 			throw new RuntimeException(e);
@@ -444,7 +463,8 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects)
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery()
+		        .cloneAndLoadValues(processor, srcObject, dstObject, avaliableSrcObjects, srcConn)
 		        .query(processor != null ? processor.getEngine() : null, srcConn);
 		
 		if (utilities.listHasNoElement(list)) {
@@ -586,6 +606,11 @@ public class QueryDataSourceConfig extends AbstractBaseConfiguration implements 
 	@Override
 	public ActionOnEtlException getGeneralBehaviourOnEtlException() {
 		return relatedSrcConf.getGeneralBehaviourOnEtlException();
+	}
+	
+	@Override
+	public EtlTemplateInfo retrieveNearestTemplate() {
+		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
 	}
 	
 }

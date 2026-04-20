@@ -3,7 +3,6 @@ package org.openmrs.module.epts.etl.conf.datasource;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.conf.types.EtlNullBehavior;
@@ -19,8 +18,6 @@ public class DataSourceField extends Field implements TransformableField {
 	private String transformer;
 	
 	private EtlFieldTransformer transformerInstance;
-	
-	private Extension extension;
 	
 	private Boolean dataTypeLoaded;
 	
@@ -116,14 +113,6 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	public void setTransformerInstance(EtlFieldTransformer transformerInstance) {
 		this.transformerInstance = transformerInstance;
-	}
-	
-	public Extension getExtension() {
-		return extension;
-	}
-	
-	public void setExtension(Extension extension) {
-		this.extension = extension;
 	}
 	
 	public Boolean isDataTypeLoaded() {

@@ -32,4 +32,8 @@ public abstract class AbstractEtlDataConfiguration extends AbstractBaseConfigura
 		return relatedEtlConf.getGeneralBehaviourOnEtlException();
 	}
 	
+	public EtlTemplateInfo retrieveNearestTemplate() {
+		return this.getTemplate();
+	}
+	
 }

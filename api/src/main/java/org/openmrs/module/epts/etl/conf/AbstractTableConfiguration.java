@@ -120,6 +120,8 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private Integer primaryKeyInitialIncrementValue;
 	
+	private List<String> dynamicElements;
+	
 	public AbstractTableConfiguration() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
 	}
@@ -128,6 +130,15 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this();
 		
 		this.tableName = tableName;
+	}
+	
+	@Override
+	public List<String> getDynamicElements() {
+		return dynamicElements;
+	}
+	
+	public void setDynamicElements(List<String> dynamicElements) {
+		this.dynamicElements = dynamicElements;
 	}
 	
 	@Override

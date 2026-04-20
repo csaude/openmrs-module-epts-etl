@@ -22,6 +22,12 @@ public interface EtlDataSource extends DatabaseObjectConfiguration {
 	
 	void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery);
 	
+	List<String> getDynamicElements();
+	
+	default boolean hasDynamicElements() {
+		return utilities.listHasElement(this.getDynamicElements());
+	}
+	
 	default Boolean isPrepared() {
 		return this.getDefaultPreparedQuery() != null;
 	}
@@ -49,7 +55,7 @@ public interface EtlDataSource extends DatabaseObjectConfiguration {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(engine, srcConn);
+		return this.getDefaultPreparedQuery().cloneAndLoadValues(null, parentSrcObject, parentSrcObject, avaliableSrcObjects, srcConn) .query(engine, srcConn);
 	}
 	
 	default void loadOwnFieldsToEtlFields(List<EtlField> etlFields, Boolean presereOriginalNames) {

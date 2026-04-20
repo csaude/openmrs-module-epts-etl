@@ -1397,4 +1397,9 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		getRelatedEtlConf().addConfiguredTable(this);
 	}
+	
+	@Override
+	public EtlTemplateInfo retrieveNearestTemplate() {
+		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
+	}
 }
