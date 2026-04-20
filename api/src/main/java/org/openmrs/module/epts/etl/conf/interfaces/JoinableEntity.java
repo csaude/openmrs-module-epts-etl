@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.MissingJoiningElementsException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
@@ -133,8 +134,7 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 		}
 		
 		if (!hasJoinFields()) {
-			throw new ForbiddenOperationException("No join fields were difined between "
-			        + this.getJoiningEntity().getTableName() + " And " + this.getTableName());
+			throw new MissingJoiningElementsException(this, this.getJoiningEntity());
 		} else {
 			
 			for (FieldsMapping joiningField : this.getJoinFields()) {

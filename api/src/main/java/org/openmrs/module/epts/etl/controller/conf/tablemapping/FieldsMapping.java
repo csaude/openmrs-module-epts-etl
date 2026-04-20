@@ -102,6 +102,8 @@ public class FieldsMapping extends Field implements TransformableField {
 		
 		if (dstField == null) {
 			throw new EtlExceptionImpl("A FieldsMapping must have at least a srcFieldName or dstField");
+		} else {
+			dstField = dstField.toString().split("\\.")[0];
 		}
 		
 		if (tryToLoadTransformer)

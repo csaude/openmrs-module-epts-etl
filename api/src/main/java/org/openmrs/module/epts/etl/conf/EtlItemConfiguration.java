@@ -218,8 +218,9 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.dstConf = dstConf;
 	}
 	
-	public static EtlItemConfiguration fastCreate(AbstractTableConfiguration tableConfig, Connection conn)
-	        throws DBException {
+	public static EtlItemConfiguration fastCreate(AbstractTableConfiguration tableConfig,
+	        boolean useMainEtlTableAsSrcConfIfNotExists, Connection conn) throws DBException {
+		
 		EtlItemConfiguration etl = new EtlItemConfiguration();
 		
 		SrcConf src = SrcConf.fastCreate(tableConfig, etl, conn);
@@ -229,6 +230,13 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		etl.setRelatedEtlConfig(tableConfig.getRelatedEtlConf());
 		
 		return etl;
+		
+	}
+	
+	public static EtlItemConfiguration fastCreate(AbstractTableConfiguration tableConfig, Connection conn)
+	        throws DBException {
+		
+		return fastCreate(tableConfig, false, conn);
 	}
 	
 	public static EtlItemConfiguration fastCreate(String configCode) {

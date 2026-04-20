@@ -24,10 +24,10 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.exceptions.MissingFieldException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
@@ -431,7 +431,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		}
 		
 		if (dstParent == null) {
-			dstParent = retrieveExistingOnDemandParent(processor, srcObject, additionalSrcObjects, srcConn, dstConn);
+			dstParent = this.retrieveExistingOnDemandParent(processor, srcObject, additionalSrcObjects, srcConn, dstConn);
 			
 			if (dstParent == null) {
 				if (usesTemplate()) {
@@ -445,6 +445,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 					
 					srcParent = recs.get(0);
 				}
+				
 				dstParent = createParent(processor, srcParent, srcObject, transformedRecord, additionalSrcObjects, field,
 				    srcConn, dstConn);
 			}
@@ -595,22 +596,9 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		for (int i = 0; i < params.length; i++) {
 			FieldsMapping mapping = this.onDemandCondtionElements.get(i).getMappig();
 			
-			FieldTransformingInfo paramValueInfo = null;
-			
-			try {
-				mapping.getTransformerInstance().performFieldTransformation(processor, srcObjects.get(0), auxObject,
-				    srcObjects, mapping, srcConn, dstConn);
-				
-				paramValueInfo = auxObject.getField(mapping.getDstField()).getTransformingInfo();
-				
-				params[i] = paramValueInfo.getTransformedValue();
-			}
-			catch (MissingFieldException e) {
-				paramValueInfo = mapping.getTransformerInstance().transform(processor, srcObjects.get(0), auxObject,
-				    srcObjects, mapping, srcConn, dstConn);
-				
-				params[i] = paramValueInfo.getTransformedValue();
-			}
+			params[i] = mapping.getTransformerInstance()
+			        .transform(processor, srcObjects.get(0), auxObject, srcObjects, mapping, srcConn, dstConn)
+			        .getTransformedValue();
 		}
 		
 		return dstConf.find(condition, params, dstConn);
@@ -785,7 +773,19 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	}
 	
 	private EtlItemConfiguration generateEtlItemConf(Connection srcConn) throws DBException {
+		boolean useMainEtlTable = false;
+		
 		AbstractTableConfiguration parentConf = new GenericTableConfiguration(parentTableName);
+		
+		try {
+			parentConf.loadSchemaInfo(null, srcConn);
+		}
+		catch (DatabaseResourceDoesNotExists e) {
+			parentConf = new GenericTableConfiguration(this.getRelatedDstConf().getRelatedEtlConf().getMainEtlTable());
+			
+			useMainEtlTable = true;
+		}
+		
 		parentConf.setRelatedEtlConfig(relatedDstConf.getRelatedEtlConf());
 		
 		EtlItemConfiguration conf = EtlItemConfiguration.fastCreate(parentConf, srcConn);
@@ -798,6 +798,10 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 			conf.setTemplate(template);
 			
 			conf.getRelatedEtlConf().logTrace("Template within transformer loaded!");
+		} else if (useMainEtlTable) {
+			DstConf dstCOnf = new DstConf(parentTableName);
+			
+			conf.setDstConf(utilities.parseToList(dstCOnf));
 		}
 		
 		conf.setParentItemConf(relatedDstConf.getParentConf());

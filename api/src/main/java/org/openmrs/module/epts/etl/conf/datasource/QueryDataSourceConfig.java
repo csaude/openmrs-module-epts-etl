@@ -19,7 +19,10 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
+import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -69,8 +72,12 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	
 	private List<String> dynamicElements;
 	
+	private RelationshipResolutionStrategy relationshipResolutionStrategy;
+	
 	public QueryDataSourceConfig() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
+		
+		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
 	}
 	
 	public QueryDataSourceConfig(String query, SrcConf relatedSrcVonf) {
@@ -79,6 +86,18 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 		setRelatedSrcConf(relatedSrcVonf);
 		
 		setQuery(query);
+	}
+	
+	public RelationshipResolutionStrategy getRelationshipResolutionStrategy() {
+		return relationshipResolutionStrategy;
+	}
+	
+	public void setRelationshipResolutionStrategy(RelationshipResolutionStrategy relationshipResolutionStrategy) {
+		this.relationshipResolutionStrategy = relationshipResolutionStrategy;
+	}
+	
+	public RelationshipResolutionStrategy relationshipResolutionStrategy() {
+		return this.relationshipResolutionStrategy;
 	}
 	
 	public List<String> getDynamicElements() {
@@ -90,7 +109,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	public Boolean isDoNotLoadFields() {
-		return isTrue(doNotLoadFields);
+		return isTrue(doNotLoadFields) || this.hasFields();
 	}
 	
 	public void setDoNotLoadFields(Boolean doNotLoadFields) {
@@ -474,7 +493,18 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 			        "The datasource (" + this.getName() + ") returned more than one src objects");
 		}
 		
-		return list.get(0);
+		EtlDatabaseObject result = list.get(0);
+		
+		if (relationshipResolutionStrategy.skip()) {
+			for (Field f : result.getFields()) {
+				FieldsMapping tf = FieldsMapping.fastCreate(f.getName());
+				tf.setRelationshipResolutionStrategy(RelationshipResolutionStrategy.SKIP);
+				
+				f.setTransformingInfo(new FieldTransformingInfo(tf, result.getFieldValues(), this));
+			}
+		}
+		
+		return result;
 	}
 	
 	@Override

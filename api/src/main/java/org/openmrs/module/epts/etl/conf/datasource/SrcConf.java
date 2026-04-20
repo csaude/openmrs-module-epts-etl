@@ -24,6 +24,7 @@ import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.MissingJoiningElementsException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -232,6 +233,22 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		if (isJoinable()) {
 			this.loadJoinElements(schemaInfo, conn);
 		}
+	}
+	
+	@Override
+	public void loadJoinElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
+		try {
+			JoinableEntity.super.loadJoinElements(schemaInfo, conn);
+		}
+		catch (MissingJoiningElementsException e) {
+			if (hasParentConf()) {
+				
+			}
+		}
+	}
+	
+	public Boolean hasParentConf() {
+		return this.getParentConf().hasParentItemConf();
 	}
 	
 	private void loadEtlFields() {

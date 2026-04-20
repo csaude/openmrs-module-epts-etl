@@ -187,6 +187,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private RelationshipResolutionStrategy relationshipResolutionStrategy;
 	
+	private String mainEtlTable;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -203,6 +205,14 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.defaultExceptionBehavior = ActionOnEtlException.ABORT_PROCESS;
 		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
 		this.defaultInconsistencyBehavior = EtlInconsistencyBehavior.ABORT_PROCESS;
+	}
+	
+	public String getMainEtlTable() {
+		return mainEtlTable;
+	}
+	
+	public void setMainEtlTable(String mainEtlTable) {
+		this.mainEtlTable = mainEtlTable;
 	}
 	
 	public RelationshipResolutionStrategy getRelationshipResolutionStrategy() {

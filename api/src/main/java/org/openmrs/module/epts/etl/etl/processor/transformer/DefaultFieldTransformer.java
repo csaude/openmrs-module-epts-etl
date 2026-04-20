@@ -74,6 +74,10 @@ public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 				
 				found = true;
 				
+				if (field.getDataSourceName().contains("_sisrme_drug_ds")) {
+					System.out.println();
+				}
+				
 				String fieldNameSnake = utilities.parsetoSnakeCase(field.getName());
 				String fieldNameCamel = utilities.parsetoCamelCase(field.getName());
 				
