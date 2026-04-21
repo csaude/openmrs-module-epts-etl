@@ -30,6 +30,7 @@ import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.DuplicateMappingException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.MissingJoiningElementsException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
@@ -364,7 +365,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			this.setUsingManualDefinedAlias(true);
 		}
 		
-		this.tryToLoadSchemaInfo(schemaInfoSrc);
+		this.tryToLoadSchemaInfo(schemaInfoSrc, conn);
 		
 		if (!this.hasSchema()) {
 			this.setSchema(toCloneFrom.getSchema());
@@ -456,7 +457,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				this.loadManualConfiguredPk(conn);
 			} else {
 				
-				this.loadSchemaInfo(null, conn);
+				this.tryToLoadSchemaInfo(null, conn);
+				
 				this.loadFields(conn);
 				
 				try {
@@ -1201,7 +1203,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	@JsonIgnore
 	default String generateRelatedSrcStageTableName() {
-		return this.getTableName() + "src_stage";
+		return this.getTableName() + "_src_stage";
 	}
 	
 	@JsonIgnore
@@ -1296,33 +1298,14 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		
-		OpenConnection openConn = null;
-		
 		try {
 			
-			if (conn instanceof OpenConnection) {
-				openConn = ((OpenConnection) conn).getDbConnInfo().openConnection();
-				
-				conn = openConn;
-			}
-			
-			boolean resourseExists = DBUtilities.isResourceExist(schema, null, resourceType, stageTable, conn);
-			
-			if (openConn != null) {
-				openConn.markAsSuccessifullyTerminated();
-			}
-			
-			return resourseExists;
+			return DBUtilities.isResourceExist(schema, null, resourceType, stageTable, conn);
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
-		}
-		finally {
-			if (openConn != null) {
-				openConn.finalizeConnection();
-			}
 		}
 	}
 	
@@ -1348,7 +1331,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 					return;
 				}
 				
-				this.loadSchemaInfo(null, conn);
+				tryToLoadSchemaInfo(null, conn);
 				
 				this.loadFields(conn);
 				
@@ -1462,7 +1445,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	/**
 	 * @throws ForbiddenOperationException
 	 */
-	default void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc) throws ForbiddenOperationException {
+	@Override
+	default void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
+		
 		if (this.isTableNameInfoLoaded())
 			return;
 		
@@ -1511,31 +1497,6 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			}
 		}
 		
-	}
-	
-	/**
-	 * @param conn
-	 * @throws DBException
-	 * @throws ForbiddenOperationException
-	 */
-	default void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
-	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
-		
-		if (this.isTableNameInfoLoaded())
-			return;
-		
-		this.tryToLoadSchemaInfo(schemaInfoSrc);
-		
-		if (this.getSchema() == null) {
-			this.setSchema(DBUtilities.determineSchemaName(conn));
-		}
-		
-		Boolean exists = DBUtilities.isTableExists(this.getSchema(), this.getTableName(), conn);
-		
-		if (!exists)
-			throw new DatabaseResourceDoesNotExists(this.generateFullTableName(conn));
-		
-		this.setTableNameInfoLoaded(true);
 	}
 	
 	/**
@@ -2186,8 +2147,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 		
 		if (!utilities.listHasElement(joinFields)) {
-			throw new ForbiddenOperationException(
-			        "No join fields were difined between " + this.getTableName() + " And " + relatedTabConf.getTableName());
+			throw new MissingJoiningElementsException(this, relatedTabConf);
 		}
 		
 		return joinFields;

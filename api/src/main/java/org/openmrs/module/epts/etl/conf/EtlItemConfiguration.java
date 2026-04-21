@@ -276,7 +276,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		relatedEtlConf.addConfiguredTable(this.getSrcConf());
 		
-		this.getSrcConf().init(this);
+		this.getSrcConf().init(this, srcConn, dstConn);
 		
 		String code = "";
 		
@@ -395,6 +395,27 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public synchronized void fullLoad(EtlOperationConfig operationConfig) throws DBException {
+		
+		OpenConnection dstConn = this.getRelatedEtlConf().tryOpenDstConn();
+		OpenConnection srcConn = this.getRelatedEtlConf().openSrcConn();
+		
+		try {
+			fullLoad(operationConfig, srcConn, dstConn);
+		}
+		finally {
+			if (dstConn != null) {
+				dstConn.finalizeConnection();
+			}
+			
+			if (srcConn != null) {
+				srcConn.finalizeConnection();
+			}
+		}
+		
+	}
+	
+	public synchronized void fullLoad(EtlOperationConfig operationConfig, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		if (this.isFullLoaded()) {
 			return;
 		}
@@ -407,10 +428,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			this.srcConf.setDstType(operationConfig.getDstType());
 		}
 		
-		this.srcConf.fullLoad();
-		
-		OpenConnection dstConn = null;
-		OpenConnection srcConn = null;
+		this.srcConf.fullLoad(srcConn);
 		
 		try {
 			
@@ -433,7 +451,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 					map.setDstType(this.getSrcConf().getDstType());
 					
 					try {
-						map.loadSchemaInfo(null, dstConn);
+						map.tryToLoadSchemaInfo(this.relatedEtlSchemaObject, srcConn);
 					}
 					catch (DatabaseResourceDoesNotExists e) {
 						if (map.getDstType().isDb() && !this.createDstTableIfNotExists()) {
@@ -481,11 +499,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			
 			if (operationConfig.writeOperationHistory()
 			        || operationConfig.getRelatedEtlConfig().getGeneralBehaviourOnEtlException().log()) {
-				srcConn = this.getRelatedEtlConf().openSrcConn();
 				
 				this.getSrcConf().generateStagingTables(srcConn);
-				
-				srcConn.markAsSuccessifullyTerminated();
 			}
 			
 			if (this.hasParentItemConf() && this.getRelatedParentDstConf() == null) {
@@ -507,15 +522,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		catch (SQLException e) {
 			throw new DBException(e);
 		}
-		finally {
-			if (dstConn != null) {
-				dstConn.finalizeConnection();
-			}
-			
-			if (srcConn != null) {
-				srcConn.finalizeConnection();
-			}
-		}
+		
 	}
 	
 	public DstConf findDstConf(String dstConfName) {
@@ -761,11 +768,12 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	public void doMinimalTableInitialization(Connection srcConn, Connection dstConn)
 	        throws DatabaseResourceDoesNotExists, DBException, ForbiddenOperationException {
-		this.srcConf.loadSchemaInfo(null, srcConn);
+		
+		this.srcConf.tryToLoadSchemaInfo(null, srcConn);
 		
 		if (hasDstConf()) {
 			for (DstConf conf : this.getDstConf()) {
-				conf.loadSchemaInfo(null, dstConn);
+				conf.tryToLoadSchemaInfo(null, dstConn);
 			}
 		}
 	}
@@ -785,18 +793,28 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		        : (this.hasParentItemConf() ? this.getParentItemConf().retrieveNearestTemplate() : null);
 	}
 	
-	public void ensureEtlStageTableExists(Connection srcConn, Connection dstConn) throws DBException {
+	public void ensureEtlStageTableExists(EtlOperationConfig operationConfig, Connection srcConn, Connection dstConn)
+	        throws DBException {
+		
+		this.fullLoad(operationConfig, srcConn, dstConn);
+		
 		this.getSrcConf().ensureEtlStageTableExists(srcConn, dstConn);
+		
+		commitConn(srcConn);
 		
 		if (hasDstConf()) {
 			for (DstConf dstConf : this.getDstConf()) {
+				dstConf.setRelatedConnInfo(((OpenConnection) dstConn).getDbConnInfo());
 				dstConf.ensureEtlStageTableExists(srcConn, dstConn);
+				
+				commitConn(dstConn);
+				commitConn(srcConn);
 			}
 		}
 		
 		if (hasChildItemConf()) {
 			for (EtlItemConfiguration child : this.getChildItemConf()) {
-				child.ensureEtlStageTableExists(srcConn, dstConn);
+				child.ensureEtlStageTableExists(operationConfig, srcConn, dstConn);
 			}
 		}
 	}

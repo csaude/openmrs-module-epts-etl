@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
@@ -24,6 +25,7 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -42,7 +44,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * Represents a query configuration. A query is used on data mapping between source and destination
  * table
  */
-public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implements DatabaseObjectConfiguration, EtlAdditionalDataSource {
+public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implements DatabaseObjectConfiguration, EtlAdditionalDataSource, EtlSrcConf {
 	
 	private final String stringLock = new String("LOCK_STRING");
 	
@@ -641,6 +643,17 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	@Override
 	public EtlTemplateInfo retrieveNearestTemplate() {
 		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
+	}
+	
+	@Override
+	public void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
+		// TODO Auto-generated method stub
+	}
+	
+	@Override
+	public void setParentConf(EtlDataConfiguration relatedParent) {
+		this.relatedSrcConf = (SrcConf) relatedParent;
 	}
 	
 }

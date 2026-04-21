@@ -9,12 +9,14 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -139,6 +141,27 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	public void setDynamicElements(List<String> dynamicElements) {
 		this.dynamicElements = dynamicElements;
+	}
+	
+	@Override
+	public void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
+		
+		TableConfiguration.super.tryToLoadSchemaInfo(schemaInfoSrc, conn);
+		
+		if (this.isTableNameInfoLoaded())
+			return;
+		
+		if (this.getSchema() == null) {
+			this.setSchema(DBUtilities.determineSchemaName(conn));
+		}
+		
+		Boolean exists = DBUtilities.isTableExists(this.getSchema(), this.getTableName(), conn);
+		
+		if (!exists)
+			throw new DatabaseResourceDoesNotExists(this.generateFullTableName(conn));
+		
+		this.setTableNameInfoLoaded(true);
 	}
 	
 	@Override

@@ -69,5 +69,4 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 * @return {@code true} if multiple source objects are allowed; {@code false} otherwise
 	 */
 	Boolean allowMultipleSrcObjectsForLoading();
-	
 }

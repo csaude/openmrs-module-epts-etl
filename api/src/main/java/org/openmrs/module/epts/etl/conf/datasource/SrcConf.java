@@ -12,6 +12,7 @@ import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
@@ -22,7 +23,6 @@ import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
-import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingJoiningElementsException;
@@ -35,7 +35,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class SrcConf extends AbstractTableConfiguration implements MainJoiningEntity, JoinableEntity {
+public class SrcConf extends AbstractTableConfiguration implements MainJoiningEntity, JoinableEntity, EtlSrcConf {
 	
 	private List<AuxExtractTable> auxExtractTable;
 	
@@ -64,11 +64,12 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
 	}
 	
-	public void init(EtlItemConfiguration relatedItemConf) {
+	public void init(EtlItemConfiguration relatedItemConf, Connection srcConn, Connection dstConn) throws DBException {
+		
 		this.setRelatedEtlConfig(relatedItemConf.getRelatedEtlConf());
 		this.setParentConf(relatedItemConf);
 		
-		this.tryToLoadFromTemplate();
+		super.init(this.getParentConf(), getParentConf().getRelatedEtlSchemaObject(), srcConn, dstConn);
 		
 		if (!this.hasDstType()) {
 			//We start with the first operation dst type. Eventual this should be changed if the nested operation has different dstType
@@ -80,12 +81,12 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 			getRelatedEtlConf().tryToAddToBusyTableAliasName(this.getTableAlias());
 		}
 		
-		this.tryToLoadSchemaInfo(getParentConf().getRelatedEtlSchemaObject());
-		
 		List<EtlAdditionalDataSource> allAvaliableDataSources = this.getAvaliableExtraDataSource();
 		
 		for (EtlAdditionalDataSource t : allAvaliableDataSources) {
 			t.tryToLoadFromTemplate();
+			
+			t.init(this, getParentConf().getRelatedEtlSchemaObject(), srcConn, dstConn);
 			
 			if (t instanceof AbstractTableConfiguration) {
 				TableConfiguration tAsTabConf = (TableConfiguration) t;
@@ -96,15 +97,14 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 				}
 				
 				getRelatedEtlConf().addConfiguredTable((AbstractTableConfiguration) t);
-				t.setRelatedSrcConf(this);
 			}
-			
-			t.setRelatedSrcConf(this);
 		}
 		
 		if (this.hasAuxExtractTable()) {
 			for (AuxExtractTable t : this.getAuxExtractTable()) {
-				t.tryToLoadFromTemplate();
+				t.setRelatedEtlConfig(getRelatedEtlConf());
+				
+				t.init(this, getParentConf().getRelatedEtlSchemaObject(), srcConn, dstConn);
 				
 				if (t.hasAlias()) {
 					t.setUsingManualDefinedAlias(true);
@@ -242,13 +242,23 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 			JoinableEntity.super.loadJoinElements(schemaInfo, conn);
 		}
 		catch (MissingJoiningElementsException e) {
-			if (hasParentConf()) {
+			if (this.hasParentItemConf() && this.getPrimaryKey().equals(this.getParentSrcConf().getPrimaryKey())) {
+				this.setJoinFields(new ArrayList<>());
 				
+				this.getJoinFields().add(FieldsMapping.fastCreate(this.getPrimaryKey().asSimpleKey().getName(), conn));
 			}
 		}
 	}
 	
-	public Boolean hasParentConf() {
+	public SrcConf getParentSrcConf() {
+		if (hasParentItemConf()) {
+			return this.getParentConf().getParentItemConf().getSrcConf();
+		}
+		
+		return null;
+	}
+	
+	public Boolean hasParentItemConf() {
 		return this.getParentConf().hasParentItemConf();
 	}
 	
@@ -657,33 +667,6 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	}
 	
 	@Override
-	public void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
-	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
-		super.loadSchemaInfo(schemaInfoSrc, conn);
-		
-		if (this.hasAuxExtractTable()) {
-			for (AuxExtractTable tab : this.getAuxExtractTable()) {
-				tab.setParentConf(this);
-				tab.loadSchemaInfo(schemaInfoSrc, conn);
-			}
-		}
-		
-		if (this.hasExtraTableDataSourceConfig()) {
-			for (TableDataSourceConfig tab : this.getExtraTableDataSource()) {
-				tab.setParentConf(this);
-				tab.loadSchemaInfo(schemaInfoSrc, conn);
-			}
-		}
-		
-		if (this.hasExtraQueryDataSourceConfig()) {
-			for (QueryDataSourceConfig q : this.getExtraQueryDataSource()) {
-				q.tryToFillParams(schemaInfoSrc);
-			}
-		}
-		
-	}
-	
-	@Override
 	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
 		if (hasAuxExtractTable()) {
 			AuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);
@@ -848,9 +831,11 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	}
 	
 	public void ensureEtlStageTableExists(Connection srcConn, Connection dstConn) throws DBException {
-		this.generateRelatedSrcStageTableConf(srcConn);
+		this.fullLoad(srcConn);
 		
-		this.generateRelatedStageSrcUniqueKeysTableConf(srcConn);
+		this.createRelatedSrcStageAreaTable(srcConn);
+		
+		this.createRelatedStageAreaSrcUniqueKeysTable(srcConn);
 	}
 	
 }

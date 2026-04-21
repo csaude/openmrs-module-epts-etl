@@ -10,9 +10,11 @@ import org.openmrs.module.epts.etl.conf.datasource.DataSourceField;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
+import org.openmrs.module.epts.etl.conf.types.OnMultipleDataSourceFoundBehavior;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.DefaultRecordTransformer;
@@ -34,7 +36,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class DstConf extends AbstractTableConfiguration implements EtlDataSource {
+public class DstConf extends AbstractTableConfiguration implements EtlDataSource, EtlDstConf {
 	
 	/*
 	 * The user defined joinFields with #getSrcConf()
@@ -93,11 +95,42 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	private Boolean loadedDataSourceInfo;
 	
+	private OnMultipleDataSourceFoundBehavior onMultipleDataSourceForSameMapping;
+	
+	private OnMultipleDataSourceFoundBehavior onMultipleDataSourceWithSameName;
+	
 	public DstConf() {
+		this.onMultipleDataSourceForSameMapping = OnMultipleDataSourceFoundBehavior.ABORT_PROCESS;
+		this.onMultipleDataSourceWithSameName = OnMultipleDataSourceFoundBehavior.ABORT_PROCESS;
 	}
 	
 	public DstConf(String tableName) {
 		setTableName(tableName);
+		
+	}
+	
+	public OnMultipleDataSourceFoundBehavior onMultipleDataSourceWithSameName() {
+		return onMultipleDataSourceWithSameName;
+	}
+	
+	public OnMultipleDataSourceFoundBehavior getOnMultipleDataSourceWithSameName() {
+		return onMultipleDataSourceWithSameName;
+	}
+	
+	public void setOnMultipleDataSourceWithSameName(OnMultipleDataSourceFoundBehavior onMultipleDataSourceWithSameName) {
+		this.onMultipleDataSourceWithSameName = onMultipleDataSourceWithSameName;
+	}
+	
+	public OnMultipleDataSourceFoundBehavior getOnMultipleDataSourceForSameMapping() {
+		return onMultipleDataSourceForSameMapping;
+	}
+	
+	public void setOnMultipleDataSourceForSameMapping(OnMultipleDataSourceFoundBehavior onMultipleDataSourceForSameMapping) {
+		this.onMultipleDataSourceForSameMapping = onMultipleDataSourceForSameMapping;
+	}
+	
+	public OnMultipleDataSourceFoundBehavior onMultipleDataSourceForSameMapping() {
+		return onMultipleDataSourceForSameMapping;
 	}
 	
 	public DstConf getParentDstConf() {
@@ -508,7 +541,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			throw new FieldNotAvaliableInAnyDataSource(fm.getSrcField());
 		}
 		
-		if (qtyOccurences > 1 && !hasTransformer) {
+		if (qtyOccurences > 1 && !hasTransformer && !this.onMultipleDataSourceForSameMapping().useLast()) {
 			throw new FieldAvaliableInMultipleDataSources(fm.getSrcField());
 		}
 		
@@ -920,7 +953,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 					if (ds.getName().equals(originalDsName)) {
 						occur++;
 						
-						if (occur > 1) {
+						if (occur > 1 && !this.onMultipleDataSourceWithSameName().useLast()) {
 							throw new ForbiddenOperationException("The preferred datasource '" + ds.getName()
 							        + "' occurs more than once. Please use alias instead of name or rename the datasource name");
 						}
@@ -1406,26 +1439,12 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public void init(EtlItemConfiguration relatedItemConf, Connection srcConn, Connection dstConn) throws DBException {
-		this.setParentConf(relatedItemConf);
-		this.setRelatedEtlConfig(relatedItemConf.getRelatedEtlConf());
-		
-		this.tryToLoadFromTemplate();
-		
-		this.tryToLoadSchemaInfo(getParentConf().getRelatedEtlSchemaObject());
+		super.init(relatedItemConf, relatedItemConf.getRelatedEtlSchemaObject(), srcConn, dstConn);
 		
 		if (this.hasAlias()) {
 			this.setUsingManualDefinedAlias(true);
 			
 			this.getRelatedEtlConf().tryToAddToBusyTableAliasName(this.getTableAlias());
-		}
-		
-		if (hasMapping()) {
-			for (FieldsMapping map : this.getMapping()) {
-				if (map.hasTransformer()) {
-					map.tryToLoadTransformer(this, srcConn);
-					map.getTransformerInstance().init(srcConn, dstConn);
-				}
-			}
 		}
 		
 		getRelatedEtlConf().addConfiguredTable(this);
@@ -1437,9 +1456,11 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public void ensureEtlStageTableExists(Connection srcConn, Connection dstConn) throws DBException {
-		this.generateRelatedDstStageTableConf(srcConn);
+		this.fullLoad(dstConn);
 		
-		this.generateRelatedStageDstUniqueKeysTableConf(srcConn);
+		this.createRelatedDstSyncStage(srcConn);
+		
+		this.createRelatedSyncStageAreaDstUniqueKeysTable(srcConn);
 		
 		if (hasMapping()) {
 			for (FieldsMapping map : this.getMapping()) {
@@ -1453,8 +1474,15 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 						ParentOnDemandLoadTransformer onDemand = (ParentOnDemandLoadTransformer) map
 						        .getTransformerInstance();
 						
-						onDemand.getExistingParentItemConf().ensureEtlStageTableExists(srcConn, dstConn);
-						onDemand.getOnDemandCreateParentItemConf().ensureEtlStageTableExists(srcConn, dstConn);
+						onDemand.init(srcConn, dstConn);
+						
+						if (onDemand.getExistingParentItemConf() != null) {
+							onDemand.getExistingParentItemConf().ensureEtlStageTableExists(
+							    getParentConf().getRelatedEtlConf().getDefaultOperation(), srcConn, dstConn);
+						}
+						
+						onDemand.getOnDemandCreateParentItemConf().ensureEtlStageTableExists(
+						    getParentConf().getRelatedEtlConf().getDefaultOperation(), srcConn, dstConn);
 					}
 				}
 			}

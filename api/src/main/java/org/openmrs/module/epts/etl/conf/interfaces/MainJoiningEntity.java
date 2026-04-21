@@ -42,7 +42,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 	default void tryToLoadAuxExtraJoinTable(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		if (hasAuxExtractTable()) {
 			for (JoinableEntity t : this.getJoiningTable()) {
-				t.loadSchemaInfo(schemaInfo, conn);
+				t.tryToLoadSchemaInfo(schemaInfo, conn);
 				
 				t.setParentConf(this);
 				t.tryToGenerateTableAlias(getRelatedEtlConf());

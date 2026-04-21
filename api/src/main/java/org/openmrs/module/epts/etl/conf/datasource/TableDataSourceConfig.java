@@ -8,6 +8,8 @@ import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -15,7 +17,6 @@ import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
-import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -25,13 +26,11 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents a source table configuration. A {@link TableDataSourceConfig} is used as an auxiliary
  * extraction table as well as an extra data source
  */
-public class TableDataSourceConfig extends AbstractTableConfiguration implements EtlAdditionalDataSource, JoinableEntity, MainJoiningEntity {
+public class TableDataSourceConfig extends AbstractTableConfiguration implements EtlAdditionalDataSource, JoinableEntity, MainJoiningEntity, EtlSrcConf {
 	
 	private List<FieldsMapping> joinFields;
 	
 	private String joinExtraCondition;
-	
-	private SrcConf relatedSrcConf;
 	
 	private List<AuxExtractTable> auxExtractTable;
 	
@@ -47,6 +46,18 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	public TableDataSourceConfig() {
 		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
 		this.joinType = JoinType.LEFT;
+	}
+	
+	@Override
+	public void init(EtlDataConfiguration relatedParent, EtlDatabaseObject etlSchemaObject, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		super.init(relatedParent, etlSchemaObject, srcConn, dstConn);
+		
+		if (this.auxExtractTable != null) {
+			for (AuxExtractTable aux : this.auxExtractTable) {
+				aux.init(this, etlSchemaObject, srcConn, dstConn);
+			}
+		}
 	}
 	
 	@Override
@@ -125,13 +136,11 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public SrcConf getRelatedSrcConf() {
-		return relatedSrcConf;
+		return (SrcConf) this.getParentConf();
 	}
 	
 	@Override
 	public void setRelatedSrcConf(SrcConf relatedSrcConf) {
-		this.relatedSrcConf = relatedSrcConf;
-		
 		setParentConf(relatedSrcConf);
 	}
 	
@@ -143,13 +152,13 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public SrcConf getParentConf() {
-		return this.relatedSrcConf;
-	}
-	
-	@Override
 	public EtlConfiguration getRelatedEtlConf() {
-		return getParentConf().getRelatedEtlConf();
+		try {
+			return this.getParentConf().getRelatedEtlConf();
+		}
+		catch (Exception e) {
+			throw e;
+		}
 	}
 	
 	@Override
@@ -168,7 +177,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(processor, srcObject, dstObject, avaliableSrcObjects, srcConn)
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery()
+		        .cloneAndLoadValues(processor, srcObject, dstObject, avaliableSrcObjects, srcConn)
 		        .query(processor.getEngine(), srcConn);
 		
 		if (utilities.listHasNoElement(list)) {
@@ -188,7 +198,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	public String generateJoinCondition() {
-		return super.generateJoinCondition(this.relatedSrcConf, this.joinFields, this.joinExtraCondition);
+		return super.generateJoinCondition(this.getRelatedSrcConf(), this.joinFields, this.joinExtraCondition);
 	}
 	
 	@Override
@@ -198,7 +208,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public DBConnectionInfo getRelatedConnInfo() {
-		return this.relatedSrcConf.getRelatedConnInfo();
+		return this.getRelatedSrcConf().getRelatedConnInfo();
 	}
 	
 	@Override
@@ -221,12 +231,12 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public void setMainExtractTable(MainJoiningEntity mainJoiningTable) {
-		this.relatedSrcConf = (SrcConf) mainJoiningTable;
+		this.setParentConf(mainJoiningTable);
 	}
 	
 	@Override
 	public MainJoiningEntity getMainExtractTable() {
-		return this.relatedSrcConf;
+		return this.getRelatedSrcConf();
 	}
 	
 	@Override
@@ -285,13 +295,13 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
-	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
-		super.loadSchemaInfo(schemaInfoSrc, conn);
+	public void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	        throws ForbiddenOperationException, DBException {
+		super.tryToLoadSchemaInfo(schemaInfoSrc, conn);
 		
 		if (this.hasAuxExtractTable()) {
 			for (AuxExtractTable tab : this.getAuxExtractTable()) {
-				tab.loadSchemaInfo(schemaInfoSrc, conn);
+				tab.tryToLoadSchemaInfo(schemaInfoSrc, conn);
 			}
 		}
 	}
@@ -313,6 +323,11 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 		
 		AuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);
 		
+	}
+	
+	@Override
+	public SrcConf getParentConf() {
+		return (SrcConf) super.getParentConf();
 	}
 	
 	@Override

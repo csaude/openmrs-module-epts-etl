@@ -20,6 +20,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
+import org.openmrs.module.epts.etl.conf.types.OnMultipleDataSourceFoundBehavior;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
@@ -773,7 +774,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		AbstractTableConfiguration parentConf = new GenericTableConfiguration(parentTableName);
 		
 		try {
-			parentConf.loadSchemaInfo(null, srcConn);
+			parentConf.tryToLoadSchemaInfo(null, srcConn);
 		}
 		catch (DatabaseResourceDoesNotExists e) {
 			parentConf = new GenericTableConfiguration(this.getRelatedDstConf().getRelatedEtlConf().getMainEtlTable());
@@ -807,6 +808,10 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		conf.init(relatedDstConf.getRelatedEtlConf(), false, srcConn, dstConn);
 		
 		conf.fullLoad(relatedDstConf.getRelatedEtlConf().getOperations().get(0));
+		
+		for (DstConf dstC : conf.getDstConf()) {
+			dstC.setOnMultipleDataSourceWithSameName(OnMultipleDataSourceFoundBehavior.USE_LAST);
+		}
 		
 		return conf;
 	}

@@ -171,7 +171,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		}
 	}
 	
-	static String[] SAFE_FIELDS = { "relatedEtlConf", "loadHealper" };
+	static String[] SAFE_FIELDS = { "relatedEtlConf", "loadHealper", "onMultipleDataSourceForSameMapping", "onMultipleDataSourceWithSameName" };
 	
 	public static boolean canBeOverriten(Object value, Field field) {
 		

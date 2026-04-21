@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -24,7 +25,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents an auxiliary table for data extraction. A {@link AuxExtractTable} is used as an
  * auxiliary extraction table usually used to include additional extraction conditions
  */
-public class AuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, MainJoiningEntity, EtlDataSource {
+public class AuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, MainJoiningEntity, EtlDataSource, EtlSrcConf {
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -38,14 +39,24 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	 */
 	private JoinType joinType;
 	
-	private MainJoiningEntity mainExtractTable;
-	
 	private List<InnerAuxExtractTable> auxExtractTable;
 	
 	private Boolean doNotUseAsDatasource;
 	
 	public AuxExtractTable() {
 		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
+	}
+	
+	@Override
+	public void init(EtlDataConfiguration relatedParent, EtlDatabaseObject etlSchemaObject, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		super.init(relatedParent, etlSchemaObject, srcConn, dstConn);
+		
+		if (this.auxExtractTable != null) {
+			for (InnerAuxExtractTable aux : this.auxExtractTable) {
+				aux.init(this, etlSchemaObject, srcConn, dstConn);
+			}
+		}
 	}
 	
 	@Override
@@ -108,12 +119,17 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	
 	@Override
 	public void setMainExtractTable(MainJoiningEntity mainExtractTable) {
-		this.mainExtractTable = mainExtractTable;
+		this.setParentConf(mainExtractTable);
+	}
+	
+	@Override
+	public MainJoiningEntity getParentConf() {
+		return (MainJoiningEntity) super.getParentConf();
 	}
 	
 	@Override
 	public MainJoiningEntity getMainExtractTable() {
-		return mainExtractTable;
+		return this.getParentConf();
 	}
 	
 	public String getJoinExtraCondition() {
@@ -133,13 +149,8 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public EtlConfiguration getRelatedEtlConf() {
-		return this.mainExtractTable != null ? this.mainExtractTable.getRelatedEtlConf() : null;
-	}
-	
-	@Override
 	public DBConnectionInfo getRelatedConnInfo() {
-		return this.mainExtractTable.getRelatedConnInfo();
+		return this.getMainExtractTable().getRelatedConnInfo();
 	}
 	
 	@Override
@@ -149,7 +160,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	
 	@Override
 	public TableConfiguration getJoiningEntity() {
-		return (TableConfiguration) mainExtractTable;
+		return (TableConfiguration) this.getMainExtractTable();
 	}
 	
 	@Override
@@ -227,13 +238,14 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	public void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
 	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
-		super.loadSchemaInfo(schemaInfoSrc, conn);
+		
+		super.tryToLoadSchemaInfo(schemaInfoSrc, conn);
 		
 		if (this.hasAuxExtractTable()) {
 			for (InnerAuxExtractTable tab : this.getAuxExtractTable()) {
-				tab.loadSchemaInfo(schemaInfoSrc, conn);
+				tab.tryToLoadSchemaInfo(schemaInfoSrc, conn);
 			}
 		}
 	}

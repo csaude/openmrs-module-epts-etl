@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -20,7 +21,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents an inner auxiliary table for data extraction. A {@link InnerAuxExtractTable} is used
  * as an auxiliary extraction table for an {@link AuxExtractTable}
  */
-public class InnerAuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, EtlDataSource {
+public class InnerAuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, EtlDataSource, EtlSrcConf {
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -53,7 +54,7 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	}
 	
 	public Boolean isDoNotUseAsDatasource() {
-		return  isTrue(doNotUseAsDatasource);
+		return isTrue(doNotUseAsDatasource);
 	}
 	
 	@Override

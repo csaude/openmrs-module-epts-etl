@@ -189,6 +189,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	private String mainEtlTable;
 	
+	public Boolean ensureEtlStageTablesExist;
+	
 	public EtlConfiguration() {
 		this.allTables = new ArrayList<AbstractTableConfiguration>();
 		
@@ -205,6 +207,18 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		this.defaultExceptionBehavior = ActionOnEtlException.ABORT_PROCESS;
 		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
 		this.defaultInconsistencyBehavior = EtlInconsistencyBehavior.ABORT_PROCESS;
+	}
+	
+	public Boolean getEnsureEtlStageTablesExist() {
+		return ensureEtlStageTablesExist;
+	}
+	
+	public void setEnsureEtlStageTablesExist(Boolean ensureEtlStageTablesExist) {
+		this.ensureEtlStageTablesExist = ensureEtlStageTablesExist;
+	}
+	
+	public Boolean ensureEtlStageTablesExist() {
+		return this.ensureEtlStageTablesExist != null && this.ensureEtlStageTablesExist;
 	}
 	
 	public String getMainEtlTable() {
@@ -878,7 +892,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 				DefaultEtlValidator.tryToValidate(this, srcConn, dstConn);
 				
-				ensureEtlStageTablesExist(srcConn, dstConn);
+				if (ensureEtlStageTablesExist()) {
+					ensureEtlStageTablesExist(srcConn, dstConn);
+				}
+				
 			}
 			finally {
 				finalizeConnection(srcConn);
@@ -887,10 +904,15 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 	}
 	
-	private void ensureEtlStageTablesExist(Connection srcConn, Connection dstConn) throws DBException {
+	public void ensureEtlStageTablesExist(Connection srcConn, Connection dstConn) throws DBException {
 		for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
-			item.ensureEtlStageTableExists(srcConn, dstConn);
+			item.ensureEtlStageTableExists(this.getDefaultOperation(), srcConn, dstConn);
 		}
+		
+		if (hasTestingItem()) {
+			this.getTestingEtlItemConfiguration().ensureEtlStageTableExists(this.getDefaultOperation(), srcConn, dstConn);
+		}
+		
 	}
 	
 	private void ensureEtlBaseSchemaTablesExists() throws DBException {
@@ -2321,6 +2343,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		catch (IOException e) {
 			throw new EtlExceptionImpl(e);
 		}
+	}
+	
+	public EtlOperationConfig getDefaultOperation() {
+		return this.getOperations().get(0);
 	}
 	
 }
