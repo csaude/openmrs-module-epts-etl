@@ -23,6 +23,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBOperation;
+import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 /**
  * Base DAO This class provides the base datasource & common functionaloty for all DAO's in the
@@ -257,19 +258,37 @@ public abstract class BaseDAO {
 	
 	public static void executeBatch(Connection conn, String... batches) throws DBException {
 		
-		try {
-			Statement st = conn.createStatement();
+		OpenConnection openConn = null;
+		
+		if (conn instanceof OpenConnection) {
+			openConn = ((OpenConnection) conn).getDbConnInfo().openConnection();
+			conn = openConn;
+		}
+		
+		try (Statement st = conn.createStatement()) {
 			
 			for (String batch : batches) {
-				st.addBatch(batch);
+				if (batch != null && !batch.trim().isEmpty()) {
+					st.addBatch(batch);
+				}
 			}
 			
 			st.executeBatch();
 			
-			st.close();
+			if (openConn != null) {
+				openConn.markAsSuccessifullyTerminated();
+			}
+			
 		}
 		catch (SQLException e) {
-			throw new DBException(e);
+			throw new DBException("Error executing batch", e);
+		}
+		finally {
+			
+			if (openConn != null) {
+				// rollback automático se não foi marcado como sucesso
+				openConn.finalizeConnection();
+			}
 		}
 	}
 	
