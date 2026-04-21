@@ -57,7 +57,7 @@ public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
 	}
 	
 	public static ArithmeticFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
-	        TransformableField field) {
+	        TransformableField field, Connection conn) {
 		
 		String key = buildCacheKey(relatedDstConf, field, parameters);
 		

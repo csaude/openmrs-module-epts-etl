@@ -15,6 +15,7 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
+import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingMappingException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -109,7 +110,8 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	private FieldsMapping input;
 	
-	public MappingFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+	public MappingFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field,
+	    Connection conn) throws FieldAvaliableInMultipleDataSources, DBException {
 		
 		super(parameters, relatedDstConf, field);
 		
@@ -144,12 +146,12 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 				
 				if (paramName.equals("input")) {
 					if (isTransformerExpression(paramValue)) {
-						this.input = FieldsMapping.fastCreate(field.getDstField(), field.getDstField(), false);
+						this.input = FieldsMapping.fastCreate(field.getDstField(), field.getDstField(), false, conn);
 						this.input.setTransformer(paramValue);
-						this.input.tryToLoadTransformer(relatedDstConf);
+						this.input.tryToLoadTransformer(relatedDstConf, conn);
 						
 					} else {
-						this.input = FieldsMapping.fastCreate(paramValue, paramValue, relatedDstConf);
+						this.input = FieldsMapping.fastCreate(paramValue, paramValue, relatedDstConf, conn);
 					}
 				} else if (paramName.equals("extra_condition")) {
 					this.extraCondition = paramValue;
@@ -212,11 +214,18 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 	}
 	
 	public static MappingFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
-	        TransformableField field) {
+	        TransformableField field, Connection conn) {
 		
 		String key = buildCacheKey(relatedDstConf, field, parameters);
 		
-		return INSTANCES.computeIfAbsent(key, k -> new MappingFieldTransformer(parameters, relatedDstConf, field));
+		return INSTANCES.computeIfAbsent(key, k -> {
+			try {
+				return new MappingFieldTransformer(parameters, relatedDstConf, field, conn);
+			}
+			catch (DBException e) {
+				throw new EtlExceptionImpl(e);
+			}
+		});
 	}
 	
 	public static void validateParams(List<Object> parameters) {

@@ -97,13 +97,13 @@ public class ReportGenerator {
 	}
 	
 	private static int countRecordsOnStageTable(TableConfiguration config, Connection conn) throws DBException {
-		String sql = "SELECT COUNT(*) as value FROM " + config.generateFullStageTableName();
+		String sql = "SELECT COUNT(*) as value FROM " + config.generateFullSrcStageTableName();
 		
 		return BaseDAO.find(SimpleValue.class, sql, null, conn).intValue();
 	}
 	
 	private static int countMissingParents(TableConfiguration config, String tableName, Connection conn) throws DBException {
-		String sql = "SELECT COUNT(*) as value FROM " + config.generateFullStageTableName()
+		String sql = "SELECT COUNT(*) as value FROM " + config.generateFullSrcStageTableName()
 		        + " WHERE last_migration_try_err LIKE '%" + tableName + ":%'";
 		
 		return BaseDAO.find(SimpleValue.class, sql, null, conn).intValue();

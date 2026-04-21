@@ -1200,8 +1200,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	@JsonIgnore
-	default String generateRelatedStageTableName() {
-		return this.getTableName() + "_stage";
+	default String generateRelatedSrcStageTableName() {
+		return this.getTableName() + "src_stage";
 	}
 	
 	@JsonIgnore
@@ -1211,12 +1211,12 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	@JsonIgnore
 	default String generateRelatedStageSrcUniqueKeysTableName() {
-		return this.generateRelatedStageTableName() + "_src_unique_keys";
+		return this.generateRelatedSrcStageTableName() + "_src_unique_keys";
 	}
 	
 	@JsonIgnore
 	default String generateRelatedStageDstUniqueKeysTableName() {
-		return this.generateRelatedStageTableName() + "_dst_unique_keys";
+		return this.generateRelatedSrcStageTableName() + "_dst_unique_keys";
 	}
 	
 	@JsonIgnore
@@ -1225,8 +1225,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	@JsonIgnore
-	default String generateFullStageTableName() {
-		return this.getSyncStageSchema() + "." + this.generateRelatedStageTableName();
+	default String generateFullSrcStageTableName() {
+		return this.getSyncStageSchema() + "." + this.generateRelatedSrcStageTableName();
 	}
 	
 	@JsonIgnore
@@ -1277,62 +1277,52 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	@JsonIgnore
 	default Boolean existRelatedExportStageTable(Connection conn) {
-		String schema = this.getSyncStageSchema();
-		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = this.generateRelatedStageTableName();
-		
-		try {
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
+		return existStageTable(this.generateRelatedSrcStageTableName(), conn);
 	}
 	
 	default Boolean existRelatedDstStageTable(Connection conn) {
-		String schema = this.getSyncStageSchema();
-		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = this.generateRelatedDstStageTableName();
-		
-		try {
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
+		return existStageTable(this.generateRelatedDstStageTableName(), conn);
 	}
 	
 	default Boolean existRelatedStageSrcUniqueKeysTable(Connection conn) {
-		String schema = this.getSyncStageSchema();
-		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = this.generateRelatedStageSrcUniqueKeysTableName();
-		
-		try {
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
+		return existStageTable(this.generateRelatedStageSrcUniqueKeysTableName(), conn);
 	}
 	
 	default Boolean existRelatedStageDstUniqueKeysTable(Connection conn) {
+		return existStageTable(this.generateRelatedStageDstUniqueKeysTableName(), conn);
+	}
+	
+	default Boolean existStageTable(String stageTable, Connection conn) {
 		String schema = getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-		String tabName = this.generateRelatedStageDstUniqueKeysTableName();
+		
+		OpenConnection openConn = null;
 		
 		try {
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+			
+			if (conn instanceof OpenConnection) {
+				openConn = ((OpenConnection) conn).getDbConnInfo().openConnection();
+				
+				conn = openConn;
+			}
+			
+			boolean resourseExists = DBUtilities.isResourceExist(schema, null, resourceType, stageTable, conn);
+			
+			if (openConn != null) {
+				openConn.markAsSuccessifullyTerminated();
+			}
+			
+			return resourseExists;
 		}
 		catch (SQLException e) {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
+		}
+		finally {
+			if (openConn != null) {
+				openConn.finalizeConnection();
+			}
 		}
 	}
 	
@@ -2148,7 +2138,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		return utilities.stringHasValue(getSchema());
 	}
 	
-	default List<FieldsMapping> tryToLoadJoinFields(TableConfiguration relatedTabConf) {
+	default List<FieldsMapping> tryToLoadJoinFields(TableConfiguration relatedTabConf, Connection conn) {
 		
 		List<FieldsMapping> joinFields = new ArrayList<>();
 		
@@ -2162,7 +2152,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				ParentTable ref = pInfo.get(0);
 				
 				for (RefMapping map : ref.getRefMapping()) {
-					joinFields.add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName()));
+					joinFields
+					        .add(new FieldsMapping(map.getParentField().getName(), "", map.getChildField().getName(), conn));
 				}
 			} else {
 				throw new ForbiddenOperationException(
@@ -2182,7 +2173,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 					ParentTable ref = pInfo.get(0);
 					
 					for (RefMapping map : ref.getRefMapping()) {
-						joinFields.add(new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName()));
+						joinFields.add(
+						    new FieldsMapping(map.getChildField().getName(), "", map.getParentField().getName(), conn));
 					}
 				} else {
 					throw new ForbiddenOperationException(
@@ -2651,7 +2643,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			createRelatedSrcStageAreaTable(conn);
 		}
 		
-		return this.generateRelatedStageTabConf(this.generateRelatedStageTableName(), this.getSyncStageSchema(), conn);
+		return this.generateRelatedStageTabConf(this.generateRelatedSrcStageTableName(), this.getSyncStageSchema(), conn);
 	}
 	
 	default EtlConfigurationTableConf generateRelatedDstStageTableConf(Connection conn) throws DBException {
@@ -2771,7 +2763,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	
 	default void createRelatedStageAreaSrcUniqueKeysTable(Connection conn) throws DBException {
 		this.createRelatedSyncStageAreaUniqueKeysTable(this.generateRelatedStageSrcUniqueKeysTableName(),
-		    this.generateFullStageTableName(), conn);
+		    this.generateFullSrcStageTableName(), conn);
 	}
 	
 	default void createRelatedSyncStageAreaDstUniqueKeysTable(Connection conn) throws DBException {
@@ -2828,16 +2820,16 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	default void createRelatedSrcStageAreaTable(Connection conn) throws DBException {
 		
 		synchronized (lock) {
-			if (!DBUtilities.isTableExists(this.getSyncStageSchema(), this.generateRelatedStageTableName(), conn)) {
+			if (!DBUtilities.isTableExists(this.getSyncStageSchema(), this.generateRelatedSrcStageTableName(), conn)) {
 				
-				String tableName = this.generateRelatedStageTableName();
+				String tableName = this.generateRelatedSrcStageTableName();
 				
 				String sql = "";
 				String notNullConstraint = "NOT NULL";
 				String nullConstraint = "NULL";
 				String endLineMarker = ",\n";
 				
-				sql += "CREATE TABLE " + this.generateFullStageTableName() + "(\n";
+				sql += "CREATE TABLE " + this.generateFullSrcStageTableName() + "(\n";
 				sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
 				sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
 				        + endLineMarker;
@@ -2859,7 +2851,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				sql += DBUtilities.generateTableDateTimeField("record_date_voided", nullConstraint, conn) + endLineMarker;
 				
 				String checkCondition = "migration_status in (-1,0,1,2)";
-				String keyName = ("CHK_" + this.generateRelatedStageTableName() + "_MIG_STATUS").toLowerCase();
+				String keyName = ("CHK_" + this.generateRelatedSrcStageTableName() + "_MIG_STATUS").toLowerCase();
 				
 				sql += DBUtilities.generateTableCheckConstraintDefinition(keyName, checkCondition, conn) + endLineMarker;
 				
@@ -2872,17 +2864,10 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				String indexName = tableName + "_location_idx";
 				String indexFields = "record_origin_location_code";
 				
-				String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullStageTableName(), indexName,
+				String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullSrcStageTableName(), indexName,
 				    indexFields, conn);
 				
-				try {
-					BaseDAO.executeBatch(conn, sql, idxDefinition);
-				}
-				catch (DBException e) {
-					if (!e.getLocalizedMessage().contains("Duplicate key name")) {
-						throw e;
-					}
-				}
+				BaseDAO.executeBatch(conn, sql, idxDefinition);
 			}
 		}
 	}
@@ -2908,7 +2893,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		sql += "CREATE TRIGGER " + triggerName + " BEFORE " + triggerEvent + " ON " + this.getTableName() + "\n";
 		sql += "FOR EACH ROW\n";
 		sql += "	BEGIN\n";
-		sql += "	UPDATE " + this.generateFullStageTableName() + " SET last_update_date = CURRENT_TIMESTAMP();\n";
+		sql += "	UPDATE " + this.generateFullSrcStageTableName() + " SET last_update_date = CURRENT_TIMESTAMP();\n";
 		sql += "	END;\n";
 		
 		return sql;

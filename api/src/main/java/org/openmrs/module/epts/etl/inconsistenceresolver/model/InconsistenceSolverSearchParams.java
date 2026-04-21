@@ -44,7 +44,7 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("NOT EXISTS (SELECT 	id " + "			FROM    "
-			        + tableInfo.generateFullStageTableName() + "			WHERE   record_origin_id = "
+			        + tableInfo.generateFullSrcStageTableName() + "			WHERE   record_origin_id = "
 			        + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey() + ")");
 			tryToAddLimits(recordLimits, searchClauses);
 			

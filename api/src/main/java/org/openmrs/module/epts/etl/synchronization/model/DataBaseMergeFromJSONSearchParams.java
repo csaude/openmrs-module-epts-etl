@@ -48,9 +48,9 @@ public class DataBaseMergeFromJSONSearchParams extends SyncImportInfoSearchParam
 		
 		AbstractTableConfiguration tableInfo = this.getSrcConf();
 		
-		searchClauses.addColumnToSelect(tableInfo.generateFullStageTableName() + ".*");
+		searchClauses.addColumnToSelect(tableInfo.generateFullSrcStageTableName() + ".*");
 		
-		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName());
+		searchClauses.addToClauseFrom(tableInfo.generateFullSrcStageTableName());
 		
 		if (!forProgressMeter) {
 			searchClauses.addToClauses("last_sync_date is null or last_sync_date < ?");

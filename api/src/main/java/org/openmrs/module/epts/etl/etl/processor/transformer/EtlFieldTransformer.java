@@ -178,4 +178,21 @@ public interface EtlFieldTransformer {
 		return this.getOverrideConnection() != null;
 	}
 	
+	default FieldTransformerType determineTransformerType() {
+		
+		Class<?> clazz = this.getClass();
+		
+		for (FieldTransformerType type : FieldTransformerType.values()) {
+			if (type.getClassName() != null && type.getClassName().equals(clazz.getCanonicalName())) {
+				return type;
+			}
+		}
+		
+		return FieldTransformerType.CUSTOM_TRANSFORMER;
+	}
+	
+	default void init(Connection srcConn, Connection dstConn) throws DBException {
+		
+	}
+	
 }

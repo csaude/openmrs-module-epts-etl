@@ -42,7 +42,7 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContent());
 		
 		searchClauses.addToClauseFrom(
-		    "inner join " + tableInfo.generateFullStageTableName() + " on record_origin_id  = " + tableInfo.getPrimaryKey());
+		    "inner join " + tableInfo.generateFullSrcStageTableName() + " on record_origin_id  = " + tableInfo.getPrimaryKey());
 		
 		if (!this.selectAllRecords) {
 			tryToAddLimits(limits, searchClauses);

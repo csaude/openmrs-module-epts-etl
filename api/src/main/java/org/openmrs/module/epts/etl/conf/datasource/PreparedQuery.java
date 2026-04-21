@@ -419,7 +419,7 @@ public class PreparedQuery {
 		}
 		
 		for (String element : this.getDataSource().getDynamicElements()) {
-			FieldsMapping map = FieldsMapping.fastCreate(element);
+			FieldsMapping map = FieldsMapping.fastCreate(element, srcConn);
 			
 			FieldTransformingInfo f = map.getTransformerInstance().transform(processor, srcObject, dstObject, srcObjects,
 			    map, srcConn, srcConn);

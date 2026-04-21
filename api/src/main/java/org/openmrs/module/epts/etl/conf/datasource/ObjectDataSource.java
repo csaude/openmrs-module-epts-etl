@@ -152,9 +152,9 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 			for (DataSourceField field : this.getObjectFields()) {
 				field.setParent(this);
 				
-				field.loadType(null, this);
+				field.loadType(null, this, conn);
 				
-				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(field);
+				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(field, conn);
 				
 				if (auxFieldMapping.hasDataSourceName()) {
 					field.setValue(null);
@@ -163,8 +163,8 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 					field.setAuxFieldMapping(auxFieldMapping);
 				}
 				
-				field.tryToLoadTransformer(null);
-				field.loadType(null, this);
+				field.tryToLoadTransformer(null, conn);
+				field.loadType(null, this, conn);
 			}
 		} else {
 			throw new ForbiddenOperationException(

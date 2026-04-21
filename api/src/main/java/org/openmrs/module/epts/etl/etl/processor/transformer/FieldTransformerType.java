@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.etl.processor.transformer;
 
 import java.lang.reflect.Method;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -88,7 +89,8 @@ public enum FieldTransformerType {
 		});
 	}
 	
-	public EtlFieldTransformer create(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+	public EtlFieldTransformer create(List<Object> parameters, DstConf relatedDstConf, TransformableField field,
+	        Connection conn) {
 		
 		if (this.isCustom()) {
 			try {
@@ -109,7 +111,7 @@ public enum FieldTransformerType {
 			throw new IllegalStateException("No factory defined for this type");
 		}
 		
-		return factory.create(parameters, relatedDstConf, field);
+		return factory.create(parameters, relatedDstConf, field, conn);
 	}
 	
 	/**
@@ -166,7 +168,7 @@ public enum FieldTransformerType {
 		throw new IllegalArgumentException("Unknown transformer: " + def);
 	}
 	
-	public static void tryToLoadTransformerToField(TransformableField field, DstConf dstConf) {
+	public static void tryToLoadTransformerToField(TransformableField field, DstConf dstConf, Connection conn) {
 		
 		if (field.getTransformerInstance() != null)
 			return;
@@ -175,7 +177,7 @@ public enum FieldTransformerType {
 		
 		List<Object> parameters = tryToLoadTransformerParameters(field.getTransformer());
 		
-		field.setTransformerInstance(type.create(parameters, dstConf, field));
+		field.setTransformerInstance(type.create(parameters, dstConf, field, conn));
 		
 		if (field.getTransformerType().isMapping()) {
 			field.setRelationshipResolutionStrategy(RelationshipResolutionStrategy.SKIP);

@@ -750,131 +750,150 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		}
 		
 		synchronized (STRING_LOCK) {
-			this.defaultGeneratedObjectKeyTabConf = new EtlConfigurationTableConf(
-			        EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME, this);
 			
-			this.skippedRecordTabConf = new EtlConfigurationTableConf(EtlConfiguration.SKIPPED_RECORD_TABLE_NAME, this);
+			OpenConnection srcConn = null;
+			OpenConnection dstConn = null;
 			
-			this.etlRecordErrorTabCof = new EtlConfigurationTableConf(EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME, this);
-			
-			this.recordWithDefaultParentsInfoTabConf = new EtlConfigurationTableConf(
-			        this.getRecordWithDefaultParentInfoTableName(), this);
-			
-			if (this.hasMainConnInfo()) {
-				this.getMainConnInfo().setRelatedEtlConf(this);
-				this.getMainConnInfo().tryToLoadPlaceHolders(this);
-			}
-			if (this.hasSrcConnInfo()) {
-				this.getSrcConnInfo().setRelatedEtlConf(this);
-				this.getSrcConnInfo().tryToLoadPlaceHolders(this);
-			}
-			
-			if (this.hasDstConnInfo()) {
-				this.getDstConnInfo().setRelatedEtlConf(this);
-				this.getDstConnInfo().tryToLoadPlaceHolders(this);
-			}
-			
-			ensureEtlSchemaTablesExists();
-			
-			if (this.getAutoIncrementHandlingType() == null) {
-				if (this.getPrimaryKeyInitialIncrementValue() != null && this.getPrimaryKeyInitialIncrementValue() > 0) {
-					this.autoIncrementHandlingType = AutoIncrementHandlingType.IGNORE_SCHEMA_DEFINITION;
-				} else {
-					this.autoIncrementHandlingType = AutoIncrementHandlingType.AS_SCHEMA_DEFINED;
+			try {
+				this.defaultGeneratedObjectKeyTabConf = new EtlConfigurationTableConf(
+				        EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME, this);
+				
+				this.skippedRecordTabConf = new EtlConfigurationTableConf(EtlConfiguration.SKIPPED_RECORD_TABLE_NAME, this);
+				
+				this.etlRecordErrorTabCof = new EtlConfigurationTableConf(EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME,
+				        this);
+				
+				this.recordWithDefaultParentsInfoTabConf = new EtlConfigurationTableConf(
+				        this.getRecordWithDefaultParentInfoTableName(), this);
+				
+				if (this.hasMainConnInfo()) {
+					this.getMainConnInfo().setRelatedEtlConf(this);
+					this.getMainConnInfo().tryToLoadPlaceHolders(this);
 				}
-			}
-			
-			if (this.getPrimaryKeyInitialIncrementValue() == null) {
-				this.setPrimaryKeyInitialIncrementValue(0);
-			}
-			
-			if (this.etlTemplatesFilePath == null) {
-				etlTemplatesFilePath = this.getRelatedConfFile().getParent() + File.separator
-				        + DEFAULT_ETL_ELEMENTS_TEMPLATE_FILE;
-			}
-			
-			for (EtlOperationConfig operation : this.getOperations()) {
-				if (operation.getMaxSupportedProcessors() == 1) {
-					operation.setUseSharedConnectionPerThread(false);
+				if (this.hasSrcConnInfo()) {
+					this.getSrcConnInfo().setRelatedEtlConf(this);
+					this.getSrcConnInfo().tryToLoadPlaceHolders(this);
 				}
 				
-				if (operation.isConsoleDst()) {
-					operation.setDoNotSaveOperationProgress(true);
+				if (this.hasDstConnInfo()) {
+					this.getDstConnInfo().setRelatedEtlConf(this);
+					this.getDstConnInfo().tryToLoadPlaceHolders(this);
 				}
 				
-				if (operation.getTotalAvaliableRecordsToProcess() != null) {
-					operation.setTotalCountStrategy(EtlTotalRecordsCountStrategy.USE_PROVIDED_COUNT);
+				ensureEtlBaseSchemaTablesExists();
+				
+				if (this.getAutoIncrementHandlingType() == null) {
+					if (this.getPrimaryKeyInitialIncrementValue() != null && this.getPrimaryKeyInitialIncrementValue() > 0) {
+						this.autoIncrementHandlingType = AutoIncrementHandlingType.IGNORE_SCHEMA_DEFINITION;
+					} else {
+						this.autoIncrementHandlingType = AutoIncrementHandlingType.AS_SCHEMA_DEFINED;
+					}
 				}
-			}
-			
-			List<EtlItemConfiguration> allItem = new ArrayList<>();
-			
-			int pos = 0;
-			
-			for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
-				if (item.isDisabled())
-					continue;
 				
-				pos++;
+				if (this.getPrimaryKeyInitialIncrementValue() == null) {
+					this.setPrimaryKeyInitialIncrementValue(0);
+				}
 				
-				item.setRelatedEtlConfig(this);
+				if (this.etlTemplatesFilePath == null) {
+					etlTemplatesFilePath = this.getRelatedConfFile().getParent() + File.separator
+					        + DEFAULT_ETL_ELEMENTS_TEMPLATE_FILE;
+				}
 				
-				if (item.isDynamic()) {
-					List<EtlItemConfiguration> dynamicItems = item.generateDynamicItems(this, conn);
+				for (EtlOperationConfig operation : this.getOperations()) {
+					if (operation.getMaxSupportedProcessors() == 1) {
+						operation.setUseSharedConnectionPerThread(false);
+					}
 					
-					if (utilities.listHasElement(dynamicItems)) {
-						logDebug(
-						    "Found Dynamic Item on position [" + pos + "] whith " + dynamicItems.size() + " returned item!");
+					if (operation.isConsoleDst()) {
+						operation.setDoNotSaveOperationProgress(true);
+					}
+					
+					if (operation.getTotalAvaliableRecordsToProcess() != null) {
+						operation.setTotalCountStrategy(EtlTotalRecordsCountStrategy.USE_PROVIDED_COUNT);
+					}
+				}
+				
+				srcConn = openSrcConn();
+				dstConn = tryOpenDstConn();
+				
+				List<EtlItemConfiguration> allItem = new ArrayList<>();
+				
+				int pos = 0;
+				
+				for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
+					if (item.isDisabled())
+						continue;
+					
+					pos++;
+					
+					item.setRelatedEtlConfig(this);
+					
+					if (item.isDynamic()) {
+						List<EtlItemConfiguration> dynamicItems = item.generateDynamicItems(this, conn);
 						
-						for (EtlItemConfiguration dItem : dynamicItems) {
-							allItem.add(dItem);
+						if (utilities.listHasElement(dynamicItems)) {
+							logDebug("Found Dynamic Item on position [" + pos + "] whith " + dynamicItems.size()
+							        + " returned item!");
 							
-							dItem.init(this, false);
+							for (EtlItemConfiguration dItem : dynamicItems) {
+								allItem.add(dItem);
+								
+								dItem.init(this, false, srcConn, dstConn);
+							}
+							
+						} else {
+							logWarn("No Item was returned on dynamic item [" + pos + "]");
 						}
 						
 					} else {
-						logWarn("No Item was returned on dynamic item [" + pos + "]");
+						if (item.getAutoIncrementHandlingType() == null) {
+							item.setAutoIncrementHandlingType(this.getAutoIncrementHandlingType());
+						}
+						
+						if (item.getPrimaryKeyInitialIncrementValue() == null) {
+							item.setPrimaryKeyInitialIncrementValue(this.getPrimaryKeyInitialIncrementValue());
+						}
+						
+						allItem.add(item);
+						
+						logInfo("Starting initialization of item");
+						
+						item.init(this, false, srcConn, dstConn);
+						
+						logInfo("Item initialized: " + item.getConfigCode());
 					}
-					
-				} else {
-					if (item.getAutoIncrementHandlingType() == null) {
-						item.setAutoIncrementHandlingType(this.getAutoIncrementHandlingType());
-					}
-					
-					if (item.getPrimaryKeyInitialIncrementValue() == null) {
-						item.setPrimaryKeyInitialIncrementValue(this.getPrimaryKeyInitialIncrementValue());
-					}
-					
-					allItem.add(item);
-					
-					logInfo("Starting initialization of item");
-					
-					item.init(this, false);
-					
-					logInfo("Item initialized: " + item.getConfigCode());
 				}
-			}
-			
-			this.setEtlItemConfiguration(allItem);
-			
-			if (this.hasTestingItem()) {
-				this.getTestingEtlItemConfiguration().init(this, true);
-			}
-			
-			if (this.relatedEtlSrcTables != null) {
-				for (String tableName : this.relatedEtlSrcTables) {
-					addConfiguredTable(new GenericTableConfiguration(tableName));
+				
+				this.setEtlItemConfiguration(allItem);
+				
+				if (this.hasTestingItem()) {
+					this.getTestingEtlItemConfiguration().init(this, true, srcConn, dstConn);
 				}
+				
+				if (this.relatedEtlSrcTables != null) {
+					for (String tableName : this.relatedEtlSrcTables) {
+						addConfiguredTable(new GenericTableConfiguration(tableName));
+					}
+				}
+				
+				DefaultEtlValidator.tryToValidate(this, srcConn, dstConn);
+				
+				ensureEtlStageTablesExist(srcConn, dstConn);
 			}
-			
-			OpenConnection srcConn = openSrcConn();
-			OpenConnection dstConn = tryOpenDstConn();
-			
-			DefaultEtlValidator.tryToValidate(this, srcConn, dstConn);
+			finally {
+				finalizeConnection(srcConn);
+				finalizeConnection(dstConn);
+			}
 		}
 	}
 	
-	private void ensureEtlSchemaTablesExists() throws DBException {
+	private void ensureEtlStageTablesExist(Connection srcConn, Connection dstConn) throws DBException {
+		for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
+			item.ensureEtlStageTableExists(srcConn, dstConn);
+		}
+	}
+	
+	private void ensureEtlBaseSchemaTablesExists() throws DBException {
 		if (!this.isImportStageSchemaExists()) {
 			this.createStageSchema();
 		}

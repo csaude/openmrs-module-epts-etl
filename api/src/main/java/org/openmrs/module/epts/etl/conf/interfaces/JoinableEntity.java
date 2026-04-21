@@ -81,9 +81,9 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 		return this.getJoinFields() != null && this.getJoinFields().size() > 0;
 	}
 	
-	default void tryToLoadJoinFields() {
+	default void tryToLoadJoinFields(Connection conn) {
 		if (!hasJoinFields()) {
-			this.setJoinFields(this.tryToLoadJoinFields(getJoiningEntity()));
+			this.setJoinFields(this.tryToLoadJoinFields(getJoiningEntity(), conn));
 		}
 	}
 	
@@ -120,7 +120,7 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 	}
 	
 	default void loadJoinElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
-		tryToLoadJoinFields();
+		tryToLoadJoinFields(conn);
 		
 		if (hasJoinExtraCondition() && !isUsingManualDefinedAlias()) {
 			setJoinExtraCondition(SQLUtilities.qualifyUnqualifiedSqlFields(getJoinExtraCondition(), getTableName()));

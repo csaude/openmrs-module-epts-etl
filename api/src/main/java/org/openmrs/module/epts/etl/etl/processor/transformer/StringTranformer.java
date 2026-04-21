@@ -92,7 +92,8 @@ public class StringTranformer extends AbstractEtlFieldTransformer {
 		return transformationString;
 	}
 	
-	public static StringTranformer getInstance(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+	public static StringTranformer getInstance(List<Object> parameters, DstConf relatedDstConf, TransformableField field,
+	        Connection conn) {
 		String key = buildCacheKey(relatedDstConf, field, parameters);
 		
 		return INSTANCES.computeIfAbsent(key, k -> new StringTranformer(parameters, relatedDstConf, field));

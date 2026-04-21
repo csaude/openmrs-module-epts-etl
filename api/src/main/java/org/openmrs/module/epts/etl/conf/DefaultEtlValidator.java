@@ -65,14 +65,14 @@ public class DefaultEtlValidator implements EtlValidator {
 		this.relatedEtlConf = relatedEtlConf;
 	}
 	
-	public void init(EtlDataConfiguration relatedEtlConfig) {
+	public void init(EtlDataConfiguration relatedEtlConfig, Connection conn) {
 		this.relatedEtlConf = relatedEtlConfig;
 		
 		if (initialized)
 			return;
 		
 		synchronized (lock) {
-			getValue().tryToLoadTransformer(null);
+			getValue().tryToLoadTransformer(null, conn);
 			
 			if (getValue().getParent() == null) {
 				EtlConfiguration etlConf = relatedEtlConfig instanceof EtlConfiguration ? (EtlConfiguration) relatedEtlConfig
@@ -192,7 +192,7 @@ public class DefaultEtlValidator implements EtlValidator {
 	        throws EtlExceptionImpl, DBException {
 		if (conf.hasValidator()) {
 			for (EtlValidator validator : conf.getValidators()) {
-				validator.init(conf);
+				validator.init(conf, srcConn);
 				
 				validator.validate(null, null, null, null, srcConn, dstConn);
 			}

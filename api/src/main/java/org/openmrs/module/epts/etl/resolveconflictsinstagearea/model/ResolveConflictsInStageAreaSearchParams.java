@@ -34,14 +34,14 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 		
 		AbstractTableConfiguration tableInfo = this.getSrcConf();
 		
-		searchClauses.addToClauseFrom(tableInfo.generateFullStageTableName() + " src_ ");
+		searchClauses.addToClauseFrom(tableInfo.generateFullSrcStageTableName() + " src_ ");
 		
 		if (this.selectAllRecords) {
-			searchClauses.addToClauses("exists ( 	 select * " + " from " + tableInfo.generateFullStageTableName()
+			searchClauses.addToClauses("exists ( 	 select * " + " from " + tableInfo.generateFullSrcStageTableName()
 			        + " inner_ " + " where inner_.record_uuid = src_.record_uuid "
 			        + " 	   and inner_.record_origin_id != src_.record_origin_id) ");
 		} else {
-			searchClauses.addToClauses("exists ( 	 select * " + " from " + tableInfo.generateFullStageTableName()
+			searchClauses.addToClauses("exists ( 	 select * " + " from " + tableInfo.generateFullSrcStageTableName()
 			        + " inner_ " + " where inner_.record_uuid = src_.record_uuid "
 			        + " 	   and inner_.record_origin_id != src_.record_origin_id " + "       and consistent = 1) ");
 			

@@ -31,7 +31,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " UPDATE " + tableConfiguration.generateFullStageTableName();
+		sql += " UPDATE " + tableConfiguration.generateFullSrcStageTableName();
 		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  record_origin_location_code = ? ";
 		sql += "		AND " + originDestin + " = ? ";
@@ -59,7 +59,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " UPDATE " + tableConfiguration.generateFullStageTableName();
+		sql += " UPDATE " + tableConfiguration.generateFullSrcStageTableName();
 		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  record_origin_location_code = ? ";
 		sql += "		AND " + originDestin + " between ? and ? ";
@@ -114,7 +114,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 			String sql = "";
 			
 			sql += " SELECT " + columnsToSelect + "\n";
-			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName()
+			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullSrcStageTableName()
 			        + " ON record_uuid = uuid\n";
 			sql += " WHERE 	record_origin_id = ? and record_origin_location_code = ? ";
 			
@@ -344,7 +344,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullStageTableName();
+		String stageTable = tableConfiguration.generateFullSrcStageTableName();
 		
 		String tablesToSelect = stageTable + " stage_ INNER JOIN " + table + " src_ on src_.uuid = stage_.record_uuid";
 		
@@ -384,7 +384,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += "													FROM   " + tabConf.getTableName() + " \n";
 		sql += "													WHERE  NOT EXISTS ( SELECT * \n";
 		sql += "																		FROM "
-		        + tabConf.generateFullStageTableName() + "\n";
+		        + tabConf.generateFullSrcStageTableName() + "\n";
 		sql += "																		WHERE record_origin_id = "
 		        + tabConf.getPrimaryKey() + "\n)";
 		sql += "												   )";
@@ -417,7 +417,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = " SELECT count(*) value";
 		sql += " FROM  	" + tableConfiguration.getTableName() + " INNER JOIN "
-		        + tableConfiguration.generateFullStageTableName() + " ON record_destination_id = "
+		        + tableConfiguration.generateFullSrcStageTableName() + " ON record_destination_id = "
 		        + tableConfiguration.getPrimaryKey() + "\n";
 		sql += " WHERE 	" + parentField + " = ? ";
 		sql += "			AND record_origin_location_code = ? ";
@@ -447,7 +447,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = " SELECT * ";
 		sql += " FROM  	" + tableConfiguration.getTableName() + " INNER JOIN "
-		        + tableConfiguration.generateFullStageTableName() + " ON record_uuid = uuid\n";
+		        + tableConfiguration.generateFullSrcStageTableName() + " ON record_uuid = uuid\n";
 		sql += " WHERE 	" + parentField + " = ? ";
 		sql += "			AND record_origin_location_code = ? ";
 		
@@ -749,7 +749,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullStageTableName();
+		String stageTable = tableConfiguration.generateFullSrcStageTableName();
 		
 		String tablesToSelect = stageTable + " src_ INNER JOIN " + tableConfiguration.generateTableNameWithAlias() + "  ON "
 		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
@@ -806,7 +806,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullStageTableName();
+		String stageTable = tableConfiguration.generateFullSrcStageTableName();
 		
 		String tablesToSelect = stageTable + " src_ RIGHT JOIN " + tableConfiguration.generateTableNameWithAlias() + "  on "
 		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
@@ -845,7 +845,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullStageTableName();
+		String stageTable = tableConfiguration.generateFullSrcStageTableName();
 		
 		String tablesToSelect = stageTable + " src_ INNER JOIN " + tableConfiguration.generateTableNameWithAlias() + "  on "
 		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";

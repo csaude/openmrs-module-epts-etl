@@ -48,7 +48,7 @@ public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 	}
 	
 	public static DefaultFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
-	        TransformableField field) {
+	        TransformableField field, Connection conn) {
 		
 		if (INSTANCE == null) {
 			INSTANCE = new DefaultFieldTransformer(parameters, relatedDstConf, field);

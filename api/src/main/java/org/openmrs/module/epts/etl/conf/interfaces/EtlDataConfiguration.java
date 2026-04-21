@@ -75,7 +75,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	default void ensureTemplateOverride() {
 		if (this.hasTemplate() && this.getTemplate().hasOverride()) {
 			for (TemplateOverride override : this.getTemplate().getOverride()) {
-				override.setParent( this.getTemplate());
+				override.setParent(this.getTemplate());
 				override.applyOverride(this);
 			}
 		}
@@ -92,12 +92,6 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		}
 		
 		return ((OpenConnection) conn).getDbConnInfo().openConnection();
-	}
-	
-	default void finalizeConnection(OpenConnection conn) {
-		if (conn != null) {
-			conn.finalizeConnection();
-		}
 	}
 	
 	@SuppressWarnings("unchecked")

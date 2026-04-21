@@ -53,5 +53,5 @@ public interface EtlValidator {
 	
 	EtlDBConnectionType getConnectionToUse();
 	
-	void init(EtlDataConfiguration relatedEtlConfig);
+	void init(EtlDataConfiguration relatedEtlConfig, Connection conn);
 }

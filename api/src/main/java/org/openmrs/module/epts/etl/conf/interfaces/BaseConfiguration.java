@@ -5,17 +5,17 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public interface BaseConfiguration {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	
 	List<Extension> getExtension();
 	
 	public void setExtension(List<Extension> extension);
 	
-	default Extension findExtension(String coding) throws ForbiddenOperationException{
+	default Extension findExtension(String coding) throws ForbiddenOperationException {
 		if (!utilities.listHasElement(this.getExtension()))
 			throw new ForbiddenOperationException("Not defined extension '" + coding + "");
 		
@@ -25,5 +25,11 @@ public interface BaseConfiguration {
 		}
 		
 		throw new ForbiddenOperationException("Not defined extension '" + coding + "");
+	}
+	
+	default void finalizeConnection(OpenConnection conn) {
+		if (conn != null) {
+			conn.finalizeConnection();
+		}
 	}
 }

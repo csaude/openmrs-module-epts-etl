@@ -208,7 +208,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 		
 		this.setParentConf(relatedMainExtractTable);
 		this.setIgnoreMissingParameters(relatedMainExtractTable.ignoreMissingParameters());
-		this.setJoinFields(FieldsMapping.cloneAll(toCloneFrom.getJoinFields()));
+		this.setJoinFields(FieldsMapping.cloneAll(toCloneFrom.getJoinFields(), conn));
 		this.setJoinExtraCondition(toCloneFrom.getJoinExtraCondition());
 		this.setJoinType(toCloneFrom.getJoinType());
 		this.setJoinExtraConditionScope(toCloneFrom.getJoinExtraConditionScope());

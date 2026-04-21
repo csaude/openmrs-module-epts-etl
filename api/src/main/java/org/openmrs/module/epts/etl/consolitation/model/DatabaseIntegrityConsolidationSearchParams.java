@@ -36,7 +36,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 		searchClauses.addColumnToSelect(getSrcConf().generateFullAliasedSelectColumns());
 		searchClauses.addToClauseFrom(getSrcConf().generateSelectFromClauseContent());
 		
-		searchClauses.addToClauseFrom("INNER JOIN " + getSrcConf().generateFullStageTableName() + " ON record_uuid = uuid");
+		searchClauses.addToClauseFrom("INNER JOIN " + getSrcConf().generateFullSrcStageTableName() + " ON record_uuid = uuid");
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("consistent = -1");

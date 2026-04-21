@@ -31,9 +31,9 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<EtlDataba
 	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<>(this);
 		
-		searchClauses.addColumnToSelect(getSrcConf().generateFullStageTableName() + ".*");
+		searchClauses.addColumnToSelect(getSrcConf().generateFullSrcStageTableName() + ".*");
 		
-		searchClauses.addToClauseFrom(getSrcConf().generateFullStageTableName());
+		searchClauses.addToClauseFrom(getSrcConf().generateFullSrcStageTableName());
 		
 		searchClauses.addToClauses("record_origin_location_code = ?");
 		searchClauses.addToParameters(this.appOriginLocationCode);

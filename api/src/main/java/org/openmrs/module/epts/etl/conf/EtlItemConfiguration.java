@@ -267,7 +267,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.id = id;
 	}
 	
-	public void init(EtlConfiguration relatedEtlConf, boolean testing) {
+	public void init(EtlConfiguration relatedEtlConf, boolean testing, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		
 		this.tryToLoadFromTemplate();
 		this.setRelatedEtlConfig(relatedEtlConf);
@@ -283,7 +284,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		if (utilities.listHasElement(this.getDstConf())) {
 			for (DstConf dst : this.getDstConf()) {
-				dst.init(this);
+				dst.init(this, srcConn, dstConn);
 				
 				if (!alreadyIncludedTables.contains(dst.getTableName())) {
 					alreadyIncludedTables.add(dst.getTableName());
@@ -304,10 +305,10 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		this.setConfigCode(getRelatedEtlConf().finalizeItemCodeGeneration(code));
 		
-		this.tryToLoadChildItemConf(testing);
+		this.tryToLoadChildItemConf(testing, srcConn, dstConn);
 	}
 	
-	private void tryToLoadChildItemConf(boolean testing) {
+	private void tryToLoadChildItemConf(boolean testing, Connection srcConn, Connection dstConn) throws DBException {
 		
 		if (this.hasChildItemConf()) {
 			for (EtlItemConfiguration childItem : this.getChildItemConf()) {
@@ -324,7 +325,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				
 				childItem.setRelatedParentDstConf(this.findDstConf(childItem.getRelatedParentDstConfName()));
 				childItem.setRelatedEtlConfig(getRelatedEtlConf());
-				childItem.init(getRelatedEtlConf(), testing);
+				childItem.init(getRelatedEtlConf(), testing, srcConn, dstConn);
 			}
 		}
 	}
@@ -782,5 +783,21 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	public EtlTemplateInfo retrieveNearestTemplate() {
 		return this.hasTemplate() ? this.getTemplate()
 		        : (this.hasParentItemConf() ? this.getParentItemConf().retrieveNearestTemplate() : null);
+	}
+	
+	public void ensureEtlStageTableExists(Connection srcConn, Connection dstConn) throws DBException {
+		this.getSrcConf().ensureEtlStageTableExists(srcConn, dstConn);
+		
+		if (hasDstConf()) {
+			for (DstConf dstConf : this.getDstConf()) {
+				dstConf.ensureEtlStageTableExists(srcConn, dstConn);
+			}
+		}
+		
+		if (hasChildItemConf()) {
+			for (EtlItemConfiguration child : this.getChildItemConf()) {
+				child.ensureEtlStageTableExists(srcConn, dstConn);
+			}
+		}
 	}
 }

@@ -1,3 +1,4 @@
+
 package org.openmrs.module.epts.etl.conf.datasource;
 
 import java.sql.Connection;
@@ -844,6 +845,12 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	@Override
 	public EtlTemplateInfo retrieveNearestTemplate() {
 		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
+	}
+	
+	public void ensureEtlStageTableExists(Connection srcConn, Connection dstConn) throws DBException {
+		this.generateRelatedSrcStageTableConf(srcConn);
+		
+		this.generateRelatedStageSrcUniqueKeysTableConf(srcConn);
 	}
 	
 }

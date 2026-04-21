@@ -45,7 +45,7 @@ public class SimpleValueTransformer extends AbstractEtlFieldTransformer {
 	}
 	
 	public static SimpleValueTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
-	        TransformableField field) {
+	        TransformableField field, Connection conn) {
 		
 		String key = buildCacheKey(relatedDstConf, field, parameters);
 		

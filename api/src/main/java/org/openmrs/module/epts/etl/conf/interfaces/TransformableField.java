@@ -153,8 +153,8 @@ public interface TransformableField {
 		return utilities.stringHasValue(this.getDataType());
 	}
 	
-	default void loadType(DstConf dstConf, EtlDataSource dataSource) {
-		tryToLoadTransformer(dstConf);
+	default void loadType(DstConf dstConf, EtlDataSource dataSource, Connection conn) {
+		tryToLoadTransformer(dstConf, conn);
 		
 		if (this.hasDataType()) {
 			if (!utilities.isStringIn(this.getDataType().toLowerCase(), "int", "double", "string", "date", "long",
@@ -209,8 +209,8 @@ public interface TransformableField {
 		return utilities.stringHasValue(getTransformer());
 	}
 	
-	default void tryToLoadTransformer(DstConf dstConf) {
-		FieldTransformerType.tryToLoadTransformerToField(this, dstConf);
+	default void tryToLoadTransformer(DstConf dstConf, Connection conn) {
+		FieldTransformerType.tryToLoadTransformerToField(this, dstConf, conn);
 	}
 	
 	EtlDataSource getDataSource();
