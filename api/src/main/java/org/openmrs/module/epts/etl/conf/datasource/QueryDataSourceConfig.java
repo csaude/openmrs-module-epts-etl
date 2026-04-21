@@ -500,7 +500,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 				FieldsMapping tf = FieldsMapping.fastCreate(f.getName());
 				tf.setRelationshipResolutionStrategy(RelationshipResolutionStrategy.SKIP);
 				
-				f.setTransformingInfo(new FieldTransformingInfo(tf, result.getFieldValues(), this));
+				f.setTransformingInfo(new FieldTransformingInfo(tf, result.getFieldValue(f.getName()), this));
 			}
 		}
 		
