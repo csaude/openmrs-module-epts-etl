@@ -2,6 +2,8 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
@@ -36,9 +38,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class SimpleValueTransformer extends AbstractEtlFieldTransformer {
 	
-	public static SimpleValueTransformer INSTANCE;
-	
-	private static Object LOCK = new Object();
+	protected static final Map<String, SimpleValueTransformer> INSTANCES = new ConcurrentHashMap<>();
 	
 	private SimpleValueTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
 		super(parameters, relatedDstConf, field);
@@ -47,13 +47,9 @@ public class SimpleValueTransformer extends AbstractEtlFieldTransformer {
 	public static SimpleValueTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
 	        TransformableField field) {
 		
-		if (INSTANCE == null) {
-			synchronized (LOCK) {
-				INSTANCE = new SimpleValueTransformer(parameters, relatedDstConf, field);
-			}
-		}
+		String key = buildCacheKey(relatedDstConf, field, parameters);
 		
-		return INSTANCE;
+		return INSTANCES.computeIfAbsent(key, k -> new SimpleValueTransformer(parameters, relatedDstConf, field));
 	}
 	
 	@Override

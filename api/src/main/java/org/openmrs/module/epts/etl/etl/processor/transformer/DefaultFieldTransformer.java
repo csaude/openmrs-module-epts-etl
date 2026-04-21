@@ -59,7 +59,7 @@ public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	@Override
 	public FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
+	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, final TransformableField field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
 		Object dstValue = null;
@@ -73,10 +73,6 @@ public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 			        && field.getDataSourceName().equals(srcObj.getRelatedConfiguration().getAlias())) {
 				
 				found = true;
-				
-				if (field.getDataSourceName().contains("_sisrme_drug_ds")) {
-					System.out.println();
-				}
 				
 				String fieldNameSnake = utilities.parsetoSnakeCase(field.getName());
 				String fieldNameCamel = utilities.parsetoCamelCase(field.getName());

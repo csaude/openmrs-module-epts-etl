@@ -370,10 +370,6 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		return sql + ")";
 	}
 	
-	public static String buildCacheKey(String parentTable, List<String> fields, DstConf relatedDstConf) {
-		return parentTable + "|" + relatedDstConf.getTableName() + "|" + fields;
-	}
-	
 	public DstConf getRelatedDstConf() {
 		return relatedDstConf;
 	}
@@ -381,18 +377,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	public static ParentOnDemandLoadTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
 	        TransformableField field) {
 		
-		if (parameters == null || parameters.size() < 1) {
-			throw new ForbiddenOperationException("A ParentOnDemandLoadTransformer needs at least 1 parameters.\n"
-			        + "ParentOnDemandLoadTransformer(parentTableName)");
-		}
-		
-		String parentTable = parameters.get(0).toString();
-		
-		List<String> defaultObjectData = parameters.size() > 1
-		        ? parameters.subList(1, parameters.size()).stream().map(Object::toString).toList()
-		        : null;
-		
-		String key = buildCacheKey(parentTable, defaultObjectData, relatedDstConf);
+		String key = buildCacheKey(relatedDstConf, field, parameters);
 		
 		return INSTANCES.computeIfAbsent(key, k -> new ParentOnDemandLoadTransformer(parameters, relatedDstConf, field));
 	}

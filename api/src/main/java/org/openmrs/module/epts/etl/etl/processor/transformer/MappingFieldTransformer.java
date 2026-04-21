@@ -211,62 +211,10 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 		return mappingTable;
 	}
 	
-	@SuppressWarnings("null")
 	public static MappingFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
 	        TransformableField field) {
 		
-		validateParams(parameters);
-		
-		String table = parameters.get(0).toString();
-		String srcField = parameters.get(1).toString();
-		String dstField = parameters.get(2).toString();
-		String extraCondition = null;
-		MappingNotFoundBehavior onMissing = MappingNotFoundBehavior.ABORT_PROCESS;
-		
-		List<String> rawParameterDefinitions = parameters.size() > 3
-		        ? parameters.subList(3, parameters.size()).stream().map(Object::toString).toList()
-		        : null;
-		
-		if (utilities.listHasElement(rawParameterDefinitions)) {
-			
-			for (String fieldData : rawParameterDefinitions) {
-				String[] mapping = fieldData.split(":", 2);
-				
-				if (mapping.length != 2) {
-					throw new EtlExceptionImpl("Wrong format for conditional parameters within the transformer "
-					        + "MAPPING_TRANSFORMER(" + parameters + ")" + "\n"
-					        + "Each object param must be specified as paramName:paramValue");
-				}
-				
-				String paramName = mapping[0];
-				String paramValue = mapping[1];
-				
-				if (!utilities.stringHasValue(paramValue)) {
-					throw new EtlExceptionImpl("The paramValue for parameter " + paramName
-					        + " has no value on transformer:  MAPPING_TRANSFORMER(" + parameters + ")");
-				}
-				
-				if (paramName.equals("extra_condition")) {
-					extraCondition = paramValue;
-				} else if (paramName.equals("on_missing")) {
-					try {
-						onMissing = MappingNotFoundBehavior.valueOf(paramValue);
-					}
-					catch (Exception e) {
-						throw new EtlExceptionImpl("Unsupported value paramValue for parameter " + paramName
-						        + " on transformer:  " + "MAPPING_TRANSFORMER(" + parameters + ")");
-					}
-					
-				} else if (paramName.equals("input")) {
-					
-				} else {
-					throw new ForbiddenOperationException("Unsupported parameter " + paramName + " on transformer:  "
-					        + "MAPPING_TRANSFORMER(" + parameters + ")");
-				}
-			}
-		}
-		
-		String key = buildCacheKey(table, srcField, dstField, extraCondition, onMissing);
+		String key = buildCacheKey(relatedDstConf, field, parameters);
 		
 		return INSTANCES.computeIfAbsent(key, k -> new MappingFieldTransformer(parameters, relatedDstConf, field));
 	}
@@ -277,13 +225,6 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 			        "MappingFieldTransformer requires at least 3 parameters: mapping_table, mapping_src_field and mapping_dst_field.");
 		}
 		
-	}
-	
-	private static String buildCacheKey(String table, String srcField, String dstField, String extraCondition,
-	        MappingNotFoundBehavior onMissing) {
-		
-		return table + "|" + srcField + "|" + dstField + (extraCondition != null ? "|" + extraCondition : "") + "|"
-		        + onMissing;
 	}
 	
 	@Override
@@ -305,7 +246,12 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 			transformingInfo = this.input.getTransformerInstance().transform(processor, srcObject, transformedRecord,
 			    additionalSrcObjects, this.input, srcConn, dstConn);
 			
-			valueToTransform = transformingInfo.getTransformedValue();
+			try {
+				valueToTransform = transformingInfo.getTransformedValue();
+			}
+			catch (Exception e) {
+				throw e;
+			}
 			
 		} else {
 			valueToTransform = field.getValueToTransform();

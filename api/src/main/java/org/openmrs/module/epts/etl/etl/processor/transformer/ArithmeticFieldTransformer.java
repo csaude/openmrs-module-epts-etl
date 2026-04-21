@@ -48,9 +48,7 @@ import net.objecthunter.exp4j.ExpressionBuilder;
  */
 public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
 	
-	public static ArithmeticFieldTransformer defaultTransformer;
-	
-	private static final Object LOCK = new Object();
+	private static final Map<String, ArithmeticFieldTransformer> INSTANCES = new ConcurrentHashMap<>();
 	
 	private static final Map<String, Expression> CACHE = new ConcurrentHashMap<>();
 	
@@ -60,17 +58,10 @@ public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	public static ArithmeticFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
 	        TransformableField field) {
-		if (defaultTransformer != null)
-			return defaultTransformer;
 		
-		synchronized (LOCK) {
-			if (defaultTransformer != null)
-				return defaultTransformer;
-			
-			defaultTransformer = new ArithmeticFieldTransformer(parameters, relatedDstConf, field);
-			
-			return defaultTransformer;
-		}
+		String key = buildCacheKey(relatedDstConf, field, parameters);
+		
+		return INSTANCES.computeIfAbsent(key, k -> new ArithmeticFieldTransformer(parameters, relatedDstConf, field));
 	}
 	
 	@Override

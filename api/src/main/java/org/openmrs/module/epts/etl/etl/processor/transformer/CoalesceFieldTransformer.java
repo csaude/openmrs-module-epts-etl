@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
@@ -111,13 +110,6 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 		dstConf.getRelatedEtlConf().logTrace("CoalesceFieldTransformer initialized");
 	}
 	
-	private static String buildCacheKey(List<Object> parameters, DstConf dstConf, TransformableField field) {
-		
-		String params = parameters.stream().map(Object::toString).collect(Collectors.joining("|"));
-		
-		return dstConf.hashCode() + ":" + field.getDstField() + ":" + params;
-	}
-	
 	public List<FieldsMapping> getCoalesceFields() {
 		return coalesceFields;
 	}
@@ -129,7 +121,7 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 			        + "Eg: CoalesceFieldTransformer(field1, field2)");
 		}
 		
-		String key = buildCacheKey(parameters, dstConf, field);
+		String key = buildCacheKey(dstConf, field, parameters);
 		
 		return INSTANCES.computeIfAbsent(key, k -> new CoalesceFieldTransformer(parameters, dstConf, field));
 	}
@@ -141,8 +133,13 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 		
 		for (FieldsMapping map : this.getCoalesceFields()) {
 			
-			FieldTransformingInfo transformingInfo = map.getTransformerInstance().transform(processor, srcObject,
-			    transformedRecord, additionalSrcObjects, map, srcConn, dstConn);
+			FieldTransformingInfo transformingInfo = null;
+			
+			try {
+				transformingInfo = map.getTransformerInstance().transform(processor, srcObject, transformedRecord,
+				    additionalSrcObjects, map, srcConn, dstConn);
+			}
+			catch (EtlTransformationException e) {}
 			
 			if (transformingInfo != null && transformingInfo.getTransformedValue() != null) {
 				return transformingInfo;

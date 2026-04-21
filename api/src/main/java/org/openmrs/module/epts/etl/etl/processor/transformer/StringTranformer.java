@@ -93,14 +93,9 @@ public class StringTranformer extends AbstractEtlFieldTransformer {
 	}
 	
 	public static StringTranformer getInstance(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
-		
-		if (utilities.listHasNoElement(parameters)) {
-			throw new EtlExceptionImpl("You must specify the string to transforn for STRING_TRANSFORMER");
-		}
-		String key = buildCacheKey(parameters.get(0).toString());
+		String key = buildCacheKey(relatedDstConf, field, parameters);
 		
 		return INSTANCES.computeIfAbsent(key, k -> new StringTranformer(parameters, relatedDstConf, field));
-		
 	}
 	
 	@Override

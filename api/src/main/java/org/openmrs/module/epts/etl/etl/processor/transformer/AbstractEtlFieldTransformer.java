@@ -2,6 +2,7 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
@@ -20,6 +21,14 @@ public abstract class AbstractEtlFieldTransformer implements EtlFieldTransformer
 		this.parameters = parameters;
 		this.relatedDstConf = relatedDstConf;
 		this.field = field;
+	}
+	
+	public static String buildCacheKey(DstConf dstConf, TransformableField field, List<Object> parameters) {
+		String params = parameters != null && !parameters.isEmpty()
+		        ? ("|" + parameters.stream().map(Object::toString).collect(Collectors.joining("|")))
+		        : null;
+		
+		return (dstConf != null ? dstConf.toString() : "No DstConf") + "|" + field.toString() + params;
 	}
 	
 	public String getTransformerDsc() {

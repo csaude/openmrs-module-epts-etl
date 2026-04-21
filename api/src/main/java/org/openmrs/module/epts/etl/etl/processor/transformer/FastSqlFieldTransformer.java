@@ -50,9 +50,9 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 	
-	private final Object lock = new Object();
-	
 	private static final Map<String, FastSqlFieldTransformer> INSTANCES = new ConcurrentHashMap<>();
+	
+	private static final Object LOCK = new Object();
 	
 	private String sqlQuery;
 	
@@ -71,9 +71,9 @@ public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 	public static FastSqlFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
 	        TransformableField field) {
 		
-		String sqlQuery = retrieveSqlQueryFromParameters(parameters);
+		String key = buildCacheKey(relatedDstConf, field, parameters);
 		
-		return INSTANCES.computeIfAbsent(sqlQuery, k -> new FastSqlFieldTransformer(parameters, relatedDstConf, field));
+		return INSTANCES.computeIfAbsent(key, k -> new FastSqlFieldTransformer(parameters, relatedDstConf, field));
 	}
 	
 	private static String retrieveSqlQueryFromParameters(List<Object> parameters) {
@@ -95,12 +95,8 @@ public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, TransformableField field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
-		/*if (additionalSrcObjects == null || additionalSrcObjects.isEmpty()) {
-			throw new EtlExceptionImpl("FastSqlFieldTransformer requires at least one source object.");
-		}*/
-		
 		if (dataSourceConfig == null) {
-			synchronized (lock) {
+			synchronized (LOCK) {
 				if (dataSourceConfig == null) {
 					
 					QueryDataSourceConfig conf = new QueryDataSourceConfig(sqlQuery, (SrcConf) field.getDataSource());
