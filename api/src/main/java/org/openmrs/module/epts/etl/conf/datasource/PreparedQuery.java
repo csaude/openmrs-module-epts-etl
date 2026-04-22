@@ -18,6 +18,7 @@ import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
+import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -427,8 +428,9 @@ public class PreparedQuery {
 			if (f != null && f.getTransformedValue() != null) {
 				getQueryParam(parseToDynamicParameter(element)).setValue(f.getTransformedValue());
 			} else {
-				throw new EtlExceptionImpl(
-				        "The transformation of dynamic element '" + element + "' resulted on an empty value!!!");
+				throw new EtlTransformationException(
+				        "The transformation of dynamic element '" + element + "' resulted on an empty value!!!", srcObject,
+				        ActionOnEtlException.ABORT_PROCESS);
 			}
 		}
 		
