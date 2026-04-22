@@ -424,7 +424,7 @@ public class PreparedQuery {
 			FieldTransformingInfo f = map.getTransformerInstance().transform(processor, srcObject, dstObject, srcObjects,
 			    map, srcConn, srcConn);
 			
-			if (f.getTransformedValue() != null) {
+			if (f != null && f.getTransformedValue() != null) {
 				getQueryParam(parseToDynamicParameter(element)).setValue(f.getTransformedValue());
 			} else {
 				throw new EtlExceptionImpl(

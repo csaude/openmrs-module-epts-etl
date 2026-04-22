@@ -202,8 +202,6 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	
 	private String parametrizedOnDemandCheckCondition;
 	
-	private List<String> ignorableFields;
-	
 	private String templateName;
 	
 	private Map<String, Object> templateParams;
@@ -211,6 +209,10 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	public ParentOnDemandLoadTransformer(List<Object> parameters, DstConf dstConf, TransformableField field, Connection conn)
 	        throws FieldAvaliableInMultipleDataSources, DBException {
 		super(parameters, dstConf, field);
+		
+		if (field.getDstField().equals("order_group_id")) {
+			logTrace("Initializing on_demand_order_group");
+		}
 		
 		if (parameters == null || parameters.size() < 1) {
 			throw new ForbiddenOperationException("A ParentOnDemandLoadTransformer needs at least 1 parameters.\n"
@@ -339,14 +341,6 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		logTrace("Transformer Initialized \n" + this);
 	}
 	
-	public void setIgnorableFields(List<String> ignorableFields) {
-		this.ignorableFields = ignorableFields;
-	}
-	
-	public List<String> getIgnorableFields() {
-		return ignorableFields;
-	}
-	
 	private FieldsMapping fastCreateFieldMap(String parentFieldName, String dstField, DstConf dstConf, Connection conn)
 	        throws FieldAvaliableInMultipleDataSources, DBException {
 		FieldsMapping fieldMap = FieldsMapping.fastCreate(parentFieldName, dstField, dstConf, conn);
@@ -417,12 +411,12 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 				
 				parentInfo.setTableName(parentTableName);
 				
-				InconsistenceInfo i = InconsistenceInfo.generate(srcObject, parentInfo,
+				InconsistenceInfo inconsistence = InconsistenceInfo.generate(srcObject, parentInfo,
 				    processor.getRelatedEtlConfiguration().getOriginAppLocationCode());
 				
 				srcObject.setFieldValue(this.parentSourceField, null);
 				
-				i.save(relatedDstConf, srcConn);
+				inconsistence.save(relatedDstConf, srcConn);
 			}
 		}
 		
@@ -501,7 +495,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	        Connection dstConn) throws EtlTransformationException, DBException {
 		
 		if (srcParent != null) {
-			ensureDstConfForExistingSrcParentInitialized(dstConn);
+			ensureDstConfForExistingSrcParentInitialized(srcConn, dstConn);
 			
 			DatabaseObjectConfiguration bkp = srcParent.getRelatedConfiguration();
 			
@@ -531,7 +525,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		TransformationType transformationType = TransformationType.PRINCIPAL;
 		
 		if (srcParent != null && sourceParentMayExists()) {
-			ensureDstConfForExistingSrcParentInitialized(dstConn);
+			ensureDstConfForExistingSrcParentInitialized(srcConn, dstConn);
 			
 			dstConf = getDstConfForExistingSrcParent(srcConn, dstConn);
 		} else {
@@ -629,6 +623,10 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		if (skipFullLoad && !dstConf.isFullLoaded()) {
 			dstConf.tryToGenerateTableAlias(dstConf.getRelatedEtlConf());
 			
+			if (!usesTemplate()) {
+				dstConf.setMapping(this.onDemandParentFieldMappings);
+			}
+			
 			dstConf.addAllToAvaliableDataSource(this.relatedDstConf.getAllAvaliableDataSource());
 			dstConf.addAllToPreferredDataSource(this.relatedDstConf.getAllPrefferredDataSource());
 		} else if (!dstConf.isFullLoaded()) {
@@ -637,7 +635,6 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 					
 					if (!usesTemplate()) {
 						dstConf.setDoNotUseSrcConfAsDataSource(true);
-						dstConf.setIgnorableFields(this.getIgnorableFields());
 						dstConf.setMapping(this.onDemandParentFieldMappings);
 					}
 					
@@ -699,15 +696,15 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		return this.parentSourceIdMapping != null;
 	}
 	
-	void ensureDstConfForExistingSrcParentInitialized(Connection dstConn) throws DBException {
+	void ensureDstConfForExistingSrcParentInitialized(Connection srcConf, Connection dstConn) throws DBException {
 		if (!sourceParentMayExists()) {
 			throw new EtlExceptionImpl(
 			        "Error On " + this + "\nExisting SrcParent not applicable as no parentSourceIdMapping is defined!");
 		}
 		
-		ensureEtlItemConfForExistingSrcParentInitialized(dstConn, dstConn);
+		ensureEtlItemConfForExistingSrcParentInitialized(srcConf, dstConn);
 		
-		DstConf dstConf = getDstConfForExistingSrcParent(dstConn, dstConn);
+		DstConf dstConf = getDstConfForExistingSrcParent(srcConf, dstConn);
 		
 		if (!dstConf.isFullLoaded()) {
 			synchronized (lock) {
@@ -771,7 +768,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	private EtlItemConfiguration generateEtlItemConf(Connection srcConn, Connection dstConn) throws DBException {
 		boolean useMainEtlTable = false;
 		
-		AbstractTableConfiguration parentConf = new GenericTableConfiguration(parentTableName);
+		AbstractTableConfiguration parentConf = new GenericTableConfiguration(this.parentTableName);
 		
 		try {
 			parentConf.tryToLoadSchemaInfo(null, srcConn);
@@ -782,7 +779,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 			useMainEtlTable = true;
 		}
 		
-		parentConf.setRelatedEtlConfig(relatedDstConf.getRelatedEtlConf());
+		parentConf.setRelatedEtlConfig(this.relatedDstConf.getRelatedEtlConf());
 		
 		EtlItemConfiguration conf = EtlItemConfiguration.fastCreate(parentConf, srcConn);
 		
@@ -840,7 +837,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	@Override
 	public void init(Connection srcConn, Connection dstConn) throws DBException {
 		if (sourceParentMayExists()) {
-			ensureDstConfForExistingSrcParentInitialized(dstConn);
+			ensureDstConfForExistingSrcParentInitialized(srcConn, dstConn);
 		}
 		
 		ensureDstConfForNonExistingSrcParentInitialized(true, srcConn, dstConn);

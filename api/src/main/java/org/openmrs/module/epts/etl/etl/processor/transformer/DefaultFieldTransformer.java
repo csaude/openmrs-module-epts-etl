@@ -7,7 +7,6 @@ import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
-import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -59,8 +58,9 @@ public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	@Override
 	public FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, final TransformableField field,
-	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
+	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects,
+	        final TransformableField field, Connection srcConn, Connection dstConn)
+	        throws DBException, EtlTransformationException {
 		
 		Object dstValue = null;
 		EtlDataSource ds = null;
@@ -103,9 +103,11 @@ public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 		}
 		
 		if (!found) {
-			throw new EtlTransformationException(
+			return null;
+			
+			/*throw new EtlTransformationException(
 			        "The field '" + field.getName() + "' does not belong to any configured source table", srcObject,
-			        ActionOnEtlException.ABORT_PROCESS);
+			        ActionOnEtlException.ABORT_PROCESS);*/
 		}
 		
 		return new FieldTransformingInfo(field, dstValue, ds);
