@@ -298,7 +298,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 					t.tryToGenerateTableAlias(getRelatedEtlConf());
 					
 					if (fullLoadedTab != null) {
-						t.clone(fullLoadedTab, null, conn);
+						t.clone(fullLoadedTab, this, null, conn);
 					} else {
 						t.fullLoad(srcConn);
 					}
@@ -312,7 +312,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 						    t.getSharedKeyRefInfo(conn).getFullTableName(), new ArrayList<>());
 						
 						if (fullLoadedTab != null) {
-							t.getSharedKeyRefInfo(conn).clone(fullLoadedTab, null, conn);
+							t.getSharedKeyRefInfo(conn).clone(fullLoadedTab, this, null, conn);
 						} else {
 							t.getSharedKeyRefInfo(conn).fullLoad();
 						}
@@ -363,7 +363,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 				ref.tryToGenerateTableAlias(getRelatedEtlConf());
 				
 				if (fullLoadedTab != null) {
-					ref.clone(fullLoadedTab, null, conn);
+					ref.clone(fullLoadedTab, this, null, conn);
 				} else {
 					ref.fullLoad();
 				}
@@ -376,7 +376,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 						ref.getSharedKeyRefInfo(conn).tryToGenerateTableAlias(getRelatedEtlConf());
 					}
 					if (fullLoadedTab != null) {
-						ref.getSharedKeyRefInfo(conn).clone(fullLoadedTab, null, conn);
+						ref.getSharedKeyRefInfo(conn).clone(fullLoadedTab, this, null, conn);
 					} else {
 						ref.getSharedKeyRefInfo(conn).fullLoad();
 					}
@@ -583,10 +583,10 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	
 	public void copyFromOther(TableConfiguration toClone, EtlDatabaseObject schemaInfoSrc,
 	        EtlItemConfiguration relatedItemConf, Connection conn) throws DBException {
-		super.clone(toClone, schemaInfoSrc, conn);
+		
+		super.clone(toClone, relatedItemConf, schemaInfoSrc, conn);
 		
 		this.setRelatedEtlConfig(relatedItemConf.getRelatedEtlConf());
-		this.setParentConf(relatedItemConf);
 		
 		if (toClone instanceof SrcConf) {
 			SrcConf toCloneFrom = (SrcConf) toClone;

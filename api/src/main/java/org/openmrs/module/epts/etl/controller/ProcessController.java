@@ -231,6 +231,11 @@ public class ProcessController implements Controller, ControllerStarter {
 		return generateStopRequestFile().exists();
 	}
 	
+	@Override
+	public boolean isDisabled() {
+		return this.getEtlConf().isDisabled();
+	}
+	
 	public File generateStopRequestFile() {
 		return new File(
 		        getEtlConf().getEtlRootDirectory() + "/process_status/stop_requested_" + getControllerId() + ".info");

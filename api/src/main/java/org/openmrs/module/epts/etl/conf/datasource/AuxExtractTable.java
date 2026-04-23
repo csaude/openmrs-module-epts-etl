@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -154,6 +155,14 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
+	public void setParentConf(EtlDataConfiguration parentConf) {
+		if (parentConf instanceof MainJoiningEntity) {
+			super.setParentConf(parentConf);
+		} else
+			throw new EtlExceptionImpl("Only MainJoiningEntity are accepted as parent of an AuxExtractTable!");
+	}
+	
+	@Override
 	public Boolean isGeneric() {
 		return false_();
 	}
@@ -215,7 +224,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 		
 		this.setIgnoreMissingParameters(relatedMainExtractTable.ignoreMissingParameters());
 		
-		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		super.clone(toCloneFrom, relatedMainExtractTable, schemaInfoSrc, conn);
 		
 		this.setParentConf(relatedMainExtractTable);
 		this.setIgnoreMissingParameters(relatedMainExtractTable.ignoreMissingParameters());

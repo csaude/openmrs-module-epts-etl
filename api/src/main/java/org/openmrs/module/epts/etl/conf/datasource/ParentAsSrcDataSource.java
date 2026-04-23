@@ -58,7 +58,7 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 		
 		ds.setChildTableConf(parent.getChildTableConf());
 		
-		ds.clone(parent, null, conn);
+		ds.clone(parent, null, null, conn);
 		
 		ds.relatedSrcConf = mainSrcConf;
 		

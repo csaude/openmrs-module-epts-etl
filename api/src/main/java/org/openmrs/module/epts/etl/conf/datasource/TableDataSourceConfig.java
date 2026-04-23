@@ -280,7 +280,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	public void clone(TableDataSourceConfig toCloneFrom, SrcConf relatedSrcConf, EtlDatabaseObject schemaInfoSrc,
 	        Connection conn) throws DBException {
-		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		super.clone(toCloneFrom, relatedSrcConf, schemaInfoSrc, conn);
 		
 		this.setJoinFields(toCloneFrom.getJoinFields());
 		this.setJoinExtraCondition(this.getJoinExtraCondition());

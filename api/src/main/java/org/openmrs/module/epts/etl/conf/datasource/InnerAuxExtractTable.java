@@ -141,7 +141,7 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	
 	public void clone(InnerAuxExtractTable toCloneFrom, AuxExtractTable relatedMainExtractTable,
 	        EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
-		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		super.clone(toCloneFrom, relatedMainExtractTable, schemaInfoSrc, conn);
 		
 		this.setJoinFields(toCloneFrom.getJoinFields());
 		this.setJoinExtraCondition(toCloneFrom.getJoinExtraCondition());

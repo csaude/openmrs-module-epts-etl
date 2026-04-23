@@ -127,12 +127,12 @@ public class ProcessStarter implements ControllerStarter {
 	}
 	
 	@Override
-	public void finalize(Controller c) {
-		c.killSelfCreatedThreads();
+	public void finalize(Controller controllerToFinalize) {
+		controllerToFinalize.killSelfCreatedThreads();
 		
-		ProcessController controller = (ProcessController) c;
+		ProcessController controller = (ProcessController) controllerToFinalize;
 		
-		if (c.isFinished()) {
+		if (controllerToFinalize.isFinished()) {
 			if (controller.getEtlConf().getChildConfigFilePath() != null) {
 				try {
 					EtlConfiguration childConfig = EtlConfiguration
@@ -140,14 +140,25 @@ public class ProcessStarter implements ControllerStarter {
 					
 					ProcessController child = new ProcessController(this, childConfig);
 					
-					ExecutorService executor = ThreadPoolService.getInstance()
-					        .createNewThreadPoolExecutor(child.getControllerId());
-					
-					executor.execute(child);
-					
-					ThreadPoolService.getInstance().terminateTread(logger, c.getControllerId(), c);
-					
 					this.currentController = child;
+					
+					if (this.currentController.isDisabled()) {
+						logger.info("Operation " + this.currentController.getControllerId()
+						        + " is marked as disabled... skipping...");
+						
+						finalize(this.currentController);
+					} else {
+						ExecutorService executor = ThreadPoolService.getInstance()
+						        .createNewThreadPoolExecutor(this.currentController.getControllerId());
+						
+						executor.execute(this.currentController);
+						
+						if (!controllerToFinalize.isDisabled()) {
+							ThreadPoolService.getInstance().terminateTread(logger, controllerToFinalize.getControllerId(),
+							    controllerToFinalize);
+						}
+					}
+					
 				}
 				catch (DBException e) {
 					throw new RuntimeException(e);
@@ -161,7 +172,7 @@ public class ProcessStarter implements ControllerStarter {
 			} else {
 				controller.finalize();
 			}
-		} else if (c.isStopped()) {
+		} else if (controllerToFinalize.isStopped()) {
 			logger.warn("THE APPLICATION IS STOPPING DUE STOP REQUESTED!");
 			controller.finalize();
 		}

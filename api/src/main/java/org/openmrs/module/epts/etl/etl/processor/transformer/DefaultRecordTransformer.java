@@ -59,8 +59,13 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		List<EtlDatabaseObject> srcObjects = collectSourceObjects(processor, srcObject, transformedRec, migratedDstParent,
 		    dstConf, transformationType, srcConn);
 		
-		if (srcObjects.isEmpty()) {
-			return null;
+		try {
+			if (srcObjects.isEmpty()) {
+				return null;
+			}
+		}
+		catch (Exception e) {
+			throw e;
 		}
 		
 		applyFieldTransformations(processor, transformedRec, srcObjects, srcConn, dstConn);

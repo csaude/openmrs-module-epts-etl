@@ -258,10 +258,6 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 						throw new ForbiddenOperationException("The on_demand_check_condition has no value");
 					}
 					
-					if (srcFieldOrValue.equals("on_demand_order_group_check_condition.sql")) {
-						logTrace("Loading on_demand_check_condition...");
-					}
-					
 					if (dstConf.getRelatedEtlConf().checkIfIsValidDumpScript(srcFieldOrValue)) {
 						this.onDemandCheckCondition = dstConf.getRelatedEtlConf().readDumpScriptContent(srcFieldOrValue);
 						
@@ -466,13 +462,8 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 			
 			FieldTransformingInfo fieldInfo = null;
 			
-			try {
-				fieldInfo = this.parentSourceIdMapping.getTransformerInstance().transform(processor, srcObject,
-				    transformedRecord, additionalSrcObjects, parentSourceIdMapping, srcConn, dstConn);
-			}
-			catch (Exception e) {
-				throw e;
-			}
+			fieldInfo = this.parentSourceIdMapping.getTransformerInstance().transform(processor, srcObject,
+			    transformedRecord, additionalSrcObjects, parentSourceIdMapping, srcConn, dstConn);
 			
 			if (fieldInfo != null && fieldInfo.getTransformedValue() != null) {
 				SrcConf srcConf = loadSrcConfForExistingSrcParentIfNeeded(srcConn, dstConn);

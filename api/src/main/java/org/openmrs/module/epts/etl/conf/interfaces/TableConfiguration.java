@@ -357,7 +357,8 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 	}
 	
-	default void clone(TableConfiguration toCloneFrom, EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
+	default void clone(TableConfiguration toCloneFrom, EtlDataConfiguration parent, EtlDatabaseObject schemaInfoSrc,
+	        Connection conn) throws DBException {
 		this.setTableName(toCloneFrom.getTableName());
 		
 		if (!this.hasAlias() && toCloneFrom.hasDynamicAlias()) {
@@ -388,7 +389,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		
 		this.setParentRefInfo(toCloneFrom.getParentRefInfo());
 		this.setSyncRecordClass(toCloneFrom.getSyncRecordClass());
-		this.setParentConf(toCloneFrom.getParentConf());
+		this.setParentConf(parent != null ? parent : toCloneFrom.getParentConf());
 		this.setFields(toCloneFrom.getFields());
 		this.setIgnorableFields(toCloneFrom.getIgnorableFields());
 		
@@ -2311,7 +2312,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 				ref.tryToGenerateTableAlias(aliasGenerator);
 				
 				if (existingConf != null) {
-					ref.clone(existingConf, null, conn);
+					ref.clone(existingConf, this, null, conn);
 					
 				} else {
 					ref.fullLoad(conn);

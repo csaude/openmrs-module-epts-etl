@@ -426,7 +426,9 @@ public class PreparedQuery {
 			    map, srcConn, srcConn);
 			
 			if (f != null && f.getTransformedValue() != null) {
-				getQueryParam(parseToDynamicParameter(element)).setValue(f.getTransformedValue());
+				for (QueryParameter p : getQueryParam(parseToDynamicParameter(element))) {
+					p.setValue(f.getTransformedValue());
+				}
 			} else {
 				throw new EtlTransformationException(
 				        "The transformation of dynamic element '" + element + "' resulted on an empty value!!!", srcObject,
@@ -441,13 +443,18 @@ public class PreparedQuery {
 		return "(" + element + ")";
 	}
 	
-	private QueryParameter getQueryParam(String name) {
+	private List<QueryParameter> getQueryParam(String name) {
 		if (hasQueryParams()) {
+			
+			List<QueryParameter> list = new ArrayList<>();
+			
 			for (QueryParameter p : this.getQueryParams()) {
 				if (p.getName().equals(name)) {
-					return p;
+					list.add(p);
 				}
 			}
+			
+			return list;
 		}
 		
 		throw new EtlExceptionImpl("Query parameter '" + name + "' not found!");

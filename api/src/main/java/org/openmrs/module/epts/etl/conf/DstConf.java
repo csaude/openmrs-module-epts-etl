@@ -1209,8 +1209,8 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	public void clone(DstConf toCloneFrom, EtlItemConfiguration relatedItemConf, EtlDatabaseObject schemaInfoSrc,
 	        Connection conn) throws DBException {
-		super.clone(toCloneFrom, schemaInfoSrc, conn);
-		this.setParentConf(relatedItemConf);
+		
+		super.clone(toCloneFrom, relatedItemConf, schemaInfoSrc, conn);
 		this.setRelatedEtlConfig(relatedItemConf.getRelatedEtlConf());
 		this.setJoinFields(toCloneFrom.getJoinFields());
 		this.setMapping(toCloneFrom.getMapping());
