@@ -73,7 +73,7 @@ public class FieldsMapping extends Field implements TransformableField {
 	private EtlDataSource dataSource;
 	
 	public FieldsMapping() {
-		this.nullValueBehavior = EtlNullBehavior.ALLOW;
+		this.nullValueBehavior = EtlNullBehavior.ABORT_PROCESS;
 		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
 		
 		this.possibleSrc = new ArrayList<>(5);

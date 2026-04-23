@@ -195,7 +195,7 @@ public class ConfVM {
 		reloadedSyncConfiguration.setRelatedController(
 		    this.etlConfiguration.getRelatedController() == null ? new ProcessController(null, reloadedSyncConfiguration)
 		            : this.etlConfiguration.getRelatedController());
-		reloadedSyncConfiguration.getRelatedController().setConfiguration(reloadedSyncConfiguration);
+		reloadedSyncConfiguration.getRelatedController().setEtlConf(reloadedSyncConfiguration);
 		
 		reloadedSyncConfiguration.setClassPath(retrieveClassPath());
 		reloadedSyncConfiguration.setModuleRootDirectory(retrieveModuleFolder());

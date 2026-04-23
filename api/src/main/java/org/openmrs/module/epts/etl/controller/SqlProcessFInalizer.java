@@ -14,7 +14,7 @@ public class SqlProcessFInalizer extends AbstractProcessFinalizer {
 	
 	@Override
 	public void performeFinalizationTasks() {
-		String sql = getRelatedProcessController().getConfiguration().getFinalizer().getSqlFinalizerQuery();
+		String sql = getRelatedProcessController().getEtlConf().getFinalizer().getSqlFinalizerQuery();
 		
 		OpenConnection conn = null;
 		

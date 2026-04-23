@@ -37,7 +37,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class ProcessController implements Controller, ControllerStarter {
 	
-	private EtlConfiguration configuration;
+	private EtlConfiguration etlConf;
 	
 	private int operationStatus;
 	
@@ -116,9 +116,9 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	public void init(EtlConfiguration configuration) throws DBException {
-		this.configuration = configuration;
-		this.configuration.setRelatedController(this);
-		this.processInfo = new ProcessInfo(getConfiguration());
+		this.etlConf = configuration;
+		this.etlConf.setRelatedController(this);
+		this.processInfo = new ProcessInfo(getEtlConf());
 		
 		this.controllerId = configuration.generateProcessId();
 		
@@ -157,7 +157,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	public void finalize() {
 		setFinalized(true);
 		
-		getConfiguration().finalizeAllApps();
+		getEtlConf().finalizeAllApps();
 	}
 	
 	@Override
@@ -198,26 +198,26 @@ public class ProcessController implements Controller, ControllerStarter {
 			logWarn("THERE IS NO MORE OPERATION TO EXECUTE... FINALIZING PROCESS... " + this.getControllerId());
 		}
 		
-		getConfiguration().finalizeAllApps();
+		getEtlConf().finalizeAllApps();
 	}
 	
 	@JsonIgnore
-	public EtlConfiguration getConfiguration() {
-		return configuration;
+	public EtlConfiguration getEtlConf() {
+		return etlConf;
 	}
 	
-	public void setConfiguration(EtlConfiguration configuration) {
-		this.configuration = configuration;
+	public void setEtlConf(EtlConfiguration etlConf) {
+		this.etlConf = etlConf;
 	}
 	
 	@JsonIgnore
 	public DBConnectionInfo getDefaultConnInfo() {
-		return getConfiguration().getSrcConnInfo();
+		return getEtlConf().getSrcConnInfo();
 	}
 	
 	@JsonIgnore
 	public DBConnectionInfo getDstConnInfo() {
-		return getConfiguration().getDstConnInfo();
+		return getEtlConf().getDstConnInfo();
 	}
 	
 	@Override
@@ -233,7 +233,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	public File generateStopRequestFile() {
 		return new File(
-		        getConfiguration().getEtlRootDirectory() + "/process_status/stop_requested_" + getControllerId() + ".info");
+		        getEtlConf().getEtlRootDirectory() + "/process_status/stop_requested_" + getControllerId() + ".info");
 	}
 	
 	@Override
@@ -504,19 +504,19 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	private boolean canBeReRun() {
-		return getConfiguration().reRunable();
+		return getEtlConf().reRunable();
 	}
 	
 	public boolean isDBReSyncProcess() {
-		return getConfiguration().isDBReSyncProcess();
+		return getEtlConf().isDBReSyncProcess();
 	}
 	
 	public boolean isDBQuickExportProcess() {
-		return getConfiguration().isDBQuickExportProcess();
+		return getEtlConf().isDBQuickExportProcess();
 	}
 	
 	public boolean isDBQuickLoadProcess() {
-		return getConfiguration().isDBQuickLoadProcess();
+		return getEtlConf().isDBQuickLoadProcess();
 	}
 	
 	private void tryToRemoveOldStopRequested() {
@@ -559,11 +559,11 @@ public class ProcessController implements Controller, ControllerStarter {
 	public void onFinish() {
 		markAsFinished();
 		
-		if (getConfiguration().hasFinalizer()) {
+		if (getEtlConf().hasFinalizer()) {
 			Class[] parameterTypes = { ProcessController.class };
 			
 			try {
-				Constructor<? extends ProcessFinalizer> a = getConfiguration().getFinalizer().getFinalizerClazz()
+				Constructor<? extends ProcessFinalizer> a = getEtlConf().getFinalizer().getFinalizerClazz()
 				        .getConstructor(parameterTypes);
 				
 				ProcessFinalizer finalizer = a.newInstance(this);
@@ -633,7 +633,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	@Override
 	public int getWaitTimeToCheckStatus() {
-		return this.getConfiguration().getWaitTimeToCheckStatus();
+		return this.getEtlConf().getWaitTimeToCheckStatus();
 	}
 	
 	@JsonIgnore
@@ -690,7 +690,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	public OpenConnection openConnection() throws DBException {
 		OpenConnection conn = getDefaultConnInfo().openConnection();
 		
-		if (getConfiguration().doNotResolveRelationship()) {
+		if (getEtlConf().doNotResolveRelationship()) {
 			DBUtilities.disableForegnKeyChecks(conn);
 		}
 		
@@ -698,9 +698,9 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	public OpenConnection tryToOpenMainConnection() throws DBException {
-		OpenConnection conn = getConfiguration().openMainConn();
+		OpenConnection conn = getEtlConf().openMainConn();
 		
-		if (getConfiguration().doNotResolveRelationship()) {
+		if (getEtlConf().doNotResolveRelationship()) {
 			DBUtilities.disableForegnKeyChecks(conn);
 		}
 		
@@ -710,10 +710,10 @@ public class ProcessController implements Controller, ControllerStarter {
 	public OpenConnection tryToOpenDstConn() throws DBException {
 		OpenConnection conn = null;
 		
-		if (getConfiguration().hasDstConnInfo()) {
+		if (getEtlConf().hasDstConnInfo()) {
 			conn = getDstConnInfo().openConnection();
 			
-			if (getConfiguration().doNotResolveRelationship()) {
+			if (getEtlConf().doNotResolveRelationship()) {
 				DBUtilities.disableForegnKeyChecks(conn);
 			}
 		}

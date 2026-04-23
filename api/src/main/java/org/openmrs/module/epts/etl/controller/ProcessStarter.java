@@ -95,19 +95,27 @@ public class ProcessStarter implements ControllerStarter {
 			
 			init();
 			
-			ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.currentController.getControllerId())
-			        .execute(this.currentController);
-			
-			while (!this.currentController.isFinalized()) {
-				TimeCountDown.sleep(60);
+			if (this.currentController.getEtlConf().isDisabled()) {
+				logger.info(
+				    "Operation " + this.currentController.getControllerId() + " is marked as disabled... skipping...");
 				
-				logger.warn("THE APPLICATION IS STILL RUNING...", 60 * 15);
-			}
-			
-			if (this.currentController.isFinished()) {
-				logger.warn("ALL JOBS ARE FINISHED");
-			} else if (this.currentController.isStopped()) {
-				logger.warn("ALL JOBS ARE STOPPED");
+				finalize(this.currentController);
+			} else {
+				
+				ThreadPoolService.getInstance().createNewThreadPoolExecutor(this.currentController.getControllerId())
+				        .execute(this.currentController);
+				
+				while (!this.currentController.isFinalized()) {
+					TimeCountDown.sleep(60);
+					
+					logger.warn("THE APPLICATION IS STILL RUNING...", 60 * 15);
+				}
+				
+				if (this.currentController.isFinished()) {
+					logger.warn("ALL JOBS ARE FINISHED");
+				} else if (this.currentController.isStopped()) {
+					logger.warn("ALL JOBS ARE STOPPED");
+				}
 			}
 		}
 		catch (ForbiddenOperationException e) {
@@ -125,10 +133,10 @@ public class ProcessStarter implements ControllerStarter {
 		ProcessController controller = (ProcessController) c;
 		
 		if (c.isFinished()) {
-			if (controller.getConfiguration().getChildConfigFilePath() != null) {
+			if (controller.getEtlConf().getChildConfigFilePath() != null) {
 				try {
 					EtlConfiguration childConfig = EtlConfiguration
-					        .loadFromFile(new File(controller.getConfiguration().getChildConfigFilePath()));
+					        .loadFromFile(new File(controller.getEtlConf().getChildConfigFilePath()));
 					
 					ProcessController child = new ProcessController(this, childConfig);
 					

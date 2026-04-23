@@ -40,5 +40,17 @@ public enum EtlNullBehavior {
 	 * configured exception handling strategy.
 	 * </p>
 	 */
-	ABORT_PROCESS
+	ABORT_PROCESS;
+	
+	public boolean abort() {
+		return this.equals(ABORT_PROCESS);
+	}
+	
+	public boolean allow() {
+		return this.equals(ALLOW);
+	}
+	
+	public boolean markAsFailed() {
+		return this.equals(MARK_RECORD_AS_FAILED);
+	}
 }

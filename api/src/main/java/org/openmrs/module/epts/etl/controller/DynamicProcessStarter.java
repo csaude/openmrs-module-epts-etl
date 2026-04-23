@@ -117,7 +117,7 @@ public class DynamicProcessStarter extends ProcessStarter implements ControllerS
 		ProcessController controller = (ProcessController) c;
 		
 		if (c.isFinished()) {
-			if (controller.getConfiguration().getChildConfigFilePath() != null) {
+			if (controller.getEtlConf().getChildConfigFilePath() != null) {
 				throw new ForbiddenOperationException(
 				        "You cannot configure childConfigFilePath on dynamic etl configuration!!!!");
 			} else {
