@@ -79,8 +79,10 @@ public class EtlConfigurationTemplate {
 		return this.getExtendsTemplate() != null;
 	}
 	
-	public <T extends EtlDataConfiguration> T parseToEtlDataConfiguration(Class<T> clazz, Map<String, Object> inputParams) {
+	public <T extends EtlDataConfiguration> T parseToEtlDataConfiguration(Class<T> clazz, EtlTemplateInfo templateInfo) {
 		String json = null;
+		
+		Map<String, Object> inputParams = templateInfo.getParameters();
 		
 		try {
 			validateAllowedParanms(inputParams);
@@ -90,8 +92,8 @@ public class EtlConfigurationTemplate {
 				throw new EtlExceptionImpl("Missing template content on " + this.getTemplate());
 			}
 			
-			json = EtlDataConfiguration.resolvePlaceholders(this.template != null ? this.template.toString() : "{}", this.getParameters(), null, null,
-			    inputParams);
+			json = EtlDataConfiguration.resolvePlaceholders(this.template != null ? this.template.toString() : "{}",
+			    this.getParameters(), null, null, inputParams);
 			
 			EtlDataConfiguration parentFromTemplate = null;
 			
@@ -101,10 +103,11 @@ public class EtlConfigurationTemplate {
 				
 				this.getExtendsTemplate().ensureReplacementOfParametersPlaceHolders(inputParams);
 				
+				templateInfo.setParentTemplate(this.getExtendsTemplate());
+				
 				baseTemplate.setRelatedEtlConf(getRelatedEtlConf());
 				
-				parentFromTemplate = baseTemplate.parseToEtlDataConfiguration(clazz,
-				    this.getExtendsTemplate().getParameters());
+				parentFromTemplate = baseTemplate.parseToEtlDataConfiguration(clazz, this.getExtendsTemplate());
 				
 				parentFromTemplate.ensureTemplateOverride();
 			}

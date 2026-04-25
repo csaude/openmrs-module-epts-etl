@@ -1,10 +1,14 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
@@ -18,6 +22,8 @@ public class EtlTemplateInfo extends AbstractEtlDataConfiguration {
 	
 	private List<TemplateOverride> override;
 	
+	private EtlTemplateInfo parentTemplate;
+	
 	public EtlTemplateInfo() {
 	}
 	
@@ -25,6 +31,18 @@ public class EtlTemplateInfo extends AbstractEtlDataConfiguration {
 		this(name);
 		
 		this.parameters = parameters;
+	}
+	
+	public boolean hasParentTemplate() {
+		return this.getParentTemplate() != null;
+	}
+	
+	public EtlTemplateInfo getParentTemplate() {
+		return parentTemplate;
+	}
+	
+	public void setParentTemplate(EtlTemplateInfo parentTemplate) {
+		this.parentTemplate = parentTemplate;
 	}
 	
 	public List<TemplateOverride> getOverride() {
@@ -53,6 +71,31 @@ public class EtlTemplateInfo extends AbstractEtlDataConfiguration {
 	
 	public void setParameters(Map<String, Object> parameters) {
 		this.parameters = parameters;
+	}
+	
+	public Map<String, Object> getAllAvailableParameters() {
+		return getAllAvaliableParameters(new HashSet<>());
+	}
+	
+	private Map<String, Object> getAllAvaliableParameters(Set<EtlTemplateInfo> visited) {
+		
+		if (visited.contains(this)) {
+			throw new EtlExceptionImpl("Circular reference detected in template hierarchy");
+		}
+		
+		visited.add(this);
+		
+		Map<String, Object> avaliableParameters = new HashMap<>();
+		
+		if (this.parentTemplate != null) {
+			avaliableParameters.putAll(this.parentTemplate.getAllAvaliableParameters(visited));
+		}
+		
+		if (this.parameters != null) {
+			avaliableParameters.putAll(this.parameters);
+		}
+		
+		return avaliableParameters;
 	}
 	
 	@Override

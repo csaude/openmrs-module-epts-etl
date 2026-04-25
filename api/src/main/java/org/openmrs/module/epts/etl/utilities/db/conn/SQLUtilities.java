@@ -1146,32 +1146,125 @@ public class SQLUtilities {
 		return false;
 	}
 	
-	/**
-	 * Validates if the syntax of a given query string represent a valid sql select query DbmsType
-	 * 
-	 * @param query the query to be validated
-	 * @return true if the query is a sql select query or false if not
-	 */
 	public static boolean isValidSelectSqlQuery(String query, DbmsType dbType) {
-		if (query == null || query.trim().isEmpty()) {
+		
+		if (!utilities.stringHasValue(query)) {
 			return false;
 		}
 		
-		// Regular expression for a basic SQL SELECT statement with flexible spacing and line breaks
-		String selectRegex = "(?i)\\s*select\\s+.+?\\s+from\\s+.+";
+		String normalized = normalizeSql(query);
 		
-		// Check if the query matches the regex
-		boolean match = query.toLowerCase().matches(selectRegex);
-		
-		if (!match && dbType.isMysql()) {
-			// Regular expression for a basic SQL SELECT statement with flexible spacing and line breaks
-			selectRegex = "(?i)\\s*select\\s+.+?\\s*";
-			
-			// Check if the query matches the regex
-			match = query.toLowerCase().matches(selectRegex);
+		// 🔹 1. SELECT ou WITH
+		if (!startsWithSelectOrWith(normalized)) {
+			return false;
 		}
 		
-		return match;
+		// 🔹 2. Verificar FROM (mais robusto)
+		boolean hasFrom = containsKeyword(normalized, "from");
+		
+		if (!hasFrom) {
+			// MySQL permite SELECT 1
+			return dbType.isMysql() && normalized.matches("(?is)^select\\s+.+$");
+		}
+		
+		// 🔹 3. Estrutura básica
+		if (!hasSelectFromStructure(normalized)) {
+			return false;
+		}
+		
+		// 🔹 4. Validar WHERE (leve)
+		String whereClause = extractWhereClause(normalized);
+		
+		if (whereClause != null) {
+			if (!isBalanced(whereClause)) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	private static String normalizeSql(String sql) {
+		return sql.replaceAll("--.*?(\\r?\\n|$)", " ") // remove comentários --
+		        .replaceAll("/\\*.*?\\*/", " ") // remove comentários /*
+		        .replaceAll("\\s+", " ").trim().toLowerCase();
+	}
+	
+	private static boolean startsWithSelectOrWith(String sql) {
+		return sql.matches("^(\\(*\\s*)*(select|with)\\b.*");
+	}
+	
+	private static boolean containsKeyword(String sql, String keyword) {
+		return sql.matches("(?s).*\\b" + keyword + "\\b.*");
+	}
+	
+	private static boolean hasSelectFromStructure(String sql) {
+		return sql.matches("(?is)^\\s*select\\s+.+?\\s+from\\s+.+");
+	}
+	
+	private static String extractWhereClause(String sql) {
+		
+		Matcher m = Pattern.compile("(?i)\\bwhere\\b").matcher(sql);
+		
+		if (!m.find()) {
+			return null;
+		}
+		
+		int start = m.end();
+		
+		String afterWhere = sql.substring(start).trim();
+		
+		return cutAfterKeywords(afterWhere);
+	}
+	
+	private static String cutAfterKeywords(String clause) {
+		
+		String[] keywords = { "group by", "order by", "limit", "having", "union", "intersect", "except" };
+		
+		String lower = clause.toLowerCase();
+		
+		int minIndex = clause.length();
+		
+		for (String kw : keywords) {
+			int idx = lower.indexOf(" " + kw + " ");
+			if (idx != -1 && idx < minIndex) {
+				minIndex = idx;
+			}
+		}
+		
+		return clause.substring(0, minIndex).trim();
+	}
+	
+	private static boolean isBalanced(String s) {
+		
+		int parentheses = 0;
+		boolean inSingleQuote = false;
+		boolean inDoubleQuote = false;
+		
+		for (int i = 0; i < s.length(); i++) {
+			
+			char c = s.charAt(i);
+			
+			if (c == '\'' && !inDoubleQuote) {
+				inSingleQuote = !inSingleQuote;
+			} else if (c == '"' && !inSingleQuote) {
+				inDoubleQuote = !inDoubleQuote;
+			}
+			
+			if (inSingleQuote || inDoubleQuote) {
+				continue;
+			}
+			
+			if (c == '(')
+				parentheses++;
+			else if (c == ')')
+				parentheses--;
+			
+			if (parentheses < 0)
+				return false;
+		}
+		
+		return parentheses == 0 && !inSingleQuote && !inDoubleQuote;
 	}
 	
 	public static List<SqlFunctionInfo> extractSqlFunctionsInSelect(String query) {

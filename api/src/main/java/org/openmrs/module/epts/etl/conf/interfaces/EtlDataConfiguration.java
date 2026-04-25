@@ -58,7 +58,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		return hasTemplate() ? getTemplate().getName() : null;
 	}
 	
-	default void tryToLoadDumpScriptContentToField(String fieldName, EtlTemplateInfo template, Connection conn)
+	default void tryToLoadDumpScriptContentToFieldAndValidate(String fieldName, EtlTemplateInfo template, Connection conn)
 	        throws DBException {
 		
 		Object fieldValue = utilities.getFieldValue(this, fieldName);
@@ -67,16 +67,17 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 			
 			String sqlType = "query";
 			
+			String fromFile = "";
 			String originalScript = fieldValue.toString();
-			String queryWithReplacedParameters = null;
+			String queryWithReplacedParameters = originalScript;
 			
 			if (this.getRelatedEtlConf().checkIfIsValidDumpScript(fieldValue.toString())) {
-				
+				fromFile = " from file " + fieldValue;
 				originalScript = this.getRelatedEtlConf().readDumpScriptContent(fieldValue.toString());
 				
 				if (template != null) {
 					queryWithReplacedParameters = EtlDataConfiguration.resolvePlaceholders(originalScript, null, null, null,
-					    template.getParameters());
+					    template.getAllAvailableParameters());
 				}
 				
 				utilities.setFieldValue(this, fieldName, queryWithReplacedParameters);
@@ -87,12 +88,12 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 			if (!SQLUtilities.startsWithSelectSqlOperation(queryWithReplacedParameters)) {
 				sqlType = "condition";
 				
-				toValidate = "select * from tab " + queryWithReplacedParameters;
+				toValidate = "select * from tab where " + queryWithReplacedParameters;
 			}
 			
 			if (!SQLUtilities.isValidSelectSqlQuery(toValidate, DBUtilities.determineDbmsType(conn))) {
-				String msg = "Ivalid sql " + sqlType + " from file: " + fieldValue.toString() + "\n" + originalScript
-				        + " within the field '" + fieldName + "'.";
+				String msg = "Ivalid sql " + sqlType + fromFile + " within the field '" + fieldName + "'.\n\t" + sqlType
+				        + "> " + originalScript;
 				
 				throw new EtlConfException(msg);
 			}
@@ -106,8 +107,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 			
 			template.setRelatedEtlConf(getRelatedEtlConf());
 			
-			EtlDataConfiguration fromTemplate = template.parseToEtlDataConfiguration(this.getClass(),
-			    this.getTemplate().getParameters());
+			EtlDataConfiguration fromTemplate = template.parseToEtlDataConfiguration(this.getClass(), this.getTemplate());
 			
 			fromTemplate.setRelatedEtlConfig(getRelatedEtlConf());
 			

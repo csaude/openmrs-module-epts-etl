@@ -168,7 +168,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	@Override
 	public void fullLoad(Connection conn) throws DBException {
-		this.tryToLoadDumpScriptContentToField("extraConditionForExtract", this.retrieveNearestTemplate(), conn);
+		this.tryToLoadDumpScriptContentToFieldAndValidate("extraConditionForExtract", this.retrieveNearestTemplate(), conn);
 		
 		TableConfiguration.super.fullLoad(conn);
 	}
