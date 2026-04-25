@@ -8,9 +8,9 @@ import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 
 public class DatabaseObjectLoaderHelper implements VOLoaderHelper {
 	
-	private DatabaseObjectConfiguration tableConf;
+	private EtlDatabaseObjectConfiguration tableConf;
 	
-	public DatabaseObjectLoaderHelper(DatabaseObjectConfiguration tableConf) {
+	public DatabaseObjectLoaderHelper(EtlDatabaseObjectConfiguration tableConf) {
 		this.tableConf = tableConf;
 	}
 	
@@ -40,11 +40,11 @@ public class DatabaseObjectLoaderHelper implements VOLoaderHelper {
 		return this.tableConf.toString();
 	}
 	
-	public void setTableConf(DatabaseObjectConfiguration tableConf) {
+	public void setTableConf(EtlDatabaseObjectConfiguration tableConf) {
 		this.tableConf = tableConf;
 	}
 	
-	public DatabaseObjectConfiguration getTableConf() {
+	public EtlDatabaseObjectConfiguration getTableConf() {
 		return tableConf;
 	}
 }

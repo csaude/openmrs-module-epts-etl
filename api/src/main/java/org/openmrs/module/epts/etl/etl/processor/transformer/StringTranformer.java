@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -55,8 +55,9 @@ public class StringTranformer extends AbstractEtlFieldTransformer {
 	
 	private StringTranformerElements transformerElements;
 	
-	public StringTranformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
-		super(parameters, relatedDstConf, field);
+	public StringTranformer(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
+	    TransformableField field) {
+		super(parameters, relatedEtlTransformTarget, field);
 		
 		if (utilities.listHasNoElement(parameters)) {
 			throw new EtlExceptionImpl("You must specify the string to transforn for STRING_TRANSFORMER");
@@ -92,11 +93,11 @@ public class StringTranformer extends AbstractEtlFieldTransformer {
 		return transformationString;
 	}
 	
-	public static StringTranformer getInstance(List<Object> parameters, DstConf relatedDstConf, TransformableField field,
-	        Connection conn) {
-		String key = buildCacheKey(relatedDstConf, field, parameters);
+	public static StringTranformer getInstance(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
+	        TransformableField field, Connection conn) {
+		String key = buildCacheKey(relatedEtlTransformTarget, field, parameters);
 		
-		return INSTANCES.computeIfAbsent(key, k -> new StringTranformer(parameters, relatedDstConf, field));
+		return INSTANCES.computeIfAbsent(key, k -> new StringTranformer(parameters, relatedEtlTransformTarget, field));
 	}
 	
 	@Override

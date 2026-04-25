@@ -29,7 +29,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 	public static RecordWithDefaultParentInfo init(EtlDatabaseObject srcObject, EtlDatabaseObject dstObject,
 	        EtlDatabaseObject parentInOrigin, ParentTable parentRefInfo, Connection conn) throws DBException {
 		
-		DatabaseObjectConfiguration recursiveRecordTableInfo = parentRefInfo.getRelatedEtlConf()
+		EtlDatabaseObjectConfiguration recursiveRecordTableInfo = parentRefInfo.getRelatedEtlConf()
 		        .getRecordWithDefaultParentsInfoTabConf();
 		
 		if (!recursiveRecordTableInfo.isFullLoaded()) {

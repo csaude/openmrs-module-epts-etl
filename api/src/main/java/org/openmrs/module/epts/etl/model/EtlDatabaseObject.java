@@ -26,7 +26,7 @@ import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlDatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
@@ -465,10 +465,10 @@ public interface EtlDatabaseObject extends EtlObject {
 		return utils.listHasElement(getUniqueKeysInfo());
 	}
 	
-	default void setRelatedConfiguration(DatabaseObjectConfiguration config) {
+	default void setRelatedConfiguration(EtlDatabaseObjectConfiguration config) {
 	}
 	
-	default DatabaseObjectConfiguration getRelatedConfiguration() {
+	default EtlDatabaseObjectConfiguration getRelatedConfiguration() {
 		return null;
 	}
 	

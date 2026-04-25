@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
@@ -81,7 +81,7 @@ public enum FieldTransformerType {
 		
 		return METHOD_CACHE.computeIfAbsent(clazz.getName(), k -> {
 			try {
-				return clazz.getDeclaredMethod("getInstance", List.class, DstConf.class, TransformableField.class);
+				return clazz.getDeclaredMethod("getInstance", List.class, EtlTranformTarget.class, TransformableField.class);
 			}
 			catch (Exception e) {
 				throw new RuntimeException(e);
@@ -89,7 +89,7 @@ public enum FieldTransformerType {
 		});
 	}
 	
-	public EtlFieldTransformer create(List<Object> parameters, DstConf relatedDstConf, TransformableField field,
+	public EtlFieldTransformer create(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget, TransformableField field,
 	        Connection conn) {
 		
 		if (this.isCustom()) {
@@ -98,7 +98,7 @@ public enum FieldTransformerType {
 				
 				Method m = getFactoryMethod(clazz);
 				
-				return (EtlFieldTransformer) m.invoke(null, parameters, relatedDstConf, field);
+				return (EtlFieldTransformer) m.invoke(null, parameters, relatedEtlTransformTarget, field);
 				
 			}
 			catch (Exception e) {
@@ -111,7 +111,7 @@ public enum FieldTransformerType {
 			throw new IllegalStateException("No factory defined for this type");
 		}
 		
-		return factory.create(parameters, relatedDstConf, field, conn);
+		return factory.create(parameters, relatedEtlTransformTarget, field, conn);
 	}
 	
 	/**
@@ -168,7 +168,7 @@ public enum FieldTransformerType {
 		throw new IllegalArgumentException("Unknown transformer: " + def);
 	}
 	
-	public static void tryToLoadTransformerToField(TransformableField field, DstConf dstConf, Connection conn) {
+	public static void tryToLoadTransformerToField(TransformableField field, EtlTranformTarget EtlTransformTarget, Connection conn) {
 		
 		if (field.getTransformerInstance() != null)
 			return;
@@ -177,7 +177,7 @@ public enum FieldTransformerType {
 		
 		List<Object> parameters = tryToLoadTransformerParameters(field.getTransformer());
 		
-		field.setTransformerInstance(type.create(parameters, dstConf, field, conn));
+		field.setTransformerInstance(type.create(parameters, EtlTransformTarget, field, conn));
 		
 		if (field.getTransformerType().isMapping()) {
 			field.setRelationshipResolutionStrategy(RelationshipResolutionStrategy.SKIP);

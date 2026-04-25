@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -44,15 +44,16 @@ public class DefaultFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	private static DefaultFieldTransformer INSTANCE;
 	
-	private DefaultFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
-		super(parameters, relatedDstConf, field);
+	private DefaultFieldTransformer(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
+	    TransformableField field) {
+		super(parameters, relatedEtlTransformTarget, field);
 	}
 	
-	public static DefaultFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
+	public static DefaultFieldTransformer getInstance(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
 	        TransformableField field, Connection conn) {
 		
 		if (INSTANCE == null) {
-			INSTANCE = new DefaultFieldTransformer(parameters, relatedDstConf, field);
+			INSTANCE = new DefaultFieldTransformer(parameters, relatedEtlTransformTarget, field);
 		}
 		
 		return INSTANCE;

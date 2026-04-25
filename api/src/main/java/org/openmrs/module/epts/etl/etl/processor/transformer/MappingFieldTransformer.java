@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.conf.types.MappingNotFoundBehavior;
@@ -110,10 +110,10 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	private FieldsMapping input;
 	
-	public MappingFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field,
-	    Connection conn) throws FieldAvaliableInMultipleDataSources, DBException {
+	public MappingFieldTransformer(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
+	    TransformableField field, Connection conn) throws FieldAvaliableInMultipleDataSources, DBException {
 		
-		super(parameters, relatedDstConf, field);
+		super(parameters, relatedEtlTransformTarget, field);
 		
 		validateParams(parameters);
 		
@@ -148,10 +148,10 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 					if (isTransformerExpression(paramValue)) {
 						this.input = FieldsMapping.fastCreate(field.getDstField(), field.getDstField(), false, conn);
 						this.input.setTransformer(paramValue);
-						this.input.tryToLoadTransformer(relatedDstConf, conn);
+						this.input.tryToLoadTransformer(relatedEtlTransformTarget, conn);
 						
 					} else {
-						this.input = FieldsMapping.fastCreate(paramValue, paramValue, relatedDstConf, conn);
+						this.input = FieldsMapping.fastCreate(paramValue, paramValue, relatedEtlTransformTarget, conn);
 					}
 				} else if (paramName.equals("extra_condition")) {
 					this.extraCondition = paramValue;
@@ -213,14 +213,14 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 		return mappingTable;
 	}
 	
-	public static MappingFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
+	public static MappingFieldTransformer getInstance(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
 	        TransformableField field, Connection conn) {
 		
-		String key = buildCacheKey(relatedDstConf, field, parameters);
+		String key = buildCacheKey(relatedEtlTransformTarget, field, parameters);
 		
 		return INSTANCES.computeIfAbsent(key, k -> {
 			try {
-				return new MappingFieldTransformer(parameters, relatedDstConf, field, conn);
+				return new MappingFieldTransformer(parameters, relatedEtlTransformTarget, field, conn);
 			}
 			catch (DBException e) {
 				throw new EtlExceptionImpl(e);

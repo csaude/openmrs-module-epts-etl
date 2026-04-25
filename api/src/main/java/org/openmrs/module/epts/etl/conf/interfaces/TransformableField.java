@@ -3,7 +3,6 @@ package org.openmrs.module.epts.etl.conf.interfaces;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.types.EtlNullBehavior;
 import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
@@ -153,7 +152,7 @@ public interface TransformableField {
 		return utilities.stringHasValue(this.getDataType());
 	}
 	
-	default void loadType(DstConf dstConf, EtlDataSource dataSource, Connection conn) {
+	default void loadType(EtlTranformTarget dstConf, EtlDataSource dataSource, Connection conn) {
 		tryToLoadTransformer(dstConf, conn);
 		
 		if (this.hasDataType()) {
@@ -210,7 +209,7 @@ public interface TransformableField {
 		return utilities.stringHasValue(getTransformer());
 	}
 	
-	default void tryToLoadTransformer(DstConf dstConf, Connection conn) {
+	default void tryToLoadTransformer(EtlTranformTarget dstConf, Connection conn) {
 		FieldTransformerType.tryToLoadTransformerToField(this, dstConf, conn);
 	}
 	

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.openmrs.module.epts.etl.conf.DstConf;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -52,16 +52,17 @@ public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	private static final Map<String, Expression> CACHE = new ConcurrentHashMap<>();
 	
-	public ArithmeticFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
-		super(parameters, relatedDstConf, field);
+	public ArithmeticFieldTransformer(List<Object> parameters, EtlTranformTarget relatedEtlTargedConf,
+	    TransformableField field) {
+		super(parameters, relatedEtlTargedConf, field);
 	}
 	
-	public static ArithmeticFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
+	public static ArithmeticFieldTransformer getInstance(List<Object> parameters, EtlTranformTarget relatedEtlTargedConf,
 	        TransformableField field, Connection conn) {
 		
-		String key = buildCacheKey(relatedDstConf, field, parameters);
+		String key = buildCacheKey(relatedEtlTargedConf, field, parameters);
 		
-		return INSTANCES.computeIfAbsent(key, k -> new ArithmeticFieldTransformer(parameters, relatedDstConf, field));
+		return INSTANCES.computeIfAbsent(key, k -> new ArithmeticFieldTransformer(parameters, relatedEtlTargedConf, field));
 	}
 	
 	@Override

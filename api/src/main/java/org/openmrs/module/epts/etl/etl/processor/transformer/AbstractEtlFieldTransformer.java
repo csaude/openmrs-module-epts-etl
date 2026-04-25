@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.openmrs.module.epts.etl.conf.DefaultEtlValidator;
-import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -18,15 +18,16 @@ public abstract class AbstractEtlFieldTransformer implements EtlFieldTransformer
 	
 	protected List<Object> parameters;
 	
-	protected DstConf relatedDstConf;
+	protected DstConf relatedEtlTransformTarget;
 	
 	protected TransformableField field;
 	
 	private Connection overrideConnection;
 	
-	public AbstractEtlFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
+	public AbstractEtlFieldTransformer(List<Object> parameters, DstConf relatedEtlTargedConf,
+	    TransformableField field) {
 		this.parameters = parameters;
-		this.relatedDstConf = relatedDstConf;
+		this.relatedEtlTransformTarget = relatedEtlTargedConf;
 		this.field = field;
 	}
 	
@@ -35,7 +36,11 @@ public abstract class AbstractEtlFieldTransformer implements EtlFieldTransformer
 		        ? ("|" + parameters.stream().map(Object::toString).collect(Collectors.joining("|")))
 		        : null;
 		
-		return (dstConf != null ? dstConf.toString() : "No DstConf") + "|" + field.toString() + params;
+		return (dstConf != null ? dstConf.toString() : "No EtlTransformTarget") + "|" + field.toString() + params;
+	}
+	
+	public DstConf getRelatedEtlTransformTarget() {
+		return relatedEtlTransformTarget;
 	}
 	
 	public String getTransformerDsc() {
@@ -53,7 +58,7 @@ public abstract class AbstractEtlFieldTransformer implements EtlFieldTransformer
 	}
 	
 	protected void logTrace(String msg) {
-		this.relatedDstConf.getRelatedEtlConf().logTrace(msg);
+		this.relatedEtlTransformTarget.getRelatedEtlConf().logTrace(msg);
 	}
 	
 	@Override
@@ -67,12 +72,12 @@ public abstract class AbstractEtlFieldTransformer implements EtlFieldTransformer
 	
 	@Override
 	public EtlConfiguration getRelatedEtlConf() {
-		return this.relatedDstConf.getRelatedEtlConf();
+		return this.relatedEtlTransformTarget.getRelatedEtlConf();
 	}
 	
 	@Override
 	public EtlDataConfiguration getParentConf() {
-		return this.relatedDstConf;
+		return this.relatedEtlTransformTarget;
 	}
 	
 	@Override

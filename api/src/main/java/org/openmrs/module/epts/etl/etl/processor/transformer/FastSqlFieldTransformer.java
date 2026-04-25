@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.datasource.QueryDataSourceConfig;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -58,8 +58,9 @@ public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 	
 	private volatile QueryDataSourceConfig dataSourceConfig;
 	
-	public FastSqlFieldTransformer(List<Object> parameters, DstConf relatedDstConf, TransformableField field) {
-		super(parameters, relatedDstConf, field);
+	public FastSqlFieldTransformer(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
+	    TransformableField field) {
+		super(parameters, relatedEtlTransformTarget, field);
 		
 		this.sqlQuery = retrieveSqlQueryFromParameters(parameters);
 	}
@@ -68,12 +69,13 @@ public class FastSqlFieldTransformer extends AbstractEtlFieldTransformer {
 		return sqlQuery;
 	}
 	
-	public static FastSqlFieldTransformer getInstance(List<Object> parameters, DstConf relatedDstConf,
+	public static FastSqlFieldTransformer getInstance(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
 	        TransformableField field, Connection conn) {
 		
-		String key = buildCacheKey(relatedDstConf, field, parameters);
+		String key = buildCacheKey(relatedEtlTransformTarget, field, parameters);
 		
-		return INSTANCES.computeIfAbsent(key, k -> new FastSqlFieldTransformer(parameters, relatedDstConf, field));
+		return INSTANCES.computeIfAbsent(key,
+		    k -> new FastSqlFieldTransformer(parameters, relatedEtlTransformTarget, field));
 	}
 	
 	private static String retrieveSqlQueryFromParameters(List<Object> parameters) {

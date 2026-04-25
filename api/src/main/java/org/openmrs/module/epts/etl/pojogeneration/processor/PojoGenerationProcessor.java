@@ -11,7 +11,7 @@ import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.EtlDatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
@@ -80,7 +80,7 @@ public class PojoGenerationProcessor extends TaskProcessor<PojoGenerationRecord>
 		
 	}
 	
-	private void generate(DBConnectionInfo app, DatabaseObjectConfiguration tableConfiguration) {
+	private void generate(DBConnectionInfo app, EtlDatabaseObjectConfiguration tableConfiguration) {
 		if (!utilities.stringHasValue(app.getPojoPackageName())) {
 			throw new ForbiddenOperationException("The app " + app + " has no package name!");
 		}

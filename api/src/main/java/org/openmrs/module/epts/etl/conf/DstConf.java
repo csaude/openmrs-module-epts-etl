@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.openmrs.module.epts.etl.conf.datasource.DataSourceField;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDstConf;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
@@ -36,7 +36,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class DstConf extends AbstractTableConfiguration implements EtlDataSource, EtlDstConf {
+public class DstConf extends AbstractTableConfiguration implements EtlDataSource, EtlDstConf, EtlTranformTarget {
 	
 	/*
 	 * The user defined joinFields with #getSrcConf()
@@ -263,6 +263,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		this.automaticalyGenerated = automaticalyGenerated;
 	}
 	
+	@Override
 	public Boolean isIgnoreUnmappedFields() {
 		return isTrue(ignoreUnmappedFields);
 	}
@@ -483,84 +484,6 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 	}
 	
-	public void tryToLoadDataSourceToFieldMapping(FieldsMapping fm, Connection conn)
-	        throws FieldNotAvaliableInAnyDataSource, FieldAvaliableInMultipleDataSources, DBException {
-		
-		if (!isLoadedDataSourceInfo()) {
-			loadDataSourceInfo(conn);
-		}
-		
-		int qtyOccurences = 0;
-		
-		if (fm.getSrcValue() != null || fm.isMapToNullValue()) {
-			return;
-		}
-		
-		for (EtlDataSource pref : this.getAllPrefferredDataSource()) {
-			if (pref.containsField(fm.getSrcField())) {
-				fm.setDataSourceName(pref.getAlias());
-				fm.setDataSource(pref);
-				
-				fm.loadType(this, pref, conn);
-				
-				if (fm.getDefaultValue() == null) {
-					
-					Field f = pref.getField(fm.getSrcField());
-					
-					if (f instanceof DataSourceField) {
-						DataSourceField prefField = (DataSourceField) f;
-						
-						if (prefField.getDefaultValue() != null) {
-							fm.setDefaultValue(prefField.getDefaultValue());
-							fm.setOverrideTriggerValue(prefField.getOverrideTriggerValue());
-						}
-					}
-				}
-				
-				qtyOccurences++;
-				
-				break;
-			}
-		}
-		
-		if (qtyOccurences == 0 && utilities.listHasElement(getAllNotPrefferredDataSource())) {
-			for (EtlDataSource notPref : this.getAllNotPrefferredDataSource()) {
-				if (notPref.containsField(fm.getSrcField())) {
-					qtyOccurences++;
-					
-					if (qtyOccurences > 1) {
-						fm.getPossibleSrc().add(notPref.getAlias());
-						
-						break;
-					} else {
-						fm.setDataSourceName(notPref.getAlias());
-						fm.setDataSource(notPref);
-						fm.loadType(this, notPref, conn);
-					}
-				}
-			}
-		}
-		
-		Boolean hasTransformer = fm.hasTransformer() && !fm.useDefaultTransformer();
-		
-		if (hasTransformer) {
-			fm.loadType(this, null, conn);
-			
-			if (fm.getDataSource() == null) {
-				fm.setDataSource(this.getSrcConf());
-			}
-		}
-		
-		if (qtyOccurences == 0 && !isIgnoreUnmappedFields() && !hasTransformer) {
-			throw new FieldNotAvaliableInAnyDataSource(fm.getSrcField());
-		}
-		
-		if (qtyOccurences > 1 && !hasTransformer && !this.onMultipleDataSourceForSameMapping().useLast()) {
-			throw new FieldAvaliableInMultipleDataSources(fm.getSrcField());
-		}
-		
-	}
-	
 	public FieldsMapping getMappingUsingDstField(String dstFieldName) {
 		List<FieldsMapping> matchedFields = new ArrayList<FieldsMapping>();
 		
@@ -756,86 +679,22 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		}
 	}
 	
+	@Override
 	public List<EtlDataSource> getAllPrefferredDataSource() {
 		return allPrefferredDataSource;
 	}
 	
+	@Override
 	public List<EtlDataSource> getAllNotPrefferredDataSource() {
 		return allNotPrefferredDataSource;
-	}
-	
-	public void addToPrefferedDataSource(EtlDataSource ds) {
-		if (this.getAllPrefferredDataSource() == null) {
-			this.allPrefferredDataSource = new ArrayList<>();
-		}
-		
-		if (ds == null)
-			throw new EtlExceptionImpl("Empty ds was provided");
-		
-		for (EtlDataSource ds1 : this.getAllPrefferredDataSource()) {
-			if (ds == ds1) {
-				return;
-			}
-		}
-		
-		this.getAllPrefferredDataSource().add(ds);
-	}
-	
-	public void addToNotPrefferedDataSource(EtlDataSource ds) {
-		if (this.getAllNotPrefferredDataSource() == null) {
-			this.allNotPrefferredDataSource = new ArrayList<>();
-		}
-		
-		if (ds == null)
-			throw new ForbiddenOperationException("Empty ds was provided");
-		
-		for (EtlDataSource ds1 : this.getAllNotPrefferredDataSource()) {
-			if (ds == ds1) {
-				return;
-			}
-		}
-		
-		this.getAllNotPrefferredDataSource().add(ds);
-	}
-	
-	public void addToAvaliableDataSource(EtlDataSource ds) {
-		if (this.getAllAvaliableDataSource() == null) {
-			this.allAvaliableDataSource = new ArrayList<>();
-		}
-		
-		if (ds == null)
-			throw new ForbiddenOperationException("Empty ds was provided");
-		
-		for (EtlDataSource ds1 : this.getAllAvaliableDataSource()) {
-			if (ds == ds1) {
-				return;
-			}
-		}
-		
-		this.getAllAvaliableDataSource().add(ds);
-	}
-	
-	public void addAllToAvaliableDataSource(List<EtlDataSource> ds) {
-		if (utilities.listHasElement(ds)) {
-			for (EtlDataSource d : ds) {
-				addToAvaliableDataSource(d);
-			}
-		}
-	}
-	
-	public void addAllToPreferredDataSource(List<EtlDataSource> ds) {
-		if (utilities.listHasElement(ds)) {
-			for (EtlDataSource d : ds) {
-				addToPrefferedDataSource(d);
-			}
-		}
 	}
 	
 	public Boolean useSrcConfAsDataSource() {
 		return !this.isDoNotUseSrcConfAsDataSource();
 	}
 	
-	private void loadDataSourceInfo(Connection conn) throws DBException {
+	@Override
+	public void loadDataSourceInfo(Connection conn) throws DBException {
 		if (isLoadedDataSourceInfo())
 			return;
 		
@@ -1509,4 +1368,20 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			}
 		}
 	}
+	
+	@Override
+	public void setAllNotPrefferredDataSource(List<EtlDataSource> ds) {
+		this.allNotPrefferredDataSource = ds;
+	}
+	
+	@Override
+	public void setAllAvaliableDataSource(List<EtlDataSource> ds) {
+		this.allAvaliableDataSource = ds;
+	}
+	
+	@Override
+	public void setAllPrefferredDataSource(List<EtlDataSource> ds) {
+		this.allPrefferredDataSource = ds;
+	}
+	
 }

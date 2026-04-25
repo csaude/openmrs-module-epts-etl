@@ -25,9 +25,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public abstract class AbstractTableConfiguration extends AbstractEtlDataConfiguration implements Comparable<AbstractTableConfiguration>, TableConfiguration {
 	
-	private List<String> ignorableFields;
-	
 	private String tableName;
+	
+	private List<String> ignorableFields;
 	
 	private String tableAlias;
 	
