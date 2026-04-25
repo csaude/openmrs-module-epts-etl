@@ -8,11 +8,11 @@ import org.openmrs.module.epts.etl.conf.datasource.AuxExtractTable;
 import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
+import org.openmrs.module.epts.etl.exceptions.EtlConfException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingJoiningElementsException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 /**
@@ -87,6 +87,13 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 		}
 	}
 	
+	@Override
+	default void fullLoad(Connection conn) throws DBException {
+		this.tryToLoadDumpScriptContentToField("joinExtraCondition", this.retrieveNearestTemplate(), conn);
+		
+		TableConfiguration.super.fullLoad(conn);
+	}
+	
 	default String generateJoinConditionsFields() {
 		String conditionFields = "";
 		
@@ -120,6 +127,12 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 	}
 	
 	default void loadJoinElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
+		if (hasJoinExtraCondition()) {
+			if (!SQLUtilities.isValidSelectSqlQuery("select * from where " + this.getJoinExtraCondition(), null)) {
+				throw new EtlConfException("Invalid joinExtraCondition \n" + this.getJoinExtraCondition());
+			}
+		}
+		
 		tryToLoadJoinFields(conn);
 		
 		if (hasJoinExtraCondition() && !isUsingManualDefinedAlias()) {
@@ -129,7 +142,7 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 			    this.getJoinExtraCondition().replaceAll(getTableName() + "\\.", getTableAlias() + "\\."));
 			
 			if (schemaInfo != null) {
-				this.setJoinExtraCondition(DBUtilities.tryToReplaceParamsInQuery(this.getJoinExtraCondition(), schemaInfo));
+				this.setJoinExtraCondition(SQLUtilities.tryToReplaceParamsInQuery(this.getJoinExtraCondition(), schemaInfo));
 			}
 		}
 		
@@ -139,10 +152,10 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 			
 			for (FieldsMapping joiningField : this.getJoinFields()) {
 				if (schemaInfo != null) {
-					joiningField.setSrcField(DBUtilities.tryToReplaceParamsInQuery(joiningField.getSrcField(), schemaInfo));
-					joiningField.setSrcValue(DBUtilities.tryToReplaceParamsInQuery(joiningField.getSrcValue(), schemaInfo));
-					joiningField.setDstField(DBUtilities.tryToReplaceParamsInQuery(joiningField.getDstField(), schemaInfo));
-					joiningField.setDstValue(DBUtilities.tryToReplaceParamsInQuery(joiningField.getDstValue(), schemaInfo));
+					joiningField.setSrcField(SQLUtilities.tryToReplaceParamsInQuery(joiningField.getSrcField(), schemaInfo));
+					joiningField.setSrcValue(SQLUtilities.tryToReplaceParamsInQuery(joiningField.getSrcValue(), schemaInfo));
+					joiningField.setDstField(SQLUtilities.tryToReplaceParamsInQuery(joiningField.getDstField(), schemaInfo));
+					joiningField.setDstValue(SQLUtilities.tryToReplaceParamsInQuery(joiningField.getDstValue(), schemaInfo));
 				}
 			}
 		}
@@ -160,7 +173,7 @@ public interface JoinableEntity extends TableConfiguration, EtlDataSource {
 			this.setJoinExtraCondition(this.getJoinExtraCondition().replaceAll(
 			    this.getMainExtractTable().getObjectName() + "\\.", this.getMainExtractTable().getAlias() + "\\."));
 			
-			String condition = DBUtilities.tryToPutTableNameInFieldsInASqlClause(this.getJoinExtraCondition(),
+			String condition = SQLUtilities.tryToPutTableNameInFieldsInASqlClause(this.getJoinExtraCondition(),
 			    this.getTableAlias(), this.getFields());
 			
 			this.setJoinExtraCondition(condition);

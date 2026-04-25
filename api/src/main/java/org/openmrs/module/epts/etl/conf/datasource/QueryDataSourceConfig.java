@@ -35,8 +35,8 @@ import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -251,7 +251,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 			
 			getRelatedEtlConf().logTrace("Determining fields for query...");
 			
-			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), null, conn));
+			setFields(SQLUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), null, conn));
 			
 			getRelatedEtlConf().logDebug("QueryDataSourceConfig [" + this.getName() + "] full loaded!");
 			
@@ -261,7 +261,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 			//Mean that there are missing parameters. Lets try to load the minimal information of fields
 			//Note that we are not marking the record as fullLoaded as there will be missing information on fields
 			
-			setFields(DBUtilities.determineFieldsFromQuery(this.getQuery()));
+			setFields(SQLUtilities.determineFieldsFromQuery(this.getQuery()));
 		}
 		
 	}
@@ -283,7 +283,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 				Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
 				
 				try {
-					setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), params, conn));
+					setFields(SQLUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), params, conn));
 				}
 				catch (DBException e) {
 					throw new DBException("Error computing the query " + this.getName(), e);
@@ -614,7 +614,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	public void tryToFillParams(EtlDatabaseObject schemaInfoSrc) {
-		this.setQuery(DBUtilities.tryToReplaceParamsInQuery(this.getQuery(), schemaInfoSrc));
+		this.setQuery(SQLUtilities.tryToReplaceParamsInQuery(this.getQuery(), schemaInfoSrc));
 	}
 	
 	public static void tryToReplacePlaceholders(List<QueryDataSourceConfig> extraQueryDataSource,

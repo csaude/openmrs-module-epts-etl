@@ -293,7 +293,12 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		
 		Object[] params = searchClauses.getParameters();
 		
-		return BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, params, srcConn);
+		try {
+			return BaseDAO.search(this.getLoaderHealper(), this.getRecordClass(), sql, params, srcConn);
+		}
+		catch (DBException e) {
+			throw e;
+		}
 	}
 	
 	public long retrieveExtremeRecord(SqlFunctionType sqlFunction, Connection conn) throws DBException {

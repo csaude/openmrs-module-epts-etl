@@ -676,7 +676,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 	}
 	
 	default int countChildren(Connection conn) throws SQLException {
-		String tableName = DBUtilities.extractTableNameFromFullTableName(this.getTableName());
+		String tableName = SQLUtilities.extractTableNameFromFullTableName(this.getTableName());
 		
 		ResultSet foreignKeyRS = conn.getMetaData().getExportedKeys(this.getCatalog(conn), this.getSchema(), tableName);
 		
@@ -1454,7 +1454,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 			return;
 		
 		if (hasDynamicAlias() && schemaInfoSrc != null) {
-			this.setTableAlias(DBUtilities.tryToReplaceParamsInQuery(this.getAlias(), schemaInfoSrc));
+			this.setTableAlias(SQLUtilities.tryToReplaceParamsInQuery(this.getAlias(), schemaInfoSrc));
 		}
 		
 		String[] tableNameParts = getTableName().split("\\.");
@@ -1467,7 +1467,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 		
 		if (this.hasSchema() && this.getSchema().startsWith("@")) {
-			String normalizedSchema = DBUtilities.normalizeQuery(this.getSchema());
+			String normalizedSchema = SQLUtilities.normalizeQuery(this.getSchema());
 			
 			String param = utilities.removeFirsChar(normalizedSchema);
 			
@@ -1483,7 +1483,7 @@ public interface TableConfiguration extends DatabaseObjectConfiguration, EtlData
 		}
 		
 		if (this.getTableName().startsWith("@")) {
-			String normalizedTableName = DBUtilities.normalizeQuery(this.getTableName());
+			String normalizedTableName = SQLUtilities.normalizeQuery(this.getTableName());
 			
 			String param = utilities.removeFirsChar(normalizedTableName);
 			

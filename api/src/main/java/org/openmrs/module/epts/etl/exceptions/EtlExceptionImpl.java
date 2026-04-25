@@ -32,7 +32,7 @@ public class EtlExceptionImpl extends RuntimeException implements EtlException {
 	}
 	
 	public EtlExceptionImpl(String msg, Exception e, EtlObject etlObject, ActionOnEtlException action) {
-		super(e.getLocalizedMessage(), e);
+		super(msg, e);
 		
 		this.action = action;
 		this.etlObject = etlObject;

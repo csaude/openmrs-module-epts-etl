@@ -27,7 +27,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 /**
  * Represents an prepared query ready to be executed. It alwas has a ready query and its parameters
@@ -209,7 +209,7 @@ public class PreparedQuery {
 		
 		logTrace("Discovering subqueries on quey");
 		
-		this.setSubqueries(DBUtilities.findSubqueries(this.getQuery()));
+		this.setSubqueries(SQLUtilities.findSubqueries(this.getQuery()));
 		
 		if (hasSubQueries()) {
 			logTrace("Found Subqueries \n" + this.getSubqueries());
@@ -484,14 +484,14 @@ public class PreparedQuery {
 		
 		if (!isSqlFunctionLoaded()) {
 			
-			List<SqlFunctionInfo> avaliableFunction = DBUtilities.extractSqlFunctionsInSelect(getMainQuery());
+			List<SqlFunctionInfo> avaliableFunction = SQLUtilities.extractSqlFunctionsInSelect(getMainQuery());
 			
 			if (utilities.listHasExactlyOneElement(this.getDataSource().getFields())
 			        && utilities.listHasExactlyOneElement(avaliableFunction)) {
 				if (avaliableFunction.get(0).isCountFunction()) {
 					this.setCountFunctionInfo(avaliableFunction.get(0));
 					
-					String mainTableName = DBUtilities.extractFirstTableFromSelectQuery(this.getMainQuery());
+					String mainTableName = SQLUtilities.extractFirstTableFromSelectQuery(this.getMainQuery());
 					
 					if (mainTableName.startsWith("@")) {
 						mainTableName = retrieveParamValue(utilities.removeFirsChar(mainTableName)).toString();
@@ -571,7 +571,7 @@ public class PreparedQuery {
 		
 		List<QueryParameter> parameters = new ArrayList<>();
 		
-		List<String> avaliableSubQueries = DBUtilities.tryToSplitQueryByUnions(sqlQuery);
+		List<String> avaliableSubQueries = SQLUtilities.tryToSplitQueryByUnions(sqlQuery);
 		
 		for (String subQuery : avaliableSubQueries) {
 			List<QueryParameter> parametersInSubQuery = extractQueryParametersInSubQuery(subQuery);
@@ -756,7 +756,7 @@ public class PreparedQuery {
 			}
 			
 			if (foundPossibleSubQueryFinishing) {
-				if (DBUtilities.isValidSelectSqlQuery(subQuery, dbmsType)) {
+				if (SQLUtilities.isValidSelectSqlQuery(subQuery, dbmsType)) {
 					return subQuery;
 				}
 			}
@@ -892,7 +892,7 @@ class MaintableAliasGenerator implements TableAliasesGenerator {
 	
 	@Override
 	public void generateAliasForTable(TableConfiguration tabConfig) {
-		String alias = DBUtilities.extractFirstTableAliasOnSqlQuery(this.pq.getQuery());
+		String alias = SQLUtilities.extractFirstTableAliasOnSqlQuery(this.pq.getQuery());
 		
 		if (alias != null) {
 			tabConfig.setTableAlias(alias);

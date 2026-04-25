@@ -68,9 +68,9 @@ public interface EtlDatabaseObject extends EtlObject {
 	 * objects related to tables presents on {@link MainJoiningEntity#getJoiningTable()} will be
 	 * placed on this field.
 	 */
-	List<? extends EtlDatabaseObject> getAuxLoadObject();
+	List<EtlDatabaseObject> getAuxLoadObject();
 	
-	void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects);
+	void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects);
 	
 	/**
 	 * Load the destination parents id to this object
@@ -843,10 +843,10 @@ public interface EtlDatabaseObject extends EtlObject {
 		
 		return succed;
 	}
-
+	
 	default void loadValuesToUniqueKeyFields(EtlDatabaseObject srcRecord) {
 		
-		for(EtlDatabaseObjectUniqueKeyInfo o : srcRecord.getUniqueKeysInfo()) {
+		for (EtlDatabaseObjectUniqueKeyInfo o : srcRecord.getUniqueKeysInfo()) {
 			try {
 				UniqueKeyInfo uk = this.getUniqueKeyInfo(o);
 				
@@ -854,8 +854,7 @@ public interface EtlDatabaseObject extends EtlObject {
 					uk.loadValuesToFields(srcRecord);
 				}
 			}
-			catch (ForbiddenOperationException e) {
-			}
+			catch (ForbiddenOperationException e) {}
 		}
 	}
 }

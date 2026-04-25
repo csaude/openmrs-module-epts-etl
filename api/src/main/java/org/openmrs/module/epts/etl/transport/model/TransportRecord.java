@@ -126,6 +126,7 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 		}
 	}
 	
+	@SuppressWarnings("null")
 	private static void copy(File source, File dest) throws IOException {
 		InputStream is = null;
 		OutputStream os = null;
@@ -472,7 +473,7 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
+	public List<EtlDatabaseObject> getAuxLoadObject() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -509,7 +510,7 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects) {
+	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
 		// TODO Auto-generated method stub
 		
 	}

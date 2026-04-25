@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.utilities.db.conn;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,11 +11,19 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SqlConditionElement;
+import org.openmrs.module.epts.etl.conf.datasource.SqlFunctionInfo;
+import org.openmrs.module.epts.etl.conf.interfaces.SqlFunctionType;
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.model.Field;
+import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.FuncoesGenericas;
@@ -26,6 +35,8 @@ import org.openmrs.module.epts.etl.utilities.FuncoesGenericas;
  */
 
 public class SQLUtilities {
+	
+	static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	/**
 	 * Esta função devolve o próximo valor da sequencia passado por parâmetro
@@ -205,7 +216,7 @@ public class SQLUtilities {
 		
 		try {
 			String sql = " SELECT max(" + campoSequencial + ") " + " FROM "
-			        + (putSchemaOnTableName ? DBUtilities.tryToPutSchemaOnDatabaseObject(tabela, conn) : tabela) + " WHERE "
+			        + (putSchemaOnTableName ? SQLUtilities.tryToPutSchemaOnDatabaseObject(tabela, conn) : tabela) + " WHERE "
 			        + condition;
 			
 			st = conn.prepareStatement(sql);
@@ -748,18 +759,57 @@ public class SQLUtilities {
 		Matcher matcher = pattern.matcher(segment);
 		StringBuffer sb = new StringBuffer();
 		
+		boolean expectTableName = false;
+		boolean expectTableAlias = false;
+		
 		while (matcher.find()) {
 			
 			String token = matcher.group();
+			String lower = token.toLowerCase();
 			
 			int start = matcher.start();
 			int end = matcher.end();
 			
 			boolean hasDotBefore = start > 0 && segment.charAt(start - 1) == '.';
 			boolean hasDotAfter = end < segment.length() && segment.charAt(end) == '.';
-			boolean isKeyword = SQL_KEYWORDS.contains(token.toLowerCase());
+			boolean isKeyword = SQL_KEYWORDS.contains(lower);
 			boolean isFunction = end < segment.length() && segment.charAt(end) == '(';
 			boolean isParameter = start > 0 && segment.charAt(start - 1) == '@';
+			
+			// detectar contexto FROM / JOIN
+			if (lower.equals("from") || lower.equals("join")) {
+				expectTableName = true;
+				expectTableAlias = false;
+				matcher.appendReplacement(sb, Matcher.quoteReplacement(token));
+				continue;
+			}
+			
+			// nome da tabela
+			if (expectTableName) {
+				expectTableName = false;
+				expectTableAlias = true;
+				matcher.appendReplacement(sb, Matcher.quoteReplacement(token));
+				continue;
+			}
+			
+			// suporte ao "AS"
+			if (expectTableAlias && lower.equals("as")) {
+				// mantém estado de alias
+				matcher.appendReplacement(sb, Matcher.quoteReplacement(token));
+				continue;
+			}
+			
+			// alias (com ou sem AS)
+			if (expectTableAlias) {
+				
+				expectTableAlias = false;
+				
+				// se for keyword → não era alias
+				if (!isKeyword) {
+					matcher.appendReplacement(sb, Matcher.quoteReplacement(token));
+					continue;
+				}
+			}
 			
 			if (hasDotBefore || hasDotAfter || isKeyword || isFunction || isParameter) {
 				matcher.appendReplacement(sb, Matcher.quoteReplacement(token));
@@ -788,12 +838,12 @@ public class SQLUtilities {
 		Pattern isNotNullPattern = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_\\.]*)\\s+is\\s+not\\s+null",
 		    Pattern.CASE_INSENSITIVE);
 		
-		// 🔥 1. Extrair WHEREs
+		// 1. Extrair WHEREs
 		List<String> whereClauses = extractWhereClauses(sql);
 		
 		for (String where : whereClauses) {
 			
-			// 🔥 2. Split correto
+			// 2. Split correto
 			List<String> parts = splitConditions(where);
 			
 			for (String part : parts) {
@@ -1094,6 +1144,684 @@ public class SQLUtilities {
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * Validates if the syntax of a given query string represent a valid sql select query DbmsType
+	 * 
+	 * @param query the query to be validated
+	 * @return true if the query is a sql select query or false if not
+	 */
+	public static boolean isValidSelectSqlQuery(String query, DbmsType dbType) {
+		if (query == null || query.trim().isEmpty()) {
+			return false;
+		}
+		
+		// Regular expression for a basic SQL SELECT statement with flexible spacing and line breaks
+		String selectRegex = "(?i)\\s*select\\s+.+?\\s+from\\s+.+";
+		
+		// Check if the query matches the regex
+		boolean match = query.toLowerCase().matches(selectRegex);
+		
+		if (!match && dbType.isMysql()) {
+			// Regular expression for a basic SQL SELECT statement with flexible spacing and line breaks
+			selectRegex = "(?i)\\s*select\\s+.+?\\s*";
+			
+			// Check if the query matches the regex
+			match = query.toLowerCase().matches(selectRegex);
+		}
+		
+		return match;
+	}
+	
+	public static List<SqlFunctionInfo> extractSqlFunctionsInSelect(String query) {
+		List<SqlFunctionInfo> functions = new ArrayList<>();
+		
+		// Normalize the query to make it case insensitive
+		String normalizedQuery = query.toLowerCase();
+		
+		// Regex to find the SELECT clause and extract its fields
+		Pattern selectPattern = Pattern.compile("select(.*?)from", Pattern.DOTALL);
+		Matcher selectMatcher = selectPattern.matcher(normalizedQuery);
+		
+		if (selectMatcher.find()) {
+			// Extract the fields part of the SELECT clause
+			String fieldsPart = selectMatcher.group(1).trim();
+			
+			// Regex to identify SQL function calls and their aliases, with or without the "AS" keyword
+			Pattern functionPattern = Pattern
+			        .compile("(\\b\\w+\\s*\\([^\\)]*\\))(\\s+as\\s+(\\w+))?|\\b(\\w+)\\s*\\(([^\\)]*)\\)\\s*(\\w+)?");
+			Matcher functionMatcher = functionPattern.matcher(fieldsPart);
+			
+			// Find all function calls in the fields part
+			while (functionMatcher.find()) {
+				String function = functionMatcher.group(1) != null ? functionMatcher.group(1).trim()
+				        : functionMatcher.group(4).trim() + "(" + functionMatcher.group(5).trim() + ")";
+				String alias = functionMatcher.group(3) != null ? functionMatcher.group(3).trim()
+				        : (functionMatcher.group(6) != null ? functionMatcher.group(6).trim() : null);
+				try {
+					functions.add(new SqlFunctionInfo(SqlFunctionType.determine(function), alias));
+				}
+				catch (ForbiddenOperationException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		return functions;
+	}
+	
+	/**
+	 * Extracts the table(s) or subquery part from the FROM clause of a SQL SELECT query.
+	 *
+	 * @param query the SQL query to be parsed
+	 * @return the part after the FROM clause, or null if not found
+	 */
+	public static String extractFromClauseOnSqlSelectQuery(String query) {
+		// Normalize the query to lowercase for case-insensitive matching
+		String normalizedQuery = query.toLowerCase();
+		
+		// Regex to match the FROM clause up to the next SQL keyword or end of the query
+		Pattern fromPattern = Pattern.compile("from\\s+([^\\s,]+(?:\\s+[^\\s,]+)*?)\\s*(where|group by|having|order by|$)",
+		    Pattern.CASE_INSENSITIVE);
+		Matcher fromMatcher = fromPattern.matcher(normalizedQuery);
+		
+		if (fromMatcher.find()) {
+			// Extract the matched group excluding the FROM keyword
+			return query.substring(fromMatcher.start(1), fromMatcher.end(1)).trim();
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Extracts the content of the WHERE clause from a SQL SELECT query, excluding the WHERE
+	 * keyword.
+	 *
+	 * @param query the SQL query to be parsed
+	 * @return the content of the WHERE clause, or null if not found
+	 */
+	public static String extractWhereClauseInASelectQuery(String query) {
+		// Normalize the query to lowercase for case-insensitive matching
+		String normalizedQuery = query.toLowerCase();
+		
+		// Regex to match the WHERE clause up to the next SQL keyword or end of the query
+		Pattern wherePattern = Pattern.compile("where\\s+(.+?)(\\s*(group by|having|order by|$))", Pattern.CASE_INSENSITIVE);
+		Matcher whereMatcher = wherePattern.matcher(normalizedQuery);
+		
+		if (whereMatcher.find()) {
+			// Extract the matched group excluding the WHERE keyword
+			return query.substring(whereMatcher.start(1), whereMatcher.end(1)).trim();
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Extracts the alias of the first table in the FROM clause of a SQL SELECT query.
+	 *
+	 * @param query the SQL query to be parsed
+	 * @return the alias of the first table, or null if not found
+	 */
+	public static String extractFirstTableAliasOnSqlQuery(String query) {
+		
+		query = utilities.removeDuplicatedEmptySpace(query);
+		
+		String from = query.toLowerCase().split("from ")[1];
+		
+		String[] parts = from.split(" ");
+		
+		if (parts.length == 1) {
+			return null;
+		}
+		
+		if (parts.length >= 2) {
+			
+			if ((parts[1]).equals("as")) {
+				return parts[2];
+			}
+			
+			if (!isReserverdWord(parts[1])) {
+				return parts[1];
+			}
+		}
+		
+		return null;
+	}
+	
+	private static boolean isReserverdWord(String alias) {
+		return utilities.isStringIn(alias.toLowerCase(), "inner", "left", "right", "full", "join", "where", "exists", "not",
+		    "select", "order", "group", "by");
+	}
+	
+	public static List<String> tryToSplitQueryByUnions(String query) {
+		// Normalize the query by removing extra spaces
+		query = query.trim().replaceAll("\\s+", " ");
+		List<String> splitQueries = new ArrayList<>();
+		StringBuilder currentQuery = new StringBuilder();
+		int parenthesesLevel = 0;
+		String lowerQuery = query.toLowerCase();
+		
+		int i = 0;
+		while (i < query.length()) {
+			char currentChar = query.charAt(i);
+			currentQuery.append(currentChar);
+			
+			// Track parentheses to determine the context (main query vs subquery)
+			if (currentChar == '(') {
+				parenthesesLevel++;
+			} else if (currentChar == ')') {
+				parenthesesLevel--;
+			}
+			
+			// Check for " UNION " (with spaces around) outside of subqueries
+			if (parenthesesLevel == 0 && i + 6 < query.length() && lowerQuery.substring(i).startsWith(" union ")
+			        && (i + 6 == query.length() || Character.isWhitespace(query.charAt(i + 6)))) {
+				
+				// Add the current query part to the list and reset the currentQuery
+				splitQueries.add(currentQuery.toString().trim());
+				currentQuery.setLength(0); // Reset the StringBuilder
+				
+				// Skip the " UNION " part in the main query
+				i += 6;
+				continue; // Continue without incrementing i to ensure the loop works correctly
+			}
+			
+			i++;
+		}
+		
+		// Add the remaining part of the query
+		splitQueries.add(currentQuery.toString().trim());
+		
+		return splitQueries;
+	}
+	
+	public static int getQtyQuestionMarksOnQuery(String query) {
+		String[] parts = query.trim().split("\\?");
+		
+		if (query.endsWith("?")) {
+			return parts.length;
+		} else {
+			return parts.length - 1;
+		}
+	}
+	
+	public static List<Field> determineFieldsFromQuery(String query, Object[] params, Connection conn) throws DBException {
+		List<Field> fields = new ArrayList<Field>();
+		
+		PreparedStatement st;
+		ResultSet rs;
+		ResultSetMetaData rsMetaData;
+		
+		try {
+			
+			query = normalizeQuery(query);
+			
+			st = conn.prepareStatement(query);
+			
+			int qtyQuestionMarksOnQuery = getQtyQuestionMarksOnQuery(query);
+			
+			if (qtyQuestionMarksOnQuery > 0) {
+				if (params == null) {
+					params = new Object[qtyQuestionMarksOnQuery];
+					
+					for (int i = 0; i < qtyQuestionMarksOnQuery; i++) {
+						params[i] = null;
+					}
+				}
+				
+				BaseDAO.loadParamsToStatment(st, params, conn);
+			}
+			
+			rs = st.executeQuery();
+			rsMetaData = rs.getMetaData();
+			
+			int qtyAttrs = rsMetaData.getColumnCount();
+			
+			for (int i = 1; i <= qtyAttrs; i++) {
+				Field field = new Field(rsMetaData.getColumnLabel(i));
+				field.setDataType(rsMetaData.getColumnTypeName(i));
+				
+				fields.add(field);
+			}
+			
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+		catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
+		return fields;
+	}
+	
+	public static String removeWhereConditionOnQuery(String query) {
+		return query.toLowerCase().split("where ")[0];
+	}
+	
+	public static String normalizeQuery(String query) {
+		
+		String normalized = query.trim();
+		normalized = utilities.removeDuplicatedEmptySpace(normalized);
+		normalized = utilities.removeSpacesBeforeAndAfterPeriod(normalized);
+		
+		normalized = normalized.replaceAll("\\s+", " ");
+		
+		String commentRegex = "(--.*?$)|(/\\*.*?\\*/)";
+		
+		// Remove comments from the SQL string
+		normalized = normalized.replaceAll(commentRegex, "");
+		
+		return normalized;
+	}
+	
+	private static boolean containsSelectWildcard(String selectClause) {
+		
+		// remove conteúdo entre parênteses (funções, subqueries)
+		String cleaned = selectClause.replaceAll("\\([^)]*\\)", "");
+		
+		// 🔹 SELECT *
+		if (cleaned.matches("(?i)^\\s*\\*\\s*$")) {
+			return true;
+		}
+		
+		// 🔹 SELECT table.*
+		if (cleaned.matches("(?i).*\\b\\w+\\.\\*\\b.*")) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public static List<Field> determineFieldsFromQuery(String query) {
+		
+		String normalizedQuery = normalizeQuery(query);
+		
+		String selectRegex = "(?i)select\\s+(.+?)\\s+from";
+		Pattern selectPattern = Pattern.compile(selectRegex);
+		Matcher selectMatcher = selectPattern.matcher(normalizedQuery);
+		
+		List<Field> fields = new ArrayList<>();
+		
+		if (selectMatcher.find()) {
+			
+			String selectClause = selectMatcher.group(1).trim();
+			
+			// 🔥 NOVA VALIDAÇÃO
+			if (containsSelectWildcard(selectClause)) {
+				throw new IllegalArgumentException("Query contains a wildcard '*' in the SELECT clause");
+			}
+			
+			// 🔥 split seguro (respeitando parênteses)
+			List<String> fieldsName = splitSelectFields(selectClause);
+			
+			for (String s : fieldsName) {
+				
+				s = utilities.removeDuplicatedEmptySpace(s.trim());
+				
+				String fieldName;
+				
+				if (s.toLowerCase().contains(" as ")) {
+					fieldName = s.split("(?i) as ")[1];
+				} else {
+					String[] parts = s.split("\\s+");
+					fieldName = parts[parts.length - 1];
+				}
+				
+				fields.add(new Field(fieldName.trim()));
+			}
+		}
+		
+		return fields;
+	}
+	
+	private static List<String> splitSelectFields(String selectClause) {
+		
+		List<String> result = new ArrayList<>();
+		
+		StringBuilder current = new StringBuilder();
+		
+		int parentheses = 0;
+		
+		for (char c : selectClause.toCharArray()) {
+			
+			if (c == '(')
+				parentheses++;
+			else if (c == ')')
+				parentheses--;
+			
+			if (c == ',' && parentheses == 0) {
+				result.add(current.toString());
+				current.setLength(0);
+				continue;
+			}
+			
+			current.append(c);
+		}
+		
+		if (!current.isEmpty()) {
+			result.add(current.toString());
+		}
+		
+		return result;
+	}
+	
+	public static String tryToPutSchemaOnDatabaseObject(String tableName, Connection conn) throws DBException {
+		
+		try {
+			String[] tableNameComposition = tableName.split("\\.");
+			
+			if (tableNameComposition != null && tableNameComposition.length > 1)
+				return tableName;
+			
+			return DBUtilities.determineSchemaName(conn) + "." + tableName;
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}
+	}
+	
+	public static boolean checkIfTableIsPresentInSqlExpretion(String sqlExpression) {
+		String[] tableNameComposition = sqlExpression.split("\\.");
+		
+		return tableNameComposition != null && tableNameComposition.length > 1;
+	}
+	
+	public static String tryToPutSchemaOnInsertScript_(String sql, Connection conn) throws DBException {
+		String tableName = (sql.toLowerCase().split("insert into")[1]).split("\\(")[0];
+		
+		String[] tableNameComposition = tableName.split("\\.");
+		
+		if (tableNameComposition != null && tableNameComposition.length > 1)
+			return sql;
+		
+		String fullTableName = tryToPutSchemaOnDatabaseObject(utilities.removeAllEmptySpace(tableName), conn);
+		
+		return sql.toLowerCase().replaceFirst(tableName, " " + fullTableName);
+	}
+	
+	public static String addInsertIgnoreOnInsertScript(String sql, Connection conn) throws DBException {
+		if (!DBUtilities.isMySQLDB(conn))
+			return sql;
+		
+		return sql.toLowerCase().replaceFirst("insert", "insert ignore");
+	}
+	
+	public static String tryToPutSchemaOnUpdateScript(String sql, Connection conn) throws DBException {
+		String tableName = (sql.toLowerCase().split("update ")[1]).split(" ")[0];
+		
+		String[] tableNameComposition = tableName.split("\\.");
+		
+		if (tableNameComposition != null && tableNameComposition.length > 1)
+			return sql;
+		
+		String fullTableName = tryToPutSchemaOnDatabaseObject(utilities.removeAllEmptySpace(tableName), conn);
+		
+		return sql.toLowerCase().replaceFirst(tableName, " " + fullTableName);
+	}
+	
+	public static String determineSchemaFromFullTableName(String fullTableName) {
+		
+		String[] tabDef = fullTableName.split("\\.");
+		
+		/* If the table definition already come with schema
+		 */
+		if (tabDef.length > 1) {
+			return tabDef[0];
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Extracts the first table name from the FROM clause of an SQL SELECT query.
+	 *
+	 * @param query the SQL query to be parsed
+	 * @return the first table name in the FROM clause, or null if not found
+	 */
+	public static String extractFirstTableFromSelectQuery(String query) {
+		String normalizedQuery = query.toLowerCase();
+		
+		Pattern fromPattern = Pattern.compile("from\\s+([^\\s,]+)", Pattern.CASE_INSENSITIVE);
+		Matcher fromMatcher = fromPattern.matcher(normalizedQuery);
+		
+		if (fromMatcher.find()) {
+			return fromMatcher.group(1);
+		}
+		
+		return null;
+	}
+	
+	public static String extractTableNameFromFullTableName(String fullTableName) {
+		
+		String[] tabDef = fullTableName.split("\\.");
+		
+		/* If the table definition already come with schema
+		 */
+		if (tabDef.length > 1) {
+			return tabDef[1];
+		} else {
+			return fullTableName;
+		}
+	}
+	
+	public static List<String> extractFieldsInClauses(String condition) {
+		List<String> fields = new ArrayList<>();
+		
+		// Regex pattern to match field names in IN, BETWEEN, and comparison clauses
+		String patternString = "(?i)\\b([\\w\\.]+)\\s*(=|IN|<|>|BETWEEN|LIKE)";
+		Pattern pattern = Pattern.compile(patternString);
+		Matcher matcher = pattern.matcher(condition);
+		
+		// Find all matches and add the field names to the list
+		while (matcher.find()) {
+			fields.add(matcher.group(1));
+		}
+		
+		return fields;
+	}
+	
+	public static List<String> extractFieldsInClauses(String condition, String tableName) {
+		List<String> fields = new ArrayList<>();
+		
+		// Regex pattern to match field names in WHERE, IN, BETWEEN, and comparison clauses
+		String patternString = "(?i)\\b([\\w\\.]+)\\s*(=|IN|<|>|BETWEEN|LIKE)";
+		Pattern pattern = Pattern.compile(patternString);
+		Matcher matcher = pattern.matcher(condition);
+		
+		// Find all matches and add the field names to the list
+		while (matcher.find()) {
+			String field = matcher.group(1);
+			if (!field.contains(".")) {
+				field = tableName + "." + field;
+			}
+			fields.add(field);
+		}
+		
+		return fields;
+	}
+	
+	public static String replaceFieldsInCondition(String condition, List<String> fields) {
+		String updatedCondition = condition;
+		
+		// Regex pattern to match field names in WHERE, IN, BETWEEN, and comparison clauses
+		String patternString = "(?i)\\b([\\w\\.]+)\\s*(=|IN|<|>|BETWEEN|LIKE)";
+		Pattern pattern = Pattern.compile(patternString);
+		Matcher matcher = pattern.matcher(condition);
+		
+		// Replace each matched field with its fully qualified name
+		int fieldIndex = 0;
+		StringBuffer result = new StringBuffer();
+		while (matcher.find()) {
+			// Construct the replacement with the field and a space before the token
+			String replacement = fields.get(fieldIndex) + " " + matcher.group(2);
+			matcher.appendReplacement(result, replacement);
+			fieldIndex++;
+		}
+		matcher.appendTail(result);
+		
+		updatedCondition = result.toString();
+		return updatedCondition;
+	}
+	
+	/**
+	 * Add a table name in fields that does not explicitly indicate the table name. The table name
+	 * will be added if the current table contains the field e.g. given the clause "col1 = 123 and
+	 * tab2.col2 > 1000"<br>
+	 * the result will be "tableName.col1 = 123 and tab2.col2 > 1000"
+	 * 
+	 * @param clauseContent the clause content: e.g. "col1 = 123 and tab2.col2 > 1000";
+	 * @param tableName the table name which will be added
+	 * @param tableFields all the fields of table
+	 * @return the modified clause which include the table name.
+	 */
+	public static String tryToPutTableNameInFieldsInASqlClause(String clauseContent, String tableName,
+	        List<Field> tableFields) {
+		
+		if (!utilities.listHasElement(tableFields)) {
+			throw new ForbiddenOperationException("The tableFields is empty!");
+		}
+		
+		List<String> fields = SQLUtilities.extractFieldsInClauses(clauseContent);
+		List<String> fieldsWithTabName = new ArrayList<>();
+		
+		for (String field : fields) {
+			if (SQLUtilities.checkIfTableIsPresentInSqlExpretion(field)) {
+				fieldsWithTabName.add(field);
+			} else {
+				
+				if (tableFields.contains(Field.fastCreateField(field))) {
+					fieldsWithTabName.add(tableName + "." + field);
+				}
+			}
+		}
+		
+		return SQLUtilities.replaceFieldsInCondition(clauseContent, fieldsWithTabName);
+	}
+	
+	public static List<String> findSubqueries(String query) {
+		List<String> subqueries = new ArrayList<>();
+		Stack<Integer> parenthesisStack = new Stack<>();
+		StringBuilder currentSubquery = new StringBuilder();
+		
+		query = query.replaceAll("\\s+", " "); // Normalize whitespace
+		
+		for (int i = 0; i < query.length(); i++) {
+			char c = query.charAt(i);
+			
+			if (c == '(') {
+				parenthesisStack.push(i);
+				if (parenthesisStack.size() == 1) {
+					currentSubquery = new StringBuilder();
+				}
+			}
+			
+			if (!parenthesisStack.isEmpty()) {
+				currentSubquery.append(c);
+			}
+			
+			if (c == ')') {
+				if (parenthesisStack.size() == 1) {
+					String subquery = currentSubquery.toString();
+					// Validate subquery starts with "select"
+					if (subquery.trim().toLowerCase().startsWith("(select")
+					        || subquery.trim().toLowerCase().startsWith("( select")) {
+						subqueries.add(subquery);
+					}
+				}
+				parenthesisStack.pop();
+			}
+		}
+		
+		return subqueries;
+	}
+	
+	public static boolean startsWithSqlOperation(String str) {
+		
+		if (!utilities.stringHasValue(str)) {
+			return false;
+		}
+		
+		String trimmed = str.trim().toLowerCase();
+		
+		// 🔹 remover parênteses iniciais (caso venha subquery ou wrapper)
+		while (trimmed.startsWith("(")) {
+			trimmed = trimmed.substring(1).trim();
+		}
+		
+		return trimmed.startsWith("select") || trimmed.startsWith("insert") || trimmed.startsWith("update")
+		        || trimmed.startsWith("delete") || trimmed.startsWith("drop") || trimmed.startsWith("create")
+		        || trimmed.startsWith("alter") || trimmed.startsWith("truncate") || trimmed.startsWith("with"); // CTE
+	}
+	
+	public static boolean startsWithSelectSqlOperation(String str) {
+		
+		if (!utilities.stringHasValue(str)) {
+			return false;
+		}
+		
+		String trimmed = str.trim().toLowerCase();
+		
+		while (trimmed.startsWith("(")) {
+			trimmed = trimmed.substring(1).trim();
+		}
+		
+		return trimmed.startsWith("select");
+	}
+	
+	public static <T extends Object> T tryToReplaceParamsInQuery(T query, EtlDatabaseObject paramSrc) {
+		return tryToReplaceParamsInQuery(query, null, paramSrc);
+	}
+	
+	public static <T extends Object> T tryToReplaceParamsInQuery(T query, EtlConfiguration paramSrc) {
+		return tryToReplaceParamsInQuery(query, paramSrc, null);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T extends Object> T tryToReplaceParamsInQuery(T query, EtlConfiguration etlConfParamSrc,
+	        EtlDatabaseObject etlObjectParamSrc) {
+		
+		if (!(query instanceof String))
+			return query;
+		
+		String strQuery = query.toString();
+		
+		if (!utilities.stringHasValue(strQuery))
+			return (T) strQuery;
+		
+		String paramRegex = "@(\\w+)";
+		Pattern pattern = Pattern.compile(paramRegex);
+		Matcher matcher = pattern.matcher(strQuery);
+		StringBuffer result = new StringBuffer();
+		
+		while (matcher.find()) {
+			String paramName = matcher.group(1);
+			
+			try {
+				
+				Object paramValue = null;
+				
+				if (etlObjectParamSrc != null) {
+					paramValue = etlObjectParamSrc.getFieldValue(paramName);
+				} else if (etlConfParamSrc != null) {
+					paramValue = etlConfParamSrc.getParamValue(paramName);
+				} else {
+					throw new ForbiddenOperationException("You need to specify the source of param");
+				}
+				
+				if (paramValue != null && !paramValue.toString().isEmpty()) {
+					matcher.appendReplacement(result, paramValue.toString());
+				} else {
+					matcher.appendReplacement(result, "@" + paramName);
+				}
+			}
+			catch (ForbiddenOperationException e) {}
+			
+		}
+		matcher.appendTail(result);
+		
+		return (T) result.toString();
 	}
 	
 }

@@ -23,6 +23,7 @@ import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
+import org.openmrs.module.epts.etl.exceptions.EtlConfException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingJoiningElementsException;
@@ -30,8 +31,8 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -221,6 +222,12 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	@Override
 	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		
+		if (hasJoinExtraCondition()) {
+			if (!SQLUtilities.isValidSelectSqlQuery("select * from where " + this.getJoinExtraCondition(), null)) {
+				throw new EtlConfException("Invalid joinExtraCondition \n" + this.getJoinExtraCondition());
+			}
+		}
+		
 		this.tryToLoadParentRefInfo(conn);
 		
 		this.tryToLoadAuxExtraJoinTable(schemaInfo, conn);
@@ -333,10 +340,10 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 					
 					if (ds.hasObjectFields()) {
 						for (DataSourceField f : ds.getObjectFields()) {
-							f.setName(DBUtilities.tryToReplaceParamsInQuery(f.getName().toString(), schemaInfo));
+							f.setName(SQLUtilities.tryToReplaceParamsInQuery(f.getName().toString(), schemaInfo));
 							
 							if (f.hasValue() && schemaInfo != null) {
-								f.setValue(DBUtilities.tryToReplaceParamsInQuery(f.getValue().toString(), schemaInfo));
+								f.setValue(SQLUtilities.tryToReplaceParamsInQuery(f.getValue().toString(), schemaInfo));
 							}
 						}
 					}
@@ -603,7 +610,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 					
 					if (schemaInfoSrc != null) {
 						aux.setJoinExtraCondition(
-						    DBUtilities.tryToReplaceParamsInQuery(aux.getJoinExtraCondition(), schemaInfoSrc));
+						    SQLUtilities.tryToReplaceParamsInQuery(aux.getJoinExtraCondition(), schemaInfoSrc));
 					}
 					
 					if (!aux.hasJoinFields()) {
@@ -614,9 +621,9 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 						if (schemaInfoSrc != null) {
 							for (FieldsMapping joiningField : aux.getJoinFields()) {
 								joiningField.setSrcField(
-								    DBUtilities.tryToReplaceParamsInQuery(joiningField.getSrcField(), schemaInfoSrc));
+								    SQLUtilities.tryToReplaceParamsInQuery(joiningField.getSrcField(), schemaInfoSrc));
 								joiningField.setDstField(
-								    DBUtilities.tryToReplaceParamsInQuery(joiningField.getDstField(), schemaInfoSrc));
+								    SQLUtilities.tryToReplaceParamsInQuery(joiningField.getDstField(), schemaInfoSrc));
 							}
 						}
 					}
@@ -643,14 +650,14 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 						if (query.hasObjectFields() && schemaInfoSrc != null) {
 							for (DataSourceField f : query.getObjectFields()) {
 								try {
-									f.setName(DBUtilities.tryToReplaceParamsInQuery(f.getName().toString(), schemaInfoSrc));
+									f.setName(SQLUtilities.tryToReplaceParamsInQuery(f.getName().toString(), schemaInfoSrc));
 								}
 								catch (ForbiddenOperationException e) {}
 								
 								if (f.hasValue()) {
 									try {
 										f.setValue(
-										    DBUtilities.tryToReplaceParamsInQuery(f.getValue().toString(), schemaInfoSrc));
+										    SQLUtilities.tryToReplaceParamsInQuery(f.getValue().toString(), schemaInfoSrc));
 									}
 									catch (ForbiddenOperationException e) {}
 								}

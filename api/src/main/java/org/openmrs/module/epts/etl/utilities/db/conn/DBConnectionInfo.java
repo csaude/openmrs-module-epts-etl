@@ -252,11 +252,11 @@ public class DBConnectionInfo {
 	}
 	
 	private String tryToLoadPlaceHolders(String str, EtlConfiguration schemaInfoSrc) {
-		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
+		return SQLUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
 	}
 	
 	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {
-		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
+		return SQLUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
 	}
 	
 	public boolean hasDatabaseSchemaPath() {

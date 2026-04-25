@@ -805,8 +805,16 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		if (hasDstConf()) {
 			for (DstConf dstConf : this.getDstConf()) {
 				dstConf.setRelatedConnInfo(((OpenConnection) dstConn).getDbConnInfo());
-				dstConf.ensureEtlStageTableExists(srcConn, dstConn);
 				
+				try {
+					
+					dstConf.ensureEtlStageTableExists(srcConn, dstConn);
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+					
+					throw e;
+				}
 				commitConn(dstConn);
 				commitConn(srcConn);
 			}

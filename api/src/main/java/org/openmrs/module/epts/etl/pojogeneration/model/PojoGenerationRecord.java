@@ -396,8 +396,7 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
-		// TODO Auto-generated method stub
+	public List<EtlDatabaseObject> getAuxLoadObject() {
 		return null;
 	}
 	
@@ -433,7 +432,7 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects) {
+	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
 		// TODO Auto-generated method stub
 		
 	}

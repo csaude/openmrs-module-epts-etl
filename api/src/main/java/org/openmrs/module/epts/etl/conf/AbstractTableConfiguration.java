@@ -10,6 +10,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
+import org.openmrs.module.epts.etl.exceptions.EtlConfException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -18,6 +19,7 @@ import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -165,7 +167,21 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	@Override
+	public void fullLoad(Connection conn) throws DBException {
+		this.tryToLoadDumpScriptContentToField("extraConditionForExtract", this.retrieveNearestTemplate(), conn);
+		
+		TableConfiguration.super.fullLoad(conn);
+	}
+	
+	@Override
 	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
+		
+		if (hasExtraConditionForExtract()) {
+			if (!SQLUtilities.isValidSelectSqlQuery("select * from where " + this.getExtraConditionForExtract(), null)) {
+				throw new EtlConfException("Invalid extraConditionForExtract  \n" + this.getExtraConditionForExtract());
+			}
+		}
+		
 		if (this.loadHealper == null) {
 			this.loadHealper = new DatabaseObjectLoaderHelper(this);
 		}

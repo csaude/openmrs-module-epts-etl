@@ -394,7 +394,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
+	public List<EtlDatabaseObject> getAuxLoadObject() {
 		return null;
 	}
 	
@@ -427,7 +427,7 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects) {
+	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
 		// TODO Auto-generated method stub
 		
 	}

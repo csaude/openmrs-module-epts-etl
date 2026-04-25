@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
@@ -19,7 +20,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 /**
  * Allow the custom field transformation.
  */
-public interface EtlFieldTransformer {
+public interface EtlFieldTransformer extends EtlDataConfiguration {
 	
 	public static final CommonUtilities utilities = CommonUtilities.getInstance();
 	

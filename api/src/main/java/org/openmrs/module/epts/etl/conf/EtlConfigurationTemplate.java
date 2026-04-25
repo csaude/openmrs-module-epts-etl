@@ -86,7 +86,11 @@ public class EtlConfigurationTemplate {
 			validateAllowedParanms(inputParams);
 			validateMissingParanms(inputParams);
 			
-			json = EtlDataConfiguration.resolvePlaceholders(this.template.toString(), this.getParameters(), null, null,
+			if (this.template == null && this.extendsTemplate == null) {
+				throw new EtlExceptionImpl("Missing template content on " + this.getTemplate());
+			}
+			
+			json = EtlDataConfiguration.resolvePlaceholders(this.template != null ? this.template.toString() : "{}", this.getParameters(), null, null,
 			    inputParams);
 			
 			EtlDataConfiguration parentFromTemplate = null;

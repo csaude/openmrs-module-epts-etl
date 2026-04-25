@@ -118,4 +118,9 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
 	}
 	
+	@Override
+	public boolean isDisabled() {
+		return false;
+	}
+	
 }

@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.exceptions.EtlConfException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -16,6 +17,7 @@ import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -163,7 +165,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		
 		try {
 			
-			String tableName = DBUtilities.extractTableNameFromFullTableName(tabConf.getTableName());
+			String tableName = SQLUtilities.extractTableNameFromFullTableName(tabConf.getTableName());
 			
 			String catalog = conn.getCatalog();
 			
@@ -192,7 +194,11 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 				if (!tabConf.isIgnorableField(Field.fastCreateField(rs.getString("COLUMN_NAME")))) {
 					Field f = tabConf.getField(rs.getString("COLUMN_NAME"));
 					
-					keyElements.add(Key.fastCreateTyped(f.getName(), f.getDataType()));
+					if (keyElements != null) {
+						keyElements.add(Key.fastCreateTyped(f.getName(), f.getDataType()));
+					} else {
+						throw new EtlConfException("keyElements cannot be null!");
+					}
 				}
 			}
 			

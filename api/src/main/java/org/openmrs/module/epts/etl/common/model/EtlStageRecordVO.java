@@ -667,7 +667,7 @@ public class EtlStageRecordVO extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
+	public List<EtlDatabaseObject> getAuxLoadObject() {
 		return null;
 	}
 	
@@ -694,9 +694,7 @@ public class EtlStageRecordVO extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects) {
-		// TODO Auto-generated method stub
-		
+	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
 	}
 	
 }

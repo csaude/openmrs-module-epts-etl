@@ -15,7 +15,6 @@ import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SqlConditionElement;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -258,22 +257,9 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 						throw new ForbiddenOperationException("The on_demand_check_condition has no value");
 					}
 					
-					if (dstConf.getRelatedEtlConf().checkIfIsValidDumpScript(srcFieldOrValue)) {
-						this.onDemandCheckCondition = dstConf.getRelatedEtlConf().readDumpScriptContent(srcFieldOrValue);
-						
-						if (dstConf.hasTemplate()) {
-							this.onDemandCheckCondition = EtlDataConfiguration.resolvePlaceholders(
-							    this.onDemandCheckCondition, null, null, null, dstConf.getTemplate().getParameters());
-						}
-						
-					} else {
-						this.onDemandCheckCondition = srcFieldOrValue;
-					}
+					this.onDemandCheckCondition = srcFieldOrValue;
 					
-					if (!SQLUtilities.isValidSqlCondition(this.onDemandCheckCondition)) {
-						throw new EtlExceptionImpl(
-						        "Wrong format for on_demand_condition within the transformer " + field.getTransformer());
-					}
+					this.tryToLoadDumpScriptContentToField("onDemandCheckCondition", dstConf.getTemplate(), conn);
 				} else if (dstField.equals("template")) {
 					if (!utilities.stringHasValue(srcFieldOrValue)) {
 						throw new ForbiddenOperationException("The template has no value");
@@ -352,16 +338,6 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		}
 		
 		return fieldMap;
-	}
-	
-	public String getTransformerDsc() {
-		String sql = "PARENT_ON_DEMAND_TRANSFORMER: (" + parentTableName;
-		
-		if (utilities.listHasElement(this.rawParameterDefinitions)) {
-			sql += ", " + this.rawParameterDefinitions.toString();
-		}
-		
-		return sql + ")";
 	}
 	
 	public DstConf getRelatedDstConf() {
@@ -545,11 +521,6 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		
 		return null;
 		
-	}
-	
-	@Override
-	public String toString() {
-		return this.getTransformerDsc();
 	}
 	
 	private EtlDatabaseObject retrieveExistingOnDemandParent(EtlProcessor processor, EtlDatabaseObject srcObject,
@@ -841,5 +812,4 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 	public EtlItemConfiguration getOnDemandCreateParentItemConf() {
 		return onDemandCreateParentItemConf;
 	}
-	
 }

@@ -18,6 +18,7 @@ import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	
@@ -81,7 +82,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = record.getUpdateParams();
 		String sql = record.getUpdateSQL();
 		
-		sql = DBUtilities.tryToPutSchemaOnUpdateScript(sql, conn);
+		sql = SQLUtilities.tryToPutSchemaOnUpdateScript(sql, conn);
 		
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
@@ -114,8 +115,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			String sql = "";
 			
 			sql += " SELECT " + columnsToSelect + "\n";
-			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullSrcStageTableName()
-			        + " ON record_uuid = uuid\n";
+			sql += " FROM  	" + clauseFromStarting + " INNER JOIN "
+			        + parentTableConfiguration.generateFullSrcStageTableName() + " ON record_uuid = uuid\n";
 			sql += " WHERE 	record_origin_id = ? and record_origin_location_code = ? ";
 			
 			return find(parentTableConfiguration.getLoadHealper(),
@@ -527,7 +528,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 		
 		if (tabConf.useMysqlInsertIgnore()) {
-			sql = DBUtilities.addInsertIgnoreOnInsertScript(sql, conn);
+			sql = SQLUtilities.addInsertIgnoreOnInsertScript(sql, conn);
 		}
 		
 		sql += " VALUES";

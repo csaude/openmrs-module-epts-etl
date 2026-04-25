@@ -22,11 +22,12 @@ import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VO;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1254,6 +1255,22 @@ public class CommonUtilities implements Serializable {
 		throw new ForbiddenOperationException("The field '" + fieldName + "' was not found on object '" + objectName + "'");
 	}
 	
+	public void setFieldValue(Object obj, String fieldName, Object fieldValue) {
+		Field f = getField(obj, fieldName);
+		
+		if (f != null) {
+			try {
+				f.set(obj, fieldValue);
+			}
+			catch (IllegalArgumentException | IllegalAccessException e) {
+				throw new EtlExceptionImpl(e);
+			}
+		} else {
+			throw new EtlExceptionImpl("Field '" + fieldName + "' not found on object " + obj);
+		}
+		
+	}
+	
 	public Field getField(Object obj, String fieldName) throws ForbiddenOperationException {
 		for (Field field : getInstanceFields(obj)) {
 			
@@ -1467,7 +1484,7 @@ public class CommonUtilities implements Serializable {
 	
 	public <T> T tryToReplacePlaceholders(T toReplace, EtlDatabaseObject src) {
 		if (src != null) {
-			return DBUtilities.tryToReplaceParamsInQuery(toReplace, src);
+			return SQLUtilities.tryToReplaceParamsInQuery(toReplace, src);
 		}
 		
 		return toReplace;

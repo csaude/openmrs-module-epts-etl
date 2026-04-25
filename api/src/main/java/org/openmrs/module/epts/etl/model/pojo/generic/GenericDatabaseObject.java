@@ -35,7 +35,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	 * related to tables presents on {@link EtlDataSource#getAuxExtractTable()} will be placed on
 	 * this field.
 	 */
-	private List<GenericDatabaseObject> auxLoadObject;
+	private List<EtlDatabaseObject> auxLoadObject;
 	
 	private boolean loadedFromDb;
 	
@@ -43,14 +43,13 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	}
 	
 	@Override
-	public List<GenericDatabaseObject> getAuxLoadObject() {
+	public List<EtlDatabaseObject> getAuxLoadObject() {
 		return auxLoadObject;
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
-	public void setAuxLoadObject(List<? extends EtlDatabaseObject> auxLoadObjects) {
-		this.auxLoadObject = (List<GenericDatabaseObject>) auxLoadObjects;
+	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
+		this.auxLoadObject = auxLoadObjects;
 	}
 	
 	@Override

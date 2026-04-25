@@ -119,5 +119,11 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public boolean isDisabled() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 	
 }

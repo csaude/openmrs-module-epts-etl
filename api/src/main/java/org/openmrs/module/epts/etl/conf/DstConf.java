@@ -99,14 +99,28 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	private OnMultipleDataSourceFoundBehavior onMultipleDataSourceWithSameName;
 	
+	private Boolean useAsDataSource;
+	
 	public DstConf() {
 		this.onMultipleDataSourceForSameMapping = OnMultipleDataSourceFoundBehavior.ABORT_PROCESS;
 		this.onMultipleDataSourceWithSameName = OnMultipleDataSourceFoundBehavior.ABORT_PROCESS;
+		this.useAsDataSource = false;
+	}
+	
+	public Boolean getUseAsDataSource() {
+		return useAsDataSource;
+	}
+	
+	public void setUseAsDataSource(Boolean useAsDataSource) {
+		this.useAsDataSource = useAsDataSource;
 	}
 	
 	public DstConf(String tableName) {
 		setTableName(tableName);
-		
+	}
+	
+	public Boolean useAsDataSource() {
+		return useAsDataSource;
 	}
 	
 	public OnMultipleDataSourceFoundBehavior onMultipleDataSourceWithSameName() {
@@ -884,6 +898,10 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		
 		this.fullLoadAllRelatedTables(getRelatedEtlConf(), null, conn);
 		
+		if (useAsDataSource()) {
+			addToAvaliableDataSource(this);
+		}
+		
 		determinePrefferredDataSources();
 		
 		this.setLoadedDataSourceInfo(true);
@@ -1481,8 +1499,11 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 							    getParentConf().getRelatedEtlConf().getDefaultOperation(), srcConn, dstConn);
 						}
 						
-						onDemand.getOnDemandCreateParentItemConf().ensureEtlStageTableExists(
-						    getParentConf().getRelatedEtlConf().getDefaultOperation(), srcConn, dstConn);
+						EtlItemConfiguration onDemandEtlConf = onDemand.getOnDemandCreateParentItemConf();
+						EtlOperationConfig defaultOperation = getParentConf().getRelatedEtlConf().getDefaultOperation();
+						
+						onDemandEtlConf.ensureEtlStageTableExists(defaultOperation, srcConn, dstConn);
+						
 					}
 				}
 			}

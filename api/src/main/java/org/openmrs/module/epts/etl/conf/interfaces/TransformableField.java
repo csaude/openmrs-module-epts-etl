@@ -159,7 +159,8 @@ public interface TransformableField {
 		if (this.hasDataType()) {
 			if (!utilities.isStringIn(this.getDataType().toLowerCase(), "int", "double", "string", "date", "long",
 			    "Boolean")) {
-				throw new ForbiddenOperationException("Unsupported dataType for field " + this.getDstField());
+				throw new ForbiddenOperationException(
+				        "Unsupported dataType for field " + this.getDstField() + ">" + this.getDataType().toLowerCase());
 			}
 		} else if (dstConf != null && dstConf.containsField(this.getDstField())) {
 			this.setDataType(dstConf.getField(this.getDstField()).getDataType());

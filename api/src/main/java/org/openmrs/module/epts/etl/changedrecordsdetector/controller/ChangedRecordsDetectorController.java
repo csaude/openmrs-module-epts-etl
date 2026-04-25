@@ -206,4 +206,10 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 		return searchParams;
 	}
 	
+	@Override
+	public boolean isDisabled() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	
 }

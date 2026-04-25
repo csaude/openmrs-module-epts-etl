@@ -3,8 +3,8 @@ package org.openmrs.module.epts.etl.controller;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 public class SqlProcessFInalizer extends AbstractProcessFinalizer {
 	
@@ -28,7 +28,7 @@ public class SqlProcessFInalizer extends AbstractProcessFinalizer {
 			}
 			
 			if (getRelatedProcessController().getSchemaInfoSrc() != null) {
-				sql = DBUtilities.tryToReplaceParamsInQuery(sql, getRelatedProcessController().getSchemaInfoSrc())
+				sql = SQLUtilities.tryToReplaceParamsInQuery(sql, getRelatedProcessController().getSchemaInfoSrc())
 				        .toString();
 			}
 			

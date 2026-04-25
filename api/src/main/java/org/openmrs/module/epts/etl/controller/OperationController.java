@@ -81,7 +81,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
-		this.controllerId =   operationConfig.generateOperationId();
+		this.controllerId = operationConfig.generateOperationId();
 		
 		OpenConnection conn = null;
 		try {
@@ -280,7 +280,9 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 					if (isResumable()) {
 						logTrace("Saving Progress Info....");
 						
-						progressInfo.save(conn);
+						if (progressInfo != null) {
+							progressInfo.save(conn);
+						}
 						
 						logTrace("Progress Info Saved!");
 						
@@ -981,6 +983,11 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		getFinalizedItems().add(item);
 		
+	}
+	
+	@Override
+	public boolean isDisabled() {
+		return this.getOperationConfig().isDisabled();
 	}
 	
 }

@@ -10,7 +10,7 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 /**
  * This search params allow the count query in multi-thread in a {@link PreparedQuery}
@@ -60,9 +60,9 @@ public class PreparedCountQuerySearchParams extends AbstractEtlSearchParams<EtlD
 		searchClauses.addColumnToSelect("1");
 		
 		searchClauses.addToClauseFrom(
-		    DBUtilities.extractFromClauseOnSqlSelectQuery(this.getPreparedQuery().generatePreparedQuery()));
-		searchClauses
-		        .addToClauses(DBUtilities.extractWhereClauseInASelectQuery(this.getPreparedQuery().generatePreparedQuery()));
+		    SQLUtilities.extractFromClauseOnSqlSelectQuery(this.getPreparedQuery().generatePreparedQuery()));
+		searchClauses.addToClauses(
+		    SQLUtilities.extractWhereClauseInASelectQuery(this.getPreparedQuery().generatePreparedQuery()));
 		
 		TableConfiguration tabConf = this.getPreparedQuery().getCountFunctionInfo().getMainTable();
 		

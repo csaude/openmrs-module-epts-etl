@@ -17,11 +17,14 @@ import org.openmrs.module.epts.etl.conf.EtlConfigurationTemplate;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.TemplateOverride;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlConfException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 public interface EtlDataConfiguration extends BaseConfiguration {
 	
@@ -31,15 +34,9 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	
 	EtlDataConfiguration getParentConf();
 	
-	boolean hasValidator();
-	
 	public List<DefaultEtlValidator> getValidators();
 	
 	void setRelatedEtlConfig(EtlConfiguration relatedSyncConfiguration);
-	
-	default DBConnectionInfo getSrcConnInfo() {
-		return this.getRelatedEtlConf().getSrcConnInfo();
-	}
 	
 	void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc);
 	
@@ -49,8 +46,57 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	
 	void setTemplate(EtlTemplateInfo template);
 	
+	default boolean hasValidator() {
+		return utilities.listHasElement(this.getValidators());
+	}
+	
+	default DBConnectionInfo getSrcConnInfo() {
+		return this.getRelatedEtlConf().getSrcConnInfo();
+	}
+	
 	default String getTemplateName() {
 		return hasTemplate() ? getTemplate().getName() : null;
+	}
+	
+	default void tryToLoadDumpScriptContentToField(String fieldName, EtlTemplateInfo template, Connection conn)
+	        throws DBException {
+		
+		Object fieldValue = utilities.getFieldValue(this, fieldName);
+		
+		if (fieldValue instanceof String) {
+			
+			String sqlType = "query";
+			
+			String originalScript = fieldValue.toString();
+			String queryWithReplacedParameters = null;
+			
+			if (this.getRelatedEtlConf().checkIfIsValidDumpScript(fieldValue.toString())) {
+				
+				originalScript = this.getRelatedEtlConf().readDumpScriptContent(fieldValue.toString());
+				
+				if (template != null) {
+					queryWithReplacedParameters = EtlDataConfiguration.resolvePlaceholders(originalScript, null, null, null,
+					    template.getParameters());
+				}
+				
+				utilities.setFieldValue(this, fieldName, queryWithReplacedParameters);
+			}
+			
+			String toValidate = queryWithReplacedParameters;
+			
+			if (!SQLUtilities.startsWithSelectSqlOperation(queryWithReplacedParameters)) {
+				sqlType = "condition";
+				
+				toValidate = "select * from tab " + queryWithReplacedParameters;
+			}
+			
+			if (!SQLUtilities.isValidSelectSqlQuery(toValidate, DBUtilities.determineDbmsType(conn))) {
+				String msg = "Ivalid sql " + sqlType + " from file: " + fieldValue.toString() + "\n" + originalScript
+				        + " within the field '" + fieldName + "'.";
+				
+				throw new EtlConfException(msg);
+			}
+		}
 	}
 	
 	default void tryToLoadFromTemplate() {
@@ -171,7 +217,8 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		}
 	}
 	
-	static String[] SAFE_FIELDS = { "relatedEtlConf", "loadHealper", "onMultipleDataSourceForSameMapping", "onMultipleDataSourceWithSameName" };
+	static String[] SAFE_FIELDS = { "useAsDataSource", "relatedEtlConf", "loadHealper", "onMultipleDataSourceForSameMapping",
+	        "onMultipleDataSourceWithSameName" };
 	
 	public static boolean canBeOverriten(Object value, Field field) {
 		

@@ -54,4 +54,5 @@ public abstract class AbstractBaseConfiguration implements BaseConfiguration {
 	public static Boolean true_() {
 		return Boolean.TRUE;
 	}
+	
 }

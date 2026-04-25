@@ -43,6 +43,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 import org.openmrs.module.epts.etl.utilities.io.FileUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -1692,7 +1693,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 		int i = 1;
 		
-		String tableName = DBUtilities.extractTableNameFromFullTableName(tabConfig.getTableName());
+		String tableName = SQLUtilities.extractTableNameFromFullTableName(tabConfig.getTableName());
 		
 		String generatedTableAlias = tableName + "_" + i;
 		
@@ -1863,7 +1864,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			Map<String, String> newMap = new LinkedHashMap<>();
 			
 			for (Map.Entry<String, String> entry : params.entrySet()) {
-				newMap.put(entry.getKey(), DBUtilities.tryToReplaceParamsInQuery(entry.getValue(), schemaInfoSrc));
+				newMap.put(entry.getKey(), SQLUtilities.tryToReplaceParamsInQuery(entry.getValue(), schemaInfoSrc));
 			}
 			
 			return newMap;
@@ -1873,7 +1874,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {
-		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
+		return SQLUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
 	}
 	
 	public String getRecordWithDefaultParentInfoTableName() {

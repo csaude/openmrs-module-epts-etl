@@ -149,5 +149,11 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public boolean isDisabled() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 	
 }
