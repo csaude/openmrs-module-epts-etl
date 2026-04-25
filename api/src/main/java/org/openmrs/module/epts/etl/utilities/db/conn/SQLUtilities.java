@@ -1219,20 +1219,61 @@ public class SQLUtilities {
 	
 	private static String cutAfterKeywords(String clause) {
 		
-		String[] keywords = { "group by", "order by", "limit", "having", "union", "intersect", "except" };
-		
 		String lower = clause.toLowerCase();
 		
-		int minIndex = clause.length();
+		String[] keywords = { "group by", "order by", "limit", "having", "union", "intersect", "except" };
 		
-		for (String kw : keywords) {
-			int idx = lower.indexOf(" " + kw + " ");
-			if (idx != -1 && idx < minIndex) {
-				minIndex = idx;
+		int parentheses = 0;
+		boolean inSingleQuote = false;
+		boolean inDoubleQuote = false;
+		
+		for (int i = 0; i < clause.length(); i++) {
+			
+			char c = clause.charAt(i);
+			
+			//  controlar aspas
+			if (c == '\'' && !inDoubleQuote) {
+				inSingleQuote = !inSingleQuote;
+				continue;
+			} else if (c == '"' && !inSingleQuote) {
+				inDoubleQuote = !inDoubleQuote;
+				continue;
+			}
+			
+			if (inSingleQuote || inDoubleQuote) {
+				continue;
+			}
+			
+			// controlar parênteses
+			if (c == '(') {
+				parentheses++;
+				continue;
+			} else if (c == ')') {
+				parentheses--;
+				continue;
+			}
+			
+			// só cortar se estiver fora de parênteses
+			if (parentheses == 0) {
+				
+				for (String kw : keywords) {
+					
+					if (lower.startsWith(kw, i)) {
+						
+						// garantir boundary (evitar cortar "limitador")
+						boolean validStart = i == 0 || Character.isWhitespace(lower.charAt(i - 1));
+						int endIdx = i + kw.length();
+						boolean validEnd = endIdx >= lower.length() || Character.isWhitespace(lower.charAt(endIdx));
+						
+						if (validStart && validEnd) {
+							return clause.substring(0, i).trim();
+						}
+					}
+				}
 			}
 		}
 		
-		return clause.substring(0, minIndex).trim();
+		return clause.trim();
 	}
 	
 	private static boolean isBalanced(String s) {

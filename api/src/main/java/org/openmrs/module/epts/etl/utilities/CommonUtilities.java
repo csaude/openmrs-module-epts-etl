@@ -1237,11 +1237,8 @@ public class CommonUtilities implements Serializable {
 		for (Field field : getInstanceFields(obj)) {
 			
 			if (field.getName().equals(fieldName)) {
-				
 				try {
-					if (field.get(obj) != null) {
-						return field.get(obj);
-					}
+					return field.get(obj);
 				}
 				catch (IllegalArgumentException e) {
 					throw new RuntimeException(e);
