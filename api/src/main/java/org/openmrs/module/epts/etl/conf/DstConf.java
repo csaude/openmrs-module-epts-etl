@@ -305,7 +305,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		return allMapping;
 	}
 	
-	private void setAllMapping(List<FieldsMapping> allMapping) {
+	public void setAllMapping(List<FieldsMapping> allMapping) {
 		this.allMapping = allMapping;
 	}
 	
@@ -315,33 +315,6 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	public void setExcludedFields(List<String> excludedFields) {
 		this.excludedFields = excludedFields;
-	}
-	
-	private void addMapping(FieldsMapping fm) throws ForbiddenOperationException {
-		if (this.getAllMapping() == null) {
-			this.setAllMapping(new ArrayList<FieldsMapping>());
-		}
-		
-		if (this.getAllMapping().contains(fm))
-			throw new ForbiddenOperationException("The field [" + fm + "] already exists on mapping");
-		
-		this.getAllMapping().add(fm);
-	}
-	
-	public EtlDataSource findDataSource(String dsName) {
-		for (EtlDataSource ds : this.getAllAvaliableDataSource()) {
-			if (ds.getAlias().equals(dsName)) {
-				return ds;
-			}
-		}
-		
-		for (EtlDataSource ds : this.getAllAvaliableDataSource()) {
-			if (ds.getName().equals(dsName)) {
-				return ds;
-			}
-		}
-		
-		return null;
 	}
 	
 	public Boolean useDefaultTransformer() {

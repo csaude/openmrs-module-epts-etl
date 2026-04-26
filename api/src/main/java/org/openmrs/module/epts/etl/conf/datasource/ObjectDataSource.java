@@ -13,11 +13,14 @@ import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.JavaObjectFieldsValuesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ObjectLanguageType;
+import org.openmrs.module.epts.etl.conf.types.OnMultipleDataSourceFoundBehavior;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
@@ -32,7 +35,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class ObjectDataSource extends AbstractEtlDataConfiguration implements EtlAdditionalDataSource, EtlSrcConf {
+public class ObjectDataSource extends AbstractEtlDataConfiguration implements EtlAdditionalDataSource, EtlSrcConf, EtlTranformTarget {
 	
 	private String name;
 	
@@ -53,6 +56,20 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	private EtlTemplateInfo template;
 	
 	private List<String> dynamicElements;
+	
+	private List<String> prefferredDataSource;
+	
+	private List<EtlDataSource> allAvaliableDataSource;
+	
+	private List<EtlDataSource> allNotPrefferredDataSource;
+	
+	private List<EtlDataSource> allPrefferredDataSource;
+	
+	private List<FieldsMapping> allMapping;
+	
+	private Boolean ignoreUnmappedFields;
+	
+	private OnMultipleDataSourceFoundBehavior onMultipleDataSourceForSameMapping;
 	
 	@Override
 	public List<String> getDynamicElements() {
@@ -454,4 +471,112 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	public void setParentConf(EtlDataConfiguration relatedParent) {
 		this.relatedSrcConf = (SrcConf) relatedParent;
 	}
+	
+	@Override
+	public Boolean isIgnoreUnmappedFields() {
+		return ignoreUnmappedFields;
+	}
+	
+	@Override
+	public SrcConf getSrcConf() {
+		return this.relatedSrcConf;
+	}
+	
+	public Boolean getFullLoaded() {
+		return fullLoaded;
+	}
+	
+	public void setFullLoaded(Boolean fullLoaded) {
+		this.fullLoaded = fullLoaded;
+	}
+	
+	public List<String> getPrefferredDataSource() {
+		return prefferredDataSource;
+	}
+	
+	public void setPrefferredDataSource(List<String> prefferredDataSource) {
+		this.prefferredDataSource = prefferredDataSource;
+	}
+	
+	@Override
+	public List<EtlDataSource> getAllAvaliableDataSource() {
+		return allAvaliableDataSource;
+	}
+	
+	@Override
+	public void setAllAvaliableDataSource(List<EtlDataSource> allAvaliableDataSource) {
+		this.allAvaliableDataSource = allAvaliableDataSource;
+	}
+	
+	@Override
+	public List<EtlDataSource> getAllNotPrefferredDataSource() {
+		return allNotPrefferredDataSource;
+	}
+	
+	@Override
+	public void setAllNotPrefferredDataSource(List<EtlDataSource> allNotPrefferredDataSource) {
+		this.allNotPrefferredDataSource = allNotPrefferredDataSource;
+	}
+	
+	@Override
+	public List<EtlDataSource> getAllPrefferredDataSource() {
+		return allPrefferredDataSource;
+	}
+	
+	@Override
+	public void setAllPrefferredDataSource(List<EtlDataSource> allPrefferredDataSource) {
+		this.allPrefferredDataSource = allPrefferredDataSource;
+	}
+	
+	@Override
+	public List<FieldsMapping> getAllMapping() {
+		return allMapping;
+	}
+	
+	@Override
+	public void setAllMapping(List<FieldsMapping> allMapping) {
+		this.allMapping = allMapping;
+	}
+	
+	public Boolean getIgnoreUnmappedFields() {
+		return ignoreUnmappedFields;
+	}
+	
+	public void setIgnoreUnmappedFields(Boolean ignoreUnmappedFields) {
+		this.ignoreUnmappedFields = ignoreUnmappedFields;
+	}
+	
+	public OnMultipleDataSourceFoundBehavior getOnMultipleDataSourceForSameMapping() {
+		return onMultipleDataSourceForSameMapping;
+	}
+	
+	public void setOnMultipleDataSourceForSameMapping(OnMultipleDataSourceFoundBehavior onMultipleDataSourceForSameMapping) {
+		this.onMultipleDataSourceForSameMapping = onMultipleDataSourceForSameMapping;
+	}
+	
+	public Boolean getRequired() {
+		return required;
+	}
+	
+	@Override
+	public void loadDataSourceInfo(Connection conn) throws DBException {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public Boolean isLoadedDataSourceInfo() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public OnMultipleDataSourceFoundBehavior onMultipleDataSourceForSameMapping() {
+		return this.onMultipleDataSourceForSameMapping;
+	}
+	
+	@Override
+	public void setMapping(List<FieldsMapping> mapping) {
+	}
+	
 }

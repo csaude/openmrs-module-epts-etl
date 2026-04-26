@@ -14,15 +14,12 @@ import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
  * Allow the custom field transformation.
  */
 public interface EtlFieldTransformer extends EtlDataConfiguration {
-	
-	public static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	static final Pattern PARAM_PATTERN = Pattern.compile("@(\\w+)");
 	

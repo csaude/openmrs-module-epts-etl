@@ -46,6 +46,12 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	
 	void setTemplate(EtlTemplateInfo template);
 	
+	List<String> getDynamicElements();
+	
+	default boolean hasDynamicElements() {
+		return utilities.listHasElement(this.getDynamicElements());
+	}
+	
 	default boolean hasValidator() {
 		return utilities.listHasElement(this.getValidators());
 	}

@@ -12,14 +12,11 @@ import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
 import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlDatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public interface EtlTranformTarget extends EtlDatabaseObjectConfiguration {
-	
-	EtlDataSource findDataSource(String dataSourceName);
 	
 	void loadDataSourceInfo(Connection conn) throws DBException;
 	
@@ -37,13 +34,42 @@ public interface EtlTranformTarget extends EtlDatabaseObjectConfiguration {
 	
 	SrcConf getSrcConf();
 	
+	List<FieldsMapping> getAllMapping();
+	
 	List<EtlDataSource> getAllNotPrefferredDataSource();
 	
 	List<EtlDataSource> getAllAvaliableDataSource();
 	
-	void setMapping(List<FieldsMapping> onDemandParentFieldMappings);
+	void setMapping(List<FieldsMapping> mapping);
 	
-	EtlDatabaseObject createRecordInstance();
+	void setAllMapping(List<FieldsMapping> allMapping);
+	
+	default void addMapping(FieldsMapping fm) throws ForbiddenOperationException {
+		if (this.getAllMapping() == null) {
+			this.setAllMapping(new ArrayList<FieldsMapping>());
+		}
+		
+		if (this.getAllMapping().contains(fm))
+			throw new ForbiddenOperationException("The field [" + fm + "] already exists on mapping");
+		
+		this.getAllMapping().add(fm);
+	}
+	
+	default EtlDataSource findDataSource(String dsName) {
+		for (EtlDataSource ds : this.getAllAvaliableDataSource()) {
+			if (ds.getAlias().equals(dsName)) {
+				return ds;
+			}
+		}
+		
+		for (EtlDataSource ds : this.getAllAvaliableDataSource()) {
+			if (ds.getName().equals(dsName)) {
+				return ds;
+			}
+		}
+		
+		return null;
+	}
 	
 	default void tryToLoadDataSourceToFieldMapping(FieldsMapping fm, Connection conn)
 	        throws FieldNotAvaliableInAnyDataSource, FieldAvaliableInMultipleDataSources, DBException {

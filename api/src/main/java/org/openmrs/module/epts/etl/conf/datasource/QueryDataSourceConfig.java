@@ -72,8 +72,6 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	
 	private Boolean doNotLoadFields;
 	
-	private List<String> dynamicElements;
-	
 	private RelationshipResolutionStrategy relationshipResolutionStrategy;
 	
 	public QueryDataSourceConfig() {
@@ -100,14 +98,6 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	
 	public RelationshipResolutionStrategy relationshipResolutionStrategy() {
 		return this.relationshipResolutionStrategy;
-	}
-	
-	public List<String> getDynamicElements() {
-		return dynamicElements;
-	}
-	
-	public void setDynamicElements(List<String> dynamicElements) {
-		this.dynamicElements = dynamicElements;
 	}
 	
 	public Boolean isDoNotLoadFields() {

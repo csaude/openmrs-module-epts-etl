@@ -2350,4 +2350,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return this.getOperations().get(0);
 	}
 	
+	@Override
+	public List<String> getDynamicElements() {
+		return null;
+	}
+	
 }

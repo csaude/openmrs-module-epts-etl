@@ -24,12 +24,6 @@ public interface EtlDataSource extends EtlDatabaseObjectConfiguration {
 	
 	void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery);
 	
-	List<String> getDynamicElements();
-	
-	default boolean hasDynamicElements() {
-		return utilities.listHasElement(this.getDynamicElements());
-	}
-	
 	default Boolean isPrepared() {
 		return this.getDefaultPreparedQuery() != null;
 	}

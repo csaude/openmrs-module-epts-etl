@@ -16,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.GenericTableConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SqlConditionElement;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
@@ -347,14 +348,14 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		return fieldMap;
 	}
 	
-	public static ParentOnDemandLoadTransformer getInstance(List<Object> parameters, DstConf relatedEtlTransformTarget,
-	        TransformableField field, Connection conn) {
+	public static ParentOnDemandLoadTransformer getInstance(List<Object> parameters,
+	        EtlTranformTarget relatedEtlTransformTarget, TransformableField field, Connection conn) {
 		
 		String key = buildCacheKey(relatedEtlTransformTarget, field, parameters);
 		
 		return INSTANCES.computeIfAbsent(key, k -> {
 			try {
-				return new ParentOnDemandLoadTransformer(parameters, relatedEtlTransformTarget, field, conn);
+				return new ParentOnDemandLoadTransformer(parameters, (DstConf) relatedEtlTransformTarget, field, conn);
 			}
 			catch (DBException e) {
 				throw new EtlExceptionImpl(e);
@@ -763,19 +764,19 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 		} else if (useMainEtlTable) {
 			DstConf EtlTransformTarget = new DstConf(parentTableName);
 			
-			conf.setEtlTransformTarget(utilities.parseToList(EtlTransformTarget));
+			conf.setDstConf(utilities.parseToList(EtlTransformTarget));
 		}
 		
-		conf.setParentItemConf(relatedEtlTransformTarget.getParentConf());
-		conf.setRelatedParentEtlTransformTargetName(relatedEtlTransformTarget.getTableAlias());
+		conf.setParentItemConf(this.getRelatedEtlTransformTarget().getParentConf());
+		conf.setRelatedParentDstConfName(this.getRelatedEtlTransformTarget().getTableAlias());
 		
-		conf.setDoNotFullLoadEtlTransformTarget(true);
+		conf.setDoNotFullLoadDstConf(true);
 		
 		conf.init(relatedEtlTransformTarget.getRelatedEtlConf(), false, srcConn, dstConn);
 		
 		conf.fullLoad(relatedEtlTransformTarget.getRelatedEtlConf().getOperations().get(0));
 		
-		for (DstConf dstC : conf.getEtlTransformTarget()) {
+		for (DstConf dstC : conf.getDstConf()) {
 			dstC.setOnMultipleDataSourceWithSameName(OnMultipleDataSourceFoundBehavior.USE_LAST);
 		}
 		
