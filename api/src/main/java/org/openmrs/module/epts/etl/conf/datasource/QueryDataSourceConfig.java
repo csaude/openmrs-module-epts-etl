@@ -563,7 +563,11 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	public static QueryDataSourceConfig fastCreate(String query, SrcConf relatedSrcConf) {
-		return new QueryDataSourceConfig(query, relatedSrcConf);
+		QueryDataSourceConfig q = new QueryDataSourceConfig(query, relatedSrcConf);
+		
+		q.setDynamicElements(relatedSrcConf.getDynamicElements());
+		
+		return q;
 	}
 	
 	@Override

@@ -125,9 +125,9 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	}
 	
 	default void ensureTemplateOverride() {
-		if (this.hasTemplate() && this.getTemplate().hasOverride()) {
-			for (TemplateOverride override : this.getTemplate().getOverride()) {
-				override.setParent(this.getTemplate());
+		if (this.hasTemplate() && this.getTemplate().hasParentTemplate() && this.getTemplate().getParentTemplate().hasOverride()) {
+			for (TemplateOverride override : this.getTemplate().getParentTemplate().getOverride()) {
+				override.setParent(this.getTemplate().getParentTemplate());
 				override.applyOverride(this);
 			}
 		}

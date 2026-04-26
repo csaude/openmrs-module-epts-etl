@@ -9,6 +9,7 @@ import java.util.Objects;
 
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlActionType;
+import org.openmrs.module.epts.etl.conf.types.EtlTemplatOverrideType;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
@@ -25,7 +26,7 @@ public class TemplateOverride extends AbstractEtlDataConfiguration {
 	
 	private JsonNode value;
 	
-	private EtlActionType type;
+	private EtlTemplatOverrideType type;
 	
 	private EtlTemplateInfo parent;
 	
@@ -85,7 +86,7 @@ public class TemplateOverride extends AbstractEtlDataConfiguration {
 			
 			Object currentFieldValue = targetField.get(parentObject);
 			
-			if (List.class.isAssignableFrom(targetField.getType())) {
+			if (this.type.isUpdate() &&  List.class.isAssignableFrom(targetField.getType())) {
 				List targetList = (List) currentFieldValue;
 				
 				if (targetList == null) {
