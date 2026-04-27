@@ -182,10 +182,20 @@ public class FieldsMapping extends Field implements TransformableField {
 	}
 	
 	public static FieldsMapping fastCreate(DataSourceField dsF, Connection conn) {
+		FieldsMapping f = null;
 		
-		FieldsMapping f = FieldsMapping.fastCreate(dsF.getValue().toString(), dsF.getDstField(), true, conn);
+		if (dsF.hasTransformer()) {
+			if (dsF.getParent() instanceof EtlTranformTarget) {
+				f = FieldsMapping.fastCreateWithTransformer((EtlTranformTarget) dsF.getParent(), dsF.getDstField(),
+				    dsF.getTransformer(), conn);
+			} else {
+				throw new ForbiddenOperationException("Only a targed parent is accepted!!");
+			}
+		} else {
+			f = FieldsMapping.fastCreate(dsF.getValue().toString(), dsF.getDstField(), true, conn);
+		}
 		
-		if (dsF.getValue().toString().startsWith("@")) {
+		if (dsF.getValue() != null && dsF.getValue().toString().startsWith("@")) {
 			
 			String fn = dsF.getValue().toString().substring(1);
 			
@@ -213,6 +223,17 @@ public class FieldsMapping extends Field implements TransformableField {
 		
 		return f;
 		
+	}
+	
+	private static FieldsMapping fastCreateWithTransformer(EtlTranformTarget target, String dstField, String transformer,
+	        Connection conn) {
+		FieldsMapping fm = FieldsMapping.fastCreate(dstField, conn);
+		
+		fm.setTransformer(transformer);
+		
+		fm.tryToLoadTransformer(target, conn);
+		
+		return fm;
 	}
 	
 	@Override
@@ -273,6 +294,7 @@ public class FieldsMapping extends Field implements TransformableField {
 	
 	private void tryToLoadDataSourceAndTransformer(String dataSourceName, EtlTranformTarget target, Connection conn)
 	        throws FieldAvaliableInMultipleDataSources, DBException {
+		
 		if (dataSourceName != null) {
 			EtlDataSource ds = target.findDataSource(dataSourceName);
 			
@@ -297,8 +319,7 @@ public class FieldsMapping extends Field implements TransformableField {
 		this.tryToLoadTransformer(target, conn);
 	}
 	
-	public void fullLoad(EtlTranformTarget target, Connection conn)
-	        throws FieldAvaliableInMultipleDataSources, DBException {
+	public void fullLoad(EtlTranformTarget target, Connection conn) throws FieldAvaliableInMultipleDataSources, DBException {
 		this.copyFrom(fastCreate(this.srcField, this.dstField, target, conn));
 		
 	}

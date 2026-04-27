@@ -873,8 +873,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 						
 						logInfo("Starting initialization of item " + counter);
 						
-						stepIntoBreakpoint(counter.getCounter().equals(8));
-						
 						item.init(this, false, srcConn, dstConn);
 						
 						logInfo("Item initialized: " + item.getConfigCode());

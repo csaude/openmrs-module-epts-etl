@@ -159,11 +159,19 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 		return utilities.listHasElement(this.getObjectFields());
 	}
 	
+	private void addAllAvaliableDataSources() {
+		this.addToAvaliableDataSource(this);
+		this.addToAvaliableDataSource(this.getSrcConf());
+		this.addAllToAvaliableDataSource(this.getSrcConf().getAvaliableExtraDataSource());
+	}
+	
 	@Override
 	public synchronized void fullLoad(Connection conn) throws DBException {
 		if (isFullLoaded()) {
 			return;
 		}
+		
+		addAllAvaliableDataSources();
 		
 		this.tryToLoadFieldValueGenerator();
 		
@@ -171,7 +179,7 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 			for (DataSourceField field : this.getObjectFields()) {
 				field.setParent(this);
 				
-				field.loadType(null, this, conn);
+				field.loadType(this, this, conn);
 				
 				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(field, conn);
 				

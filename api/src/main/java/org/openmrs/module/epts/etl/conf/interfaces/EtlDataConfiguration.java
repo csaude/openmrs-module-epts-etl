@@ -300,10 +300,12 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		return sb.toString();
 	}
 	
-
-	default void stepIntoBreakpoint(boolean b) {
+	default void stepIntoBreakpoint(EtlConfiguration etlConf, boolean b) {
 		if (b) {
-			getRelatedEtlConf().logDebug("Steped into the breakpoint");
+			if (etlConf != null)
+				etlConf.logDebug("Steped into the breakpoint");
+			else
+				System.err.println("Steped into the breakpoint");
 		}
 	}
 	

@@ -367,6 +367,8 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 				} else {
 					EtlDataSource ds = findDataSource(fm.getDataSourceName());
 					
+					stepIntoBreakpoint(null, ds == null);
+					
 					if (ds == null) {
 						throw new NoSuchElementException("Error when preparing the fm:" + fm + "> The DataSource '"
 						        + fm.getDataSourceName() + "' cannot be found ");
@@ -1035,6 +1037,9 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 				}
 				catch (SQLException e) {
 					throw new DBException(e);
+				}
+				finally {
+					dstConn.finalizeConnection();
 				}
 			} else {
 				return null;

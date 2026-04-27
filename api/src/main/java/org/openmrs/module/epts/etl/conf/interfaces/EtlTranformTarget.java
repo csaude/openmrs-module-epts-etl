@@ -202,7 +202,7 @@ public interface EtlTranformTarget extends EtlDatabaseObjectConfiguration {
 		this.getAllAvaliableDataSource().add(ds);
 	}
 	
-	default void addAllToAvaliableDataSource(List<EtlDataSource> ds) {
+	default void addAllToAvaliableDataSource(List<? extends EtlDataSource> ds) {
 		if (utilities.listHasElement(ds)) {
 			for (EtlDataSource d : ds) {
 				addToAvaliableDataSource(d);
