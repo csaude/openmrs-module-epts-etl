@@ -78,7 +78,7 @@ public class DBConnectionInfo {
 		return this.dbService;
 	}
 	
-	public OpenConnection openConnection() throws DBException {
+	public OpenConnection openConnection_() throws DBException {
 		return getRelatedDBConnectionService().openConnection();
 	}
 	

@@ -26,7 +26,7 @@ public class ReportGenerator {
 		
 		ProcessController controller = new ProcessController(null, syncConfigs.get(0));
 		
-		OpenConnection conn = controller.getDefaultConnInfo().openConnection();
+		OpenConnection conn = controller.openDefaultConn();
 		
 		generateDataInconsistencyReport(syncConfigs.get(0), conn);
 		
@@ -65,7 +65,7 @@ public class ReportGenerator {
 			}
 			
 			if (parentMissingRecords > 0) {
-				report += "," + parent.getTableName() + "," + parentMissingRecords;
+				report += "," + (parent != null ? parent.getTableName() : "") + "," + parentMissingRecords;
 				
 				for (int i = firstMissingParentPos; i < config.getParents().size(); i++) {
 					String nextLine = ",,,";

@@ -623,7 +623,7 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 		OpenConnection conn = null;
 		
 		try {
-			conn = this.getRelatedEtlConf().getSrcConnInfo().openConnection();
+			conn = this.getRelatedEtlConf().openSrcConn();
 			
 			this.loadUniqueKeys(conn);
 		}
@@ -1549,7 +1549,7 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 	@Override
 	default void fullLoad() throws DBException {
 		synchronized (this) {
-			OpenConnection mainConn = this.getRelatedEtlConf().getSrcConnInfo().openConnection();
+			OpenConnection mainConn = this.getRelatedEtlConf().openSrcConn();
 			
 			OpenConnection dstConn = null;
 			

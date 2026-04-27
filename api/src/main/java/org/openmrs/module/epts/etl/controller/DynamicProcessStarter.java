@@ -35,8 +35,9 @@ public class DynamicProcessStarter extends ProcessStarter implements ControllerS
 	}
 	
 	private List<EtlDatabaseObject> loadAvaliableSrcObjects(EtlConfiguration etlConfig) {
+		OpenConnection conn = null;
 		try {
-			OpenConnection conn = etlConfig.getMainConnInfo().openConnection();
+			conn = etlConfig.getMainConnInfo().openConnection_();
 			
 			if (!etlConfig.hasMainConnInfo()) {
 				throw new ForbiddenOperationException("For dynamic etl configuration you must setup the mainConnInfo!!!");
@@ -52,6 +53,11 @@ public class DynamicProcessStarter extends ProcessStarter implements ControllerS
 		}
 		catch (DBException e) {
 			throw new RuntimeException(e);
+		}
+		finally {
+			if (conn != null) {
+				conn.finalizeConnection();
+			}
 		}
 	}
 	

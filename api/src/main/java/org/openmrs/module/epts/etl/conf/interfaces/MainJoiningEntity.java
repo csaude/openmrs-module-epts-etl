@@ -52,7 +52,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName(),
 				    new ArrayList<>());
 				
-				OpenConnection srcConn = this.getRelatedConnInfo().openConnection();
+				OpenConnection srcConn = this.getRelatedConnInfo().openConnection_();
 				
 				try {
 					if (fullLoadedTab != null) {

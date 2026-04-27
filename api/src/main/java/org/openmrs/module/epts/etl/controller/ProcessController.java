@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
@@ -210,9 +211,13 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.etlConf = etlConf;
 	}
 	
-	@JsonIgnore
-	public DBConnectionInfo getDefaultConnInfo() {
-		return getEtlConf().getSrcConnInfo();
+	public OpenConnection openDefaultConn() {
+		try {
+			return getEtlConf().getSrcConnInfo().openConnection_();
+		}
+		catch (DBException e) {
+			throw new EtlExceptionImpl(e);
+		}
 	}
 	
 	@JsonIgnore
@@ -427,7 +432,7 @@ public class ProcessController implements Controller, ControllerStarter {
 					performePreReRunActions();
 				}
 				
-				conn = getDefaultConnInfo().openConnection();
+				conn = openDefaultConn();
 				
 				initOperationsControllers(conn);
 				conn.markAsSuccessifullyTerminated();
@@ -693,7 +698,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	}
 	
 	public OpenConnection openConnection() throws DBException {
-		OpenConnection conn = getDefaultConnInfo().openConnection();
+		OpenConnection conn = openDefaultConn();
 		
 		if (getEtlConf().doNotResolveRelationship()) {
 			DBUtilities.disableForegnKeyChecks(conn);
@@ -716,7 +721,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		OpenConnection conn = null;
 		
 		if (getEtlConf().hasDstConnInfo()) {
-			conn = getDstConnInfo().openConnection();
+			conn = getDstConnInfo().openConnection_();
 			
 			if (getEtlConf().doNotResolveRelationship()) {
 				DBUtilities.disableForegnKeyChecks(conn);

@@ -83,7 +83,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	}
 	
 	public OpenConnection openSrcConnection() throws DBException {
-		OpenConnection conn = getDefaultConnInfo().openConnection();
+		OpenConnection conn = openDefaultConn();
 		
 		try {
 			DBUtilities.disableForegnKeyChecks(conn);
@@ -119,7 +119,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		// TODO Auto-generated method stub
 		
 	}
-
+	
 	@Override
 	public boolean isDisabled() {
 		// TODO Auto-generated method stub

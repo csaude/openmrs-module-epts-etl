@@ -956,9 +956,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			
 			//Try to openConnection to determine if db schama exists
 			boolean dstDbExists = false;
-			
+			OpenConnection dstConn = null;
 			try {
-				OpenConnection dstConn = getDstConnInfo().openConnection();
+				dstConn = getDstConnInfo().openConnection_();
 				dstConn.finalizeConnection();
 				
 				dstDbExists = true;
@@ -970,6 +970,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					}
 				} else
 					throw e;
+			}
+			finally {
+				if (dstConn != null)
+					dstConn.finalizeConnection();
 			}
 			
 			if (!dstDbExists) {
@@ -1731,7 +1735,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		OpenConnection dstConn = null;
 		
 		if (hasDstConnInfo()) {
-			dstConn = getDstConnInfo().openConnection();
+			dstConn = getDstConnInfo().openConnection_();
 			
 			if (this.doNotResolveRelationship()) {
 				DBUtilities.disableForegnKeyChecks(dstConn);
@@ -1752,7 +1756,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		OpenConnection mainConn = null;
 		
 		if (hasMainConnInfo()) {
-			mainConn = getMainConnInfo().openConnection();
+			mainConn = getMainConnInfo().openConnection_();
 		} else {
 			throw new ForbiddenOperationException("No main conn config defined!");
 		}
@@ -1761,7 +1765,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public OpenConnection openSrcConn() throws DBException, ForbiddenOperationException {
-		OpenConnection conn = getSrcConnInfo().openConnection();
+		OpenConnection conn = getSrcConnInfo().openConnection_();
 		
 		if (this.doNotResolveRelationship()) {
 			DBUtilities.disableForegnKeyChecks(conn);
@@ -1946,7 +1950,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	private void createStageSchema() throws DBException {
-		OpenConnection conn = getSrcConnInfo().openConnection();
+		OpenConnection conn = getSrcConnInfo().openConnection_();
 		
 		try {
 			if (DBUtilities.isMySQLDB(conn)) {

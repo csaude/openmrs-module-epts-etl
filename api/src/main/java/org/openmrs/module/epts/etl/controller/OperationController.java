@@ -274,7 +274,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				logTrace("Opening connection for saving Progress Info");
 				
-				OpenConnection conn = getDefaultConnInfo().openConnection();
+				OpenConnection conn = openDefaultConn();
 				
 				try {
 					if (isResumable()) {
@@ -383,7 +383,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				Engine<T> engine = Engine.init(this, config, progressInfo);
 				
-				OpenConnection conn = getDefaultConnInfo().openConnection();
+				OpenConnection conn = openDefaultConn();
 				
 				try {
 					if (isResumable()) {
@@ -647,7 +647,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		progressInfo.getProgressMeter().changeStatusToFinished();
 		
 		if (isResumable()) {
-			OpenConnection conn = getDefaultConnInfo().openConnection();
+			OpenConnection conn = openDefaultConn();
 			
 			try {
 				progressInfo.save(conn);
@@ -921,8 +921,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	@JsonIgnore
-	public DBConnectionInfo getDefaultConnInfo() {
-		return getProcessController().getDefaultConnInfo();
+	public OpenConnection openDefaultConn() {
+		return getProcessController().openDefaultConn();
 	}
 	
 	public OpenConnection openSrcConnection() throws DBException {
