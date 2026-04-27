@@ -760,7 +760,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	 * @throws DBException
 	 */
 	public void init(OpenConnection conn) throws ForbiddenOperationException, DBException {
-		if (initialized) {
+		if (initialized || disabled) {
 			return;
 		}
 		
@@ -833,13 +833,13 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 				List<EtlItemConfiguration> allItem = new ArrayList<>();
 				
-				int pos = 0;
+				EtlCounter counter = new EtlCounter();
 				
 				for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
 					if (item.isDisabled())
 						continue;
 					
-					pos++;
+					counter.increase();
 					
 					item.setRelatedEtlConfig(this);
 					
@@ -847,8 +847,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 						List<EtlItemConfiguration> dynamicItems = item.generateDynamicItems(this, conn);
 						
 						if (utilities.listHasElement(dynamicItems)) {
-							logDebug("Found Dynamic Item on position [" + pos + "] whith " + dynamicItems.size()
-							        + " returned item!");
+							logDebug("Found Dynamic Item on position [" + counter.getCounter() + "] whith "
+							        + dynamicItems.size() + " returned item!");
 							
 							for (EtlItemConfiguration dItem : dynamicItems) {
 								allItem.add(dItem);
@@ -857,7 +857,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 							}
 							
 						} else {
-							logWarn("No Item was returned on dynamic item [" + pos + "]");
+							logWarn("No Item was returned on dynamic item [" + counter.getCounter() + "]");
 						}
 						
 					} else {
@@ -871,7 +871,9 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 						
 						allItem.add(item);
 						
-						logInfo("Starting initialization of item");
+						logInfo("Starting initialization of item " + counter);
+						
+						stepIntoBreakpoint(counter.getCounter().equals(8));
 						
 						item.init(this, false, srcConn, dstConn);
 						
@@ -906,12 +908,15 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public void ensureEtlStageTablesExist(Connection srcConn, Connection dstConn) throws DBException {
+		EtlCounter counter = new EtlCounter();
+		
 		for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
-			item.ensureEtlStageTableExists(this.getDefaultOperation(), srcConn, dstConn);
+			item.ensureEtlStageTableExists(counter, this.getDefaultOperation(), srcConn, dstConn);
 		}
 		
 		if (hasTestingItem()) {
-			this.getTestingEtlItemConfiguration().ensureEtlStageTableExists(this.getDefaultOperation(), srcConn, dstConn);
+			this.getTestingEtlItemConfiguration().ensureEtlStageTableExists(counter, this.getDefaultOperation(), srcConn,
+			    dstConn);
 		}
 		
 	}
@@ -1769,7 +1774,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	
 	@Override
 	public EtlConfiguration getRelatedEtlConf() {
-		return this.getParentEtlConf();
+		return this.getParentEtlConf() != null ? this.getRelatedEtlConf() : this;
 	}
 	
 	@Override

@@ -407,11 +407,11 @@ public class PreparedQuery {
 		return cloned;
 	}
 	
-	public void ensureDynamicElementsLoaded(EtlProcessor processor, EtlDatabaseObject srcObject,
+	private void ensureDynamicElementsLoaded(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> srcObjects, Connection srcConn)
 	        throws EtlTransformationException, DBException {
 		
-		if (!hasDynamicElements()) {
+		if (!this.hasDynamicElements()) {
 			return;
 		}
 		
@@ -426,9 +426,12 @@ public class PreparedQuery {
 			    map, srcConn, srcConn);
 			
 			if (f != null && f.getTransformedValue() != null) {
-				for (QueryParameter p : getQueryParam(parseToDynamicParameter(element))) {
-					p.setValue(f.getTransformedValue());
+				try {
+					for (QueryParameter p : this.getQueryParam(parseToDynamicParameter(element))) {
+						p.setValue(f.getTransformedValue());
+					}
 				}
+				catch (MissingParameterException e) {}
 			} else {
 				throw new EtlTransformationException(
 				        "The transformation of dynamic element '" + element + "' resulted on an empty value!!!", srcObject,
@@ -457,7 +460,7 @@ public class PreparedQuery {
 			return list;
 		}
 		
-		throw new EtlExceptionImpl("Query parameter '" + name + "' not found!");
+		throw new MissingParameterException("Query parameter '" + name + "' not found!");
 	}
 	
 	private boolean hasDynamicElements() {

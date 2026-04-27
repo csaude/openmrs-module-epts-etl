@@ -146,7 +146,9 @@ public class ProcessStarter implements ControllerStarter {
 						logger.info("Operation " + this.currentController.getControllerId()
 						        + " is marked as disabled... skipping...");
 						
-						finalize(this.currentController);
+						this.currentController.markAsFinished();
+						
+						this.finalize(this.currentController);
 					} else {
 						ExecutorService executor = ThreadPoolService.getInstance()
 						        .createNewThreadPoolExecutor(this.currentController.getControllerId());

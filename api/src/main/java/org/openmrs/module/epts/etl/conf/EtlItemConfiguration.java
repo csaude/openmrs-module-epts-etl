@@ -274,9 +274,9 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		this.setRelatedEtlConfig(relatedEtlConf);
 		this.setTesting(testing);
 		
-		relatedEtlConf.addConfiguredTable(this.getSrcConf());
-		
 		this.getSrcConf().init(this, srcConn, dstConn);
+		
+		relatedEtlConf.addConfiguredTable(this.getSrcConf());
 		
 		String code = "";
 		
@@ -285,6 +285,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		if (utilities.listHasElement(this.getDstConf())) {
 			for (DstConf dst : this.getDstConf()) {
 				dst.init(this, srcConn, dstConn);
+				
+				relatedEtlConf.addConfiguredTable(dst);
 				
 				if (!alreadyIncludedTables.contains(dst.getTableName())) {
 					alreadyIncludedTables.add(dst.getTableName());
@@ -370,13 +372,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 							getRelatedEtlConf()
 							        .logDebug("Creating default dstRecord for table " + refInfo.getFullTableDescription());
 							
-							try {
-								refInfo.generateAndSaveDefaultObject(dstConn);
-							}
-							catch (DBException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
+							refInfo.generateAndSaveDefaultObject(dstConn);
 						}
 					}
 				}
@@ -794,12 +790,14 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		        : (this.hasParentItemConf() ? this.getParentItemConf().retrieveNearestTemplate() : null);
 	}
 	
-	public void ensureEtlStageTableExists(EtlOperationConfig operationConfig, Connection srcConn, Connection dstConn)
-	        throws DBException {
+	public void ensureEtlStageTableExists(EtlCounter counter, EtlOperationConfig operationConfig, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		
+		counter.increase();
 		
 		this.fullLoad(operationConfig, srcConn, dstConn);
 		
-		this.getSrcConf().ensureEtlStageTableExists(srcConn, dstConn);
+		this.getSrcConf().ensureEtlStageTableExists(counter, srcConn, dstConn);
 		
 		commitConn(srcConn);
 		
@@ -809,7 +807,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 				
 				try {
 					
-					dstConf.ensureEtlStageTableExists(srcConn, dstConn);
+					dstConf.ensureEtlStageTableExists(counter, srcConn, dstConn);
 				}
 				catch (Exception e) {
 					e.printStackTrace();
@@ -823,7 +821,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		if (hasChildItemConf()) {
 			for (EtlItemConfiguration child : this.getChildItemConf()) {
-				child.ensureEtlStageTableExists(operationConfig, srcConn, dstConn);
+				child.ensureEtlStageTableExists(counter, operationConfig, srcConn, dstConn);
 			}
 		}
 	}

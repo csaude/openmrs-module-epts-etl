@@ -63,7 +63,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		tryToAddExtraConditionForExport(auxQueryInfo.getSearchClauses(), parentObject, auxDataSourceObjects,
 		    DbmsType.determineFromConnection(srcConn));
 		
-		tryToAddExtraJoinExtraConditions(auxQueryInfo.getSearchClauses(), parentObject, null,
+		tryToAddExtraJoinExtraConditions(auxQueryInfo.getSearchClauses(), parentObject, auxDataSourceObjects,
 		    DbmsType.determineFromConnection(srcConn));
 		
 		if (getFinalCheckStatus().onGoing()) {

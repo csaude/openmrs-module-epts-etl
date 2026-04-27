@@ -101,6 +101,8 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	private Boolean useAsDataSource;
 	
+	private Boolean fieldsMappingAlredyGenerated;
+	
 	public DstConf() {
 		this.onMultipleDataSourceForSameMapping = OnMultipleDataSourceFoundBehavior.ABORT_PROCESS;
 		this.onMultipleDataSourceWithSameName = OnMultipleDataSourceFoundBehavior.ABORT_PROCESS;
@@ -366,7 +368,8 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 					EtlDataSource ds = findDataSource(fm.getDataSourceName());
 					
 					if (ds == null) {
-						throw new NoSuchElementException("The DataSource '" + fm.getDataSourceName() + "' cannot be found!");
+						throw new NoSuchElementException("Error when preparing the fm:" + fm + "> The DataSource '"
+						        + fm.getDataSourceName() + "' cannot be found ");
 					}
 					
 					if (ds.containsField(fm.getSrcField())) {
@@ -383,7 +386,8 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	}
 	
 	public void generateAllFieldsMapping(Connection conn) throws DBException, FieldsMappingException {
-		if (!useDefaultTransformer() || utilities.listHasElement(this.allMapping)) {
+		
+		if (this.fieldsMappingAlredyGenerated()) {
 			return;
 		}
 		
@@ -455,6 +459,11 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			throw new FieldsMappingException(this, mappingProblem);
 		}
 		
+		this.fieldsMappingAlredyGenerated = true;
+	}
+	
+	private boolean fieldsMappingAlredyGenerated() {
+		return !this.useDefaultTransformer() || isTrue(this.fieldsMappingAlredyGenerated);
 	}
 	
 	public FieldsMapping getMappingUsingDstField(String dstFieldName) {
@@ -1305,7 +1314,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
 	}
 	
-	public void ensureEtlStageTableExists(Connection srcConn, Connection dstConn) throws DBException {
+	public void ensureEtlStageTableExists(EtlCounter counter, Connection srcConn, Connection dstConn) throws DBException {
 		this.fullLoad(dstConn);
 		
 		this.createRelatedDstSyncStage(srcConn);
@@ -1327,14 +1336,14 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 						onDemand.init(srcConn, dstConn);
 						
 						if (onDemand.getExistingParentItemConf() != null) {
-							onDemand.getExistingParentItemConf().ensureEtlStageTableExists(
+							onDemand.getExistingParentItemConf().ensureEtlStageTableExists(counter,
 							    getParentConf().getRelatedEtlConf().getDefaultOperation(), srcConn, dstConn);
 						}
 						
 						EtlItemConfiguration onDemandEtlConf = onDemand.getOnDemandCreateParentItemConf();
 						EtlOperationConfig defaultOperation = getParentConf().getRelatedEtlConf().getDefaultOperation();
 						
-						onDemandEtlConf.ensureEtlStageTableExists(defaultOperation, srcConn, dstConn);
+						onDemandEtlConf.ensureEtlStageTableExists(counter, defaultOperation, srcConn, dstConn);
 						
 					}
 				}

@@ -368,4 +368,18 @@ public class TemplateOverride extends AbstractEtlDataConfiguration {
 	public String toString() {
 		return this.getParentConf().getName() + " " + this.path;
 	}
+	
+	@Override
+	public TemplateOverride clone() {
+		TemplateOverride clone = new TemplateOverride();
+		
+		clone.setPath(this.path);
+		
+		clone.setMatch(this.match != null ? this.match.deepCopy() : null);
+		clone.setValue(this.value != null ? this.value.deepCopy() : null);
+		
+		clone.setType(this.type);
+		
+		return clone;
+	}
 }

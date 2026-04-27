@@ -104,7 +104,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		this.finalCheckStatus = finalCheckStatus;
 	}
 	
-	@SuppressWarnings({ "null", "unchecked" })
+	@SuppressWarnings({ "unchecked" })
 	private void tryToAddExtraCondition(String extraCondition, SearchClauses<T> searchClauses, T parentObject,
 	        List<T> dataSourceObjects, DbmsType dbmsType) throws EtlTransformationException, DBException {
 		
@@ -119,7 +119,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraCondition, this.getSrcConf()),
 			    this.getRelatedEtlConf(), ds, true, dbmsType);
 			
-			pQ.ensureDynamicElementsLoaded(null, parentObject, null, ds, null);
+			pQ = pQ.cloneAndLoadValues(null, parentObject, null, ds, null);
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			
@@ -150,7 +150,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			return;
 		}
 		
-		if (dataSourceObjects == null) {
+		if (parentObject == null) {
 			throw new EtlExceptionImpl("The joinable srcConf requires the parent object!");
 		}
 		

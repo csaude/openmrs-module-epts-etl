@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -33,10 +34,105 @@ public class EtlTemplateInfo extends AbstractEtlDataConfiguration {
 	public EtlTemplateInfo() {
 	}
 	
+	public EtlTemplateInfo(String name) {
+		this();
+		
+		this.name = name;
+	}
+	
 	public EtlTemplateInfo(String name, Map<String, Object> parameters) {
 		this(name);
 		
 		this.parameters = parameters;
+	}
+	
+	public EtlTemplateInfo cloneAndEnsureParametersAndOverridePlaceholdersReplacement(Map<String, Object> inputParams) {
+		EtlTemplateInfo cloned = new EtlTemplateInfo(this.getName());
+		
+		cloned.setParameters(this.cloneParameters(inputParams));
+		cloned.setOverride(this.cloneOverride(inputParams));
+		
+		return cloned;
+	}
+	
+	private Map<String, Object> cloneParameters(Map<String, Object> inputParams) {
+		Map<String, Object> clonedParametes = new HashMap<>();
+		
+		for (Entry<String, Object> e : this.getParameters().entrySet()) {
+			Object value = e.getValue();
+			
+			if (e.getValue() instanceof String) {
+				value = EtlDataConfiguration.resolvePlaceholders(e.getValue().toString(), null, null, null, inputParams);
+			}
+			
+			clonedParametes.put(e.getKey(), value);
+			
+		}
+		
+		return clonedParametes;
+	}
+	
+	private List<TemplateOverride> cloneOverride(Map<String, Object> inputParams) {
+		if (this.hasOverride()) {
+			List<TemplateOverride> clonedOverrides = new ArrayList<>();
+			
+			for (TemplateOverride override : this.getOverride()) {
+				
+				TemplateOverride clonedOverride = override.clone();
+				
+				if (clonedOverride.getValue() != null) {
+					
+					JsonNode resolved = resolveJsonNodePlaceholders(clonedOverride.getValue(), inputParams);
+					
+					clonedOverride.setValue(resolved);
+				}
+				
+				clonedOverrides.add(clonedOverride);
+			}
+			
+			return clonedOverrides;
+		}
+		
+		return null;
+	}
+	
+	private JsonNode resolveJsonNodePlaceholders(JsonNode node, Map<String, Object> params) {
+		
+		if (node == null) {
+			return null;
+		}
+		
+		// STRING
+		if (node.isTextual()) {
+			String resolved = EtlDataConfiguration.resolvePlaceholders(node.asText(), null, null, null, params);
+			
+			return new TextNode(resolved);
+		}
+		
+		// OBJECT
+		if (node.isObject()) {
+			ObjectNode newObj = JsonNodeFactory.instance.objectNode();
+			
+			node.fields().forEachRemaining(entry -> {
+				newObj.set(entry.getKey(), resolveJsonNodePlaceholders(entry.getValue(), params));
+			});
+			
+			return newObj;
+		}
+		
+		// ARRAY
+		if (node.isArray()) {
+			ArrayNode newArray = JsonNodeFactory.instance.arrayNode();
+			
+			for (JsonNode element : node) {
+				newArray.add(resolveJsonNodePlaceholders(element, params));
+			}
+			
+			return newArray;
+		}
+		
+		// outros tipos (number, boolean, etc)
+		return node;
 	}
 	
 	public boolean hasParentTemplate() {
@@ -57,10 +153,6 @@ public class EtlTemplateInfo extends AbstractEtlDataConfiguration {
 	
 	public void setOverride(List<TemplateOverride> override) {
 		this.override = override;
-	}
-	
-	public EtlTemplateInfo(String name) {
-		this.name = name;
 	}
 	
 	public String getName() {
@@ -111,68 +203,6 @@ public class EtlTemplateInfo extends AbstractEtlDataConfiguration {
 	
 	public boolean hasOverride() {
 		return utilities.listHasElement(this.getOverride());
-	}
-	
-	public void ensureReplacementOfPlaceHolders(Map<String, Object> params) {
-		
-		// parameters normais
-		for (Entry<String, Object> e : this.getParameters().entrySet()) {
-			if (e.getValue() instanceof String) {
-				e.setValue(EtlDataConfiguration.resolvePlaceholders(e.getValue().toString(), null, null, null, params));
-			}
-		}
-		
-		// overrides (JsonNode)
-		if (this.hasOverride()) {
-			for (TemplateOverride override : this.getOverride()) {
-				
-				if (override.getValue() != null) {
-					
-					JsonNode resolved = resolveJsonNodePlaceholders(override.getValue(), params);
-					
-					override.setValue(resolved);
-				}
-			}
-		}
-	}
-	
-	private JsonNode resolveJsonNodePlaceholders(JsonNode node, Map<String, Object> params) {
-		
-		if (node == null) {
-			return null;
-		}
-		
-		// STRING
-		if (node.isTextual()) {
-			String resolved = EtlDataConfiguration.resolvePlaceholders(node.asText(), null, null, null, params);
-			
-			return new TextNode(resolved);
-		}
-		
-		// OBJECT
-		if (node.isObject()) {
-			ObjectNode newObj = JsonNodeFactory.instance.objectNode();
-			
-			node.fields().forEachRemaining(entry -> {
-				newObj.set(entry.getKey(), resolveJsonNodePlaceholders(entry.getValue(), params));
-			});
-			
-			return newObj;
-		}
-		
-		// ARRAY
-		if (node.isArray()) {
-			ArrayNode newArray = JsonNodeFactory.instance.arrayNode();
-			
-			for (JsonNode element : node) {
-				newArray.add(resolveJsonNodePlaceholders(element, params));
-			}
-			
-			return newArray;
-		}
-		
-		// outros tipos (number, boolean, etc)
-		return node;
 	}
 	
 	@Override

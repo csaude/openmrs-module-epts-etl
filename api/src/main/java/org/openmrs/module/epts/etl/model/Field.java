@@ -31,6 +31,8 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 	
 	public static final String DEFAULT_STRING_VALUE = "UNDEFINED";
 	
+	private static final Boolean DEFAULT_BOOLEAN_VALUE = false;
+	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private static final long serialVersionUID = 1L;
@@ -429,6 +431,8 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 			setValue(DEFAULT_DATE_VALUE);
 		} else if (isNumericColumnType()) {
 			setValue(DEFAULT_INT_VALUE);
+		} else if (isBooleanColumnType()) {
+			setValue(DEFAULT_BOOLEAN_VALUE);
 		} else {
 			setValue(DEFAULT_STRING_VALUE);
 		}

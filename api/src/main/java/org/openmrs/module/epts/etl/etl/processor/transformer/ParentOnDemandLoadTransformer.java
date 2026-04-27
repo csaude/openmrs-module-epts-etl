@@ -403,7 +403,9 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 				if (usesTemplate()) {
 					SrcConf srcConf = loadSrcConfForNonExistingSrcParentIfNeeded(srcConn, dstConn);
 					
-					List<EtlDatabaseObject> recs = srcConf.searchRecords(null, srcObject, additionalSrcObjects, srcConn);
+					List<EtlDatabaseObject> recs;
+					
+					recs = srcConf.searchRecords(null, srcObject, additionalSrcObjects, srcConn);
 					
 					if (recs.isEmpty()) {
 						throw new EtlExceptionImpl("No src record was returned with " + this);
@@ -414,6 +416,7 @@ public class ParentOnDemandLoadTransformer extends AbstractEtlFieldTransformer {
 				
 				dstParent = createParent(processor, srcParent, srcObject, transformedRecord, additionalSrcObjects, field,
 				    srcConn, dstConn);
+				
 			}
 			
 		}

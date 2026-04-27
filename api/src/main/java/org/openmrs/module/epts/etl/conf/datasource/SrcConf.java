@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlCounter;
 import org.openmrs.module.epts.etl.conf.EtlField;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
@@ -826,8 +827,6 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		
 		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(this, null);
 		
-		searchParams.setQtdRecordPerSelected(1);
-		
 		return searchParams.search(null, parentSrcObject, auxDataSourceObjects, srcConn, srcConn);
 	}
 	
@@ -836,7 +835,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
 	}
 	
-	public void ensureEtlStageTableExists(Connection srcConn, Connection dstConn) throws DBException {
+	public void ensureEtlStageTableExists(EtlCounter counter, Connection srcConn, Connection dstConn) throws DBException {
 		this.fullLoad(srcConn);
 		
 		this.createRelatedSrcStageAreaTable(srcConn);

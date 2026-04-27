@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.DefaultEtlValidator;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlConfigurationTemplate;
+import org.openmrs.module.epts.etl.conf.EtlTemplateConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlConfException;
@@ -107,7 +107,7 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	
 	default void tryToLoadFromTemplate() {
 		if (this.hasTemplate()) {
-			EtlConfigurationTemplate template = EtlConfigurationTemplate.findTemplate(this.getRelatedEtlConf(),
+			EtlTemplateConfiguration template = EtlTemplateConfiguration.findTemplate(this.getRelatedEtlConf(),
 			    this.getTemplate().getName());
 			
 			template.setRelatedEtlConf(getRelatedEtlConf());
@@ -211,8 +211,8 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		}
 	}
 	
-	static String[] SAFE_FIELDS = { "useAsDataSource", "relatedEtlConf", "loadHealper", "onMultipleDataSourceForSameMapping",
-	        "onMultipleDataSourceWithSameName" };
+	static String[] SAFE_FIELDS = { "joinExtraConditionScope", "useAsDataSource", "relatedEtlConf", "loadHealper",
+	        "onMultipleDataSourceForSameMapping", "onMultipleDataSourceWithSameName" };
 	
 	public static boolean canBeOverriten(Object value, Field field) {
 		
@@ -299,4 +299,12 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 		
 		return sb.toString();
 	}
+	
+
+	default void stepIntoBreakpoint(boolean b) {
+		if (b) {
+			getRelatedEtlConf().logDebug("Steped into the breakpoint");
+		}
+	}
+	
 }

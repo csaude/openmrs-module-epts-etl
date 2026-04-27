@@ -18,11 +18,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class EtlConfigurationTemplate {
+public class EtlTemplateConfiguration {
 	
 	public static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
-	private static final Map<String, List<EtlConfigurationTemplate>> CACHE = new HashMap<>();
+	private static final Map<String, List<EtlTemplateConfiguration>> CACHE = new HashMap<>();
 	
 	private String name;
 	
@@ -98,16 +98,17 @@ public class EtlConfigurationTemplate {
 			EtlDataConfiguration parentFromTemplate = null;
 			
 			if (this.isExtension()) {
-				EtlConfigurationTemplate baseTemplate = EtlConfigurationTemplate.findTemplate(this.getRelatedEtlConf(),
+				EtlTemplateConfiguration baseTemplate = EtlTemplateConfiguration.findTemplate(this.getRelatedEtlConf(),
 				    this.getExtendsTemplate().getName());
 				
-				this.getExtendsTemplate().ensureReplacementOfPlaceHolders(inputParams);
+				EtlTemplateInfo extendsTemplateInfo = this.getExtendsTemplate()
+				        .cloneAndEnsureParametersAndOverridePlaceholdersReplacement(inputParams);
 				
-				templateInfo.setParentTemplate(this.getExtendsTemplate());
+				templateInfo.setParentTemplate(extendsTemplateInfo);
 				
 				baseTemplate.setRelatedEtlConf(getRelatedEtlConf());
 				
-				parentFromTemplate = baseTemplate.parseToEtlDataConfiguration(clazz, this.getExtendsTemplate());
+				parentFromTemplate = baseTemplate.parseToEtlDataConfiguration(clazz, extendsTemplateInfo);
 			}
 			
 			T etlDataConf = new ObjectMapperProvider().getContext(clazz).readValue(json, clazz);
@@ -164,7 +165,7 @@ public class EtlConfigurationTemplate {
 		}
 	}
 	
-	public static EtlConfigurationTemplate findTemplate(EtlConfiguration relatedEtlConf, String templateName) {
+	public static EtlTemplateConfiguration findTemplate(EtlConfiguration relatedEtlConf, String templateName) {
 		
 		String templatesFileLocation = relatedEtlConf.getEtlTemplatesFilePath();
 		
@@ -172,11 +173,11 @@ public class EtlConfigurationTemplate {
 			throw new EtlExceptionImpl("Templates file path is not defined.");
 		}
 		
-		List<EtlConfigurationTemplate> templates = CACHE.computeIfAbsent(templatesFileLocation, path -> {
+		List<EtlTemplateConfiguration> templates = CACHE.computeIfAbsent(templatesFileLocation, path -> {
 			try {
-				ObjectMapper mapper = new ObjectMapperProvider().getContext(EtlConfigurationTemplate.class);
+				ObjectMapper mapper = new ObjectMapperProvider().getContext(EtlTemplateConfiguration.class);
 				return mapper.readValue(new File(path),
-				    mapper.getTypeFactory().constructCollectionType(List.class, EtlConfigurationTemplate.class));
+				    mapper.getTypeFactory().constructCollectionType(List.class, EtlTemplateConfiguration.class));
 			}
 			catch (IOException e) {
 				throw new EtlExceptionImpl("Error reading templates file: " + path, e);

@@ -142,6 +142,7 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			
 			result.add(srcObject);
 			
+			addDstObject(result, dstObject);
 			addSharedObjects(result, srcObject);
 			addParentObjects(result, srcObject, migratedDstParent);
 			addAuxObjects(result, srcObject);
@@ -192,6 +193,12 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	private void addSharedObjects(Set<EtlDatabaseObject> srcObjects, EtlDatabaseObject srcObject) {
 		if (srcObject.hasSharedPkObj()) {
 			srcObjects.add(srcObject.getSharedPkObj());
+		}
+	}
+	
+	private void addDstObject(Set<EtlDatabaseObject> srcObjects, EtlDatabaseObject dstObject) {
+		if (((DstConf) dstObject.getRelatedConfiguration()).useAsDataSource()) {
+			srcObjects.add(dstObject);
 		}
 	}
 	
