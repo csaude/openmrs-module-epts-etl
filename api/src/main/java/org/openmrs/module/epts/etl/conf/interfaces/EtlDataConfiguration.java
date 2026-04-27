@@ -15,7 +15,6 @@ import org.openmrs.module.epts.etl.conf.DefaultEtlValidator;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTemplate;
 import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
-import org.openmrs.module.epts.etl.conf.TemplateOverride;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlConfException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
@@ -118,19 +117,8 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 			fromTemplate.setRelatedEtlConfig(getRelatedEtlConf());
 			
 			this.copyFromTemplate(fromTemplate, this.getTemplate().getName());
-			
-			this.ensureTemplateOverride();
 		}
 		
-	}
-	
-	default void ensureTemplateOverride() {
-		if (this.hasTemplate() && this.getTemplate().hasParentTemplate() && this.getTemplate().getParentTemplate().hasOverride()) {
-			for (TemplateOverride override : this.getTemplate().getParentTemplate().getOverride()) {
-				override.setParent(this.getTemplate().getParentTemplate());
-				override.applyOverride(this);
-			}
-		}
 	}
 	
 	default boolean hasTemplate() {

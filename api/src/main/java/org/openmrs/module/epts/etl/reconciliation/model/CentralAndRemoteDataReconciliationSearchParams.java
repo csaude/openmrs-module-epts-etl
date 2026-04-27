@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.reconciliation.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -38,7 +39,8 @@ public class CentralAndRemoteDataReconciliationSearchParams extends AbstractEtlS
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		
 		utilities.throwReviewMethodException();

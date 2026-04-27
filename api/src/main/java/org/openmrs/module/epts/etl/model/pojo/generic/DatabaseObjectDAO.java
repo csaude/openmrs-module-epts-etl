@@ -722,7 +722,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	public static Integer getSpecificRecord(EtlDatabaseObjectSearchParams searchParams, String function, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
-		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(null, conn, null);
+		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(null, null, null, conn, null);
 		
 		searchClauses.setColumnsToSelect(function + "(" + searchParams.getConfig().getSrcConf().getPrimaryKey() + ") value");
 		

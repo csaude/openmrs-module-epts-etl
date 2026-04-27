@@ -1504,4 +1504,8 @@ public class CommonUtilities implements Serializable {
 	public boolean objectHasValue(Object obj) {
 		return obj != null && this.stringHasValue(obj.toString());
 	}
+	
+	public <T> List<T> fastCreateList() {
+		return new ArrayList<>();
+	}
 }

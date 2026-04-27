@@ -821,15 +821,14 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	
 	@Override
 	public List<EtlDatabaseObject> searchRecords(Engine<? extends EtlDatabaseObject> engine,
-	        EtlDatabaseObject parentSrcObject, Connection srcConn) throws DBException {
+	        EtlDatabaseObject parentSrcObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn)
+	        throws DBException {
 		
 		EtlDatabaseObjectSearchParams searchParams = new EtlDatabaseObjectSearchParams(this, null);
 		
 		searchParams.setQtdRecordPerSelected(1);
 		
-		searchParams.setParentObject(parentSrcObject);
-		
-		return searchParams.search(null, srcConn, srcConn);
+		return searchParams.search(null, parentSrcObject, auxDataSourceObjects, srcConn, srcConn);
 	}
 	
 	@Override

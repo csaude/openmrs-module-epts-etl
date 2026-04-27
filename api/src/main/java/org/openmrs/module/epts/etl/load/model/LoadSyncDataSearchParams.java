@@ -69,8 +69,8 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
-	        Connection dstCOnn) throws DBException {
+	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, EtlDatabaseObject parentObject,
+	        List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn, Connection dstCOnn) throws DBException {
 		
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
@@ -114,7 +114,8 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;

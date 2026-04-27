@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.export.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
@@ -32,7 +33,8 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
@@ -41,12 +43,13 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
 		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContent());
 		
-		searchClauses.addToClauseFrom(
-		    "inner join " + tableInfo.generateFullSrcStageTableName() + " on record_origin_id  = " + tableInfo.getPrimaryKey());
+		searchClauses.addToClauseFrom("inner join " + tableInfo.generateFullSrcStageTableName() + " on record_origin_id  = "
+		        + tableInfo.getPrimaryKey());
 		
 		if (!this.selectAllRecords) {
 			tryToAddLimits(limits, searchClauses);
-			tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
+			tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
+			    DbmsType.determineFromConnection(srcConn));
 		}
 		
 		searchClauses.addToClauses("consistent = 1");

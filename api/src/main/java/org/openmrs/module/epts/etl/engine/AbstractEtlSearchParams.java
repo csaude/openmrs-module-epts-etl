@@ -24,6 +24,7 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtre
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadCurrentIntervals;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
+import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.AbstractSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -103,17 +104,22 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		this.finalCheckStatus = finalCheckStatus;
 	}
 	
-	private void tryToAddExtraCondition(String extraCondition, SearchClauses<EtlDatabaseObject> searchClauses,
-	        EtlDatabaseObject parentObject, DbmsType dbmsType) {
+	@SuppressWarnings({ "null", "unchecked" })
+	private void tryToAddExtraCondition(String extraCondition, SearchClauses<T> searchClauses, T parentObject,
+	        List<T> dataSourceObjects, DbmsType dbmsType) throws EtlTransformationException, DBException {
 		
-		if (parentObject != null) {
-			getRelatedEtlConf().logTrace("Search for parentObject..." + parentObject);
+		if (dataSourceObjects != null) {
+			this.getRelatedEtlConf().logTrace("Search for parentObject..." + dataSourceObjects);
 		}
 		
 		if (extraCondition != null) {
-			String extraContidion = extraCondition;
-			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraContidion, getSrcConf()),
-			    getRelatedEtlConf(), utilities.parseToList(parentObject), true, dbmsType);
+			
+			List<EtlDatabaseObject> ds = (List<EtlDatabaseObject>) collectDataSourceObjects(parentObject, dataSourceObjects);
+			
+			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraCondition, this.getSrcConf()),
+			    this.getRelatedEtlConf(), ds, true, dbmsType);
+			
+			pQ.ensureDynamicElementsLoaded(null, parentObject, null, ds, null);
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			
@@ -127,28 +133,31 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 	
 	/**
 	 * @param searchClauses
+	 * @throws DBException
+	 * @throws EtlTransformationException
 	 */
-	public void tryToAddExtraConditionForExport(SearchClauses<EtlDatabaseObject> searchClauses,
-	        EtlDatabaseObject parentObject, DbmsType dbmsType) {
+	public void tryToAddExtraConditionForExport(SearchClauses<T> searchClauses, T parentObject, List<T> dataSourceObjects,
+	        DbmsType dbmsType) throws EtlTransformationException, DBException {
 		
-		tryToAddExtraCondition(this.srcConf.getExtraConditionForExtract(), searchClauses, parentObject, dbmsType);
+		tryToAddExtraCondition(this.srcConf.getExtraConditionForExtract(), searchClauses, parentObject, dataSourceObjects,
+		    dbmsType);
 	}
 	
-	public void tryToAddExtraJoinExtraConditions(SearchClauses<EtlDatabaseObject> searchClauses,
-	        EtlDatabaseObject parentObject, DbmsType dbmsType) {
+	public void tryToAddExtraJoinExtraConditions(SearchClauses<T> searchClauses, T parentObject, List<T> dataSourceObjects,
+	        DbmsType dbmsType) throws EtlTransformationException, DBException {
 		
 		if (!srcConf.isJoinable()) {
 			return;
 		}
 		
-		if (parentObject == null) {
+		if (dataSourceObjects == null) {
 			throw new EtlExceptionImpl("The joinable srcConf requires the parent object!");
 		}
 		
 		String extraCondition = srcConf.generateConditionsFields(parentObject, srcConf.getJoinFields(),
 		    srcConf.getJoinExtraCondition());
 		
-		tryToAddExtraCondition(extraCondition, searchClauses, parentObject, dbmsType);
+		tryToAddExtraCondition(extraCondition, searchClauses, parentObject, dataSourceObjects, dbmsType);
 	}
 	
 	public EtlConfiguration getRelatedEtlConf() {
@@ -276,9 +285,10 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		return this.savedCount;
 	}
 	
-	public List<T> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn, Connection dstCOnn)
-	        throws DBException {
-		SearchClauses<T> searchClauses = this.generateSearchClauses(intervalExtremeRecord, srcConn, dstCOnn);
+	public List<T> search(IntervalExtremeRecord intervalExtremeRecord, T parentObject, List<T> auxDataSourceObjects,
+	        Connection srcConn, Connection dstCOnn) throws DBException {
+		SearchClauses<T> searchClauses = this.generateSearchClauses(intervalExtremeRecord, parentObject,
+		    auxDataSourceObjects, srcConn, dstCOnn);
 		
 		if (this.getOrderByFields() != null) {
 			searchClauses.addToOrderByFields(this.getOrderByFields());
@@ -287,8 +297,9 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		String sql = searchClauses.generateSQL(srcConn);
 		
 		if (getRelatedEtlConf() != null) {
-			getRelatedEtlConf().logTrace("Using query for intervals " + intervalExtremeRecord + " > \n------------ \n "
-			        + this.generateFulfilledQuery(intervalExtremeRecord, srcConn, dstCOnn) + "\n----------------");
+			getRelatedEtlConf().logTrace(
+			    "Using query for intervals " + intervalExtremeRecord + " > \n------------ \n " + this.generateFulfilledQuery(
+			        intervalExtremeRecord, parentObject, auxDataSourceObjects, srcConn, dstCOnn) + "\n----------------");
 		}
 		
 		Object[] params = searchClauses.getParameters();
@@ -305,8 +316,8 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 		return SearchParamsDAO.retrieveExtremRecord(this, sqlFunction, null, conn);
 	}
 	
-	public List<T> searchNextRecordsInMultiThreads(IntervalExtremeRecord interval, Connection srcConn, Connection dstConn)
-	        throws DBException {
+	public List<T> searchNextRecordsInMultiThreads(IntervalExtremeRecord interval, T parentObject,
+	        List<T> auxDataSourceObjects, Connection srcConn, Connection dstConn) throws DBException {
 		if (interval == null) {
 			throw new ForbiddenOperationException("For multithreading search you must specify the IntervalExtremeRecord");
 		}
@@ -320,7 +331,7 @@ public abstract class AbstractEtlSearchParams<T extends EtlDatabaseObject> exten
 			
 			tasks.add(CompletableFuture.supplyAsync(() -> {
 				try {
-					return this.search(limits, srcConn, dstConn);
+					return this.search(limits, parentObject, auxDataSourceObjects, srcConn, dstConn);
 				}
 				catch (DBException e) {
 					throw new EtlExceptionImpl(e);

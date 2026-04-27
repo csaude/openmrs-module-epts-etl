@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.conf.datasource;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -53,7 +54,8 @@ public class PreparedCountQuerySearchParams extends AbstractEtlSearchParams<EtlD
 	
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord intervalExtremeRecord,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		

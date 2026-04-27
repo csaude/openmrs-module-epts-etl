@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.dbquickload.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -27,7 +28,8 @@ public class LoadedRecordsSearchParams extends AbstractEtlSearchParams<EtlDataba
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<>(this);
 		

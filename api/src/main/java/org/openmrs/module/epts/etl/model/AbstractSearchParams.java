@@ -184,12 +184,13 @@ public abstract class AbstractSearchParams<T extends VO> {
 		return param.toString();
 	}
 	
-	public abstract SearchClauses<T> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
-	        Connection dstConn) throws DBException;
+	public abstract SearchClauses<T> generateSearchClauses(IntervalExtremeRecord recordLimits, T parentObject,
+	        List<T> auxDataSourceObjects, Connection srcConn, Connection dstConn) throws DBException;
 	
-	public String generateFulfilledQuery(IntervalExtremeRecord recordLimits, Connection srcConn, Connection dstConn)
-	        throws DBException {
-		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, srcConn, dstConn);
+	public String generateFulfilledQuery(IntervalExtremeRecord recordLimits, T parentObject, List<T> auxDataSourceObjects,
+	        Connection srcConn, Connection dstConn) throws DBException {
+		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, parentObject, auxDataSourceObjects, srcConn,
+		    dstConn);
 		
 		String fulfiledQuery = "";
 		
@@ -211,9 +212,11 @@ public abstract class AbstractSearchParams<T extends VO> {
 		return fulfiledQuery;
 	}
 	
-	public String generateFulfilledQueryClause(IntervalExtremeRecord recordLimits, Connection srcConn, Connection dstConn)
-	        throws DBException {
-		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, srcConn, dstConn);
+	public String generateFulfilledQueryClause(IntervalExtremeRecord recordLimits, T parentObject,
+	        List<T> auxDataSourceObjects, Connection srcConn, Connection dstConn) throws DBException {
+		
+		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, parentObject, auxDataSourceObjects, srcConn,
+		    dstConn);
 		
 		String fulfiledQuery = "";
 		String clauses = searchClauses.getClauses();
@@ -283,5 +286,19 @@ public abstract class AbstractSearchParams<T extends VO> {
 	
 	public String[] getOrderByFields() {
 		return orderByFields;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<T> collectDataSourceObjects(T parent, List<T> auxDataSourceObjects) {
+		List<T> ds = parent != null ? utilities.parseToList(parent) : null;
+		
+		if (utilities.listHasElement(auxDataSourceObjects)) {
+			if (ds == null)
+				ds = new ArrayList<>();
+			
+			ds.addAll(auxDataSourceObjects);
+		}
+		
+		return ds;
 	}
 }

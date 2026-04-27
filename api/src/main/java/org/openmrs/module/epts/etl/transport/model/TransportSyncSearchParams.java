@@ -43,8 +43,8 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	}
 	
 	@Override
-	public List<TransportRecord> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn, Connection dstCOnn)
-	        throws DBException {
+	public List<TransportRecord> search(IntervalExtremeRecord intervalExtremeRecord, TransportRecord parentObject,
+	        List<TransportRecord> auxDataSourceObjects, Connection srcConn, Connection dstCOnn) throws DBException {
 		
 		try {
 			File[] files = getSyncDirectory().listFiles(this);
@@ -81,8 +81,9 @@ public class TransportSyncSearchParams extends AbstractEtlSearchParams<Transport
 	}
 	
 	@Override
-	public SearchClauses<TransportRecord> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public SearchClauses<TransportRecord> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        TransportRecord parentObject, List<TransportRecord> auxDataSourceObjects, Connection srcConn, Connection dstConn)
+	        throws DBException {
 		return null;
 	}
 	

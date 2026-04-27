@@ -629,7 +629,8 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			
 			searchParams.setSyncStartDate(getRelatedEtlConf().getStartDate());
 			
-			SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(null, srcConn, null);
+			SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(null, null, null, srcConn,
+			    null);
 			
 			searchClauses.addToParameters(parentRecordInOrigin.getObjectId().parseValuesToArray());
 			
@@ -698,7 +699,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		EtlDynamicItemSearchParams searchParams = new EtlDynamicItemSearchParams(this.getEtlItemSrcConf());
 		
-		List<EtlDatabaseObject> itemsSrc = searchParams.search(null, conn, conn);
+		List<EtlDatabaseObject> itemsSrc = searchParams.search(null, null, null, conn, conn);
 		
 		List<EtlItemConfiguration> items = new ArrayList<>(itemsSrc.size());
 		

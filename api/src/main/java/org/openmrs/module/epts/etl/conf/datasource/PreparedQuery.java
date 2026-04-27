@@ -407,7 +407,7 @@ public class PreparedQuery {
 		return cloned;
 	}
 	
-	private void ensureDynamicElementsLoaded(EtlProcessor processor, EtlDatabaseObject srcObject,
+	public void ensureDynamicElementsLoaded(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> srcObjects, Connection srcConn)
 	        throws EtlTransformationException, DBException {
 		

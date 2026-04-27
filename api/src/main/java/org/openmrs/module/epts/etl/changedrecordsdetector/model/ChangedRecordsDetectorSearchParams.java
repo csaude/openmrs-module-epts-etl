@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.changedrecordsdetector.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
@@ -32,7 +33,8 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
@@ -73,7 +75,8 @@ public class ChangedRecordsDetectorSearchParams extends EtlDatabaseObjectSearchP
 			tryToAddLimits(limits, searchClauses);
 		}
 		
-		tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
+		    DbmsType.determineFromConnection(srcConn));
 		
 		return searchClauses;
 	}

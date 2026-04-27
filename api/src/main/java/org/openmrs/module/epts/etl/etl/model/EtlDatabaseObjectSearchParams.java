@@ -27,8 +27,6 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
-	private EtlDatabaseObject parentObject;
-	
 	public EtlDatabaseObjectSearchParams(SrcConf srcConf, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		super(srcConf, limits);
 		
@@ -37,17 +35,10 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		}
 	}
 	
-	public void setParentObject(EtlDatabaseObject parentObject) {
-		this.parentObject = parentObject;
-	}
-	
-	public EtlDatabaseObject getParentObject() {
-		return parentObject;
-	}
-	
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord intervalExtremeRecord,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		
 		SrcConf srcConfig = getSrcConf();
 		
@@ -59,7 +50,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		if (utilities.listHasElement(srcConfig.getAuxExtractTable())) {
 			for (AuxExtractTable aux : srcConfig.getAuxExtractTable()) {
-				loadAllAuxExtractTable(auxQueryInfo, aux, srcConn);
+				loadAllAuxExtractTable(auxQueryInfo, aux, parentObject, auxDataSourceObjects, srcConn);
 			}
 			
 			if (!auxQueryInfo.getAdditionalLeftJoinFields().isEmpty()) {
@@ -69,9 +60,11 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		tryToAddLimits(intervalExtremeRecord, auxQueryInfo.getSearchClauses());
 		
-		tryToAddExtraConditionForExport(auxQueryInfo.getSearchClauses(), parentObject, DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(auxQueryInfo.getSearchClauses(), parentObject, auxDataSourceObjects,
+		    DbmsType.determineFromConnection(srcConn));
 		
-		tryToAddExtraJoinExtraConditions(auxQueryInfo.getSearchClauses(), parentObject, DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraJoinExtraConditions(auxQueryInfo.getSearchClauses(), parentObject, null,
+		    DbmsType.determineFromConnection(srcConn));
 		
 		if (getFinalCheckStatus().onGoing()) {
 			
@@ -91,19 +84,21 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		return auxQueryInfo.getSearchClauses();
 	}
 	
-	private void loadAllAuxExtractTable(AuxQueryInfo queryInfo, MainJoiningEntity aux, Connection srcConn)
+	private void loadAllAuxExtractTable(AuxQueryInfo queryInfo, MainJoiningEntity aux, EtlDatabaseObject parentObject,
+	        List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn)
 	        throws ForbiddenOperationException, DBException {
 		
-		loadAuxExtractTable(queryInfo, aux.parseToJoinable(), srcConn);
+		loadAuxExtractTable(queryInfo, aux.parseToJoinable(), parentObject, auxDataSourceObjects, srcConn);
 		
 		if (aux.hasAuxExtractTable()) {
 			for (JoinableEntity jEntity : aux.getJoiningTable()) {
-				loadAuxExtractTable(queryInfo, jEntity, srcConn);
+				loadAuxExtractTable(queryInfo, jEntity, parentObject, auxDataSourceObjects, srcConn);
 			}
 		}
 	}
 	
-	private void loadAuxExtractTable(AuxQueryInfo queryInfo, JoinableEntity aux, Connection srcConn)
+	private void loadAuxExtractTable(AuxQueryInfo queryInfo, JoinableEntity aux, EtlDatabaseObject parentObject,
+	        List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn)
 	        throws ForbiddenOperationException, DBException {
 		SrcConf srcConfig = getSrcConf();
 		
@@ -120,7 +115,8 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		if (utilities.stringHasValue(extraJoinQuery)) {
 			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraJoinQuery, getSrcConf()),
-			    getConfig().getRelatedEtlConf(), utilities.parseToList(parentObject), true, DbmsType.determineFromConnection(srcConn));
+			    getConfig().getRelatedEtlConf(), collectDataSourceObjects(parentObject, auxDataSourceObjects), true,
+			    DbmsType.determineFromConnection(srcConn));
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			

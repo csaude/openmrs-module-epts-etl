@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.inconsistenceresolver.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
@@ -33,7 +34,8 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
@@ -48,7 +50,8 @@ public class InconsistenceSolverSearchParams extends AbstractEtlSearchParams<Etl
 			        + tableInfo.getTableName() + "." + tableInfo.getPrimaryKey() + ")");
 			tryToAddLimits(recordLimits, searchClauses);
 			
-			tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
+			tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
+			    DbmsType.determineFromConnection(srcConn));
 		}
 		
 		return searchClauses;

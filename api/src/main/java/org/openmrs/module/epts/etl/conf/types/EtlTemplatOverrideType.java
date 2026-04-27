@@ -5,21 +5,33 @@ package org.openmrs.module.epts.etl.conf.types;
  */
 public enum EtlTemplatOverrideType {
 	
-	ADD,
+	ADD_TO_LIST,
 	
-	DELETE,
+	DELETE_ON_LIST,
 	
-	UPDATE;
+	UPDATE_ON_LIST,
 	
-	public boolean isAdd() {
-		return this.equals(ADD);
+	OVERRIDE,
+	
+	EMPTY;
+	
+	public boolean isAddToList() {
+		return this.equals(ADD_TO_LIST);
 	}
 	
-	public boolean isDelete() {
-		return this.equals(DELETE);
+	public boolean isDeleteOnList() {
+		return this.equals(DELETE_ON_LIST);
 	}
 	
-	public boolean isUpdate() {
-		return this.equals(UPDATE);
+	public boolean isUpdateOnList() {
+		return this.equals(UPDATE_ON_LIST);
+	}
+	
+	public boolean isOverride() {
+		return this.equals(OVERRIDE);
+	}
+	
+	public boolean isEmpty() {
+		return this.equals(EMPTY);
 	}
 }

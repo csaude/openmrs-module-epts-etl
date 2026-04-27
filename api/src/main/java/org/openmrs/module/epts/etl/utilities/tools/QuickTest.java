@@ -251,11 +251,13 @@ public class QuickTest {
 		}
 		finally {
 			try {
-				st.close();
-				
-				System.out.println("Thread " + threadId + " finalized the db operation!");
-				
-				st = null;
+				if (st != null) {
+					st.close();
+					
+					System.out.println("Thread " + threadId + " finalized the db operation!");
+					
+					st = null;
+				}
 			}
 			catch (NullPointerException e) {
 				st = null;
@@ -318,7 +320,7 @@ public class QuickTest {
 		
 		OpenConnection srcConn = conf.getSrcConnInfo().openConnection();
 		
-		List<EtlDatabaseObject> syncRecords = searchParams.search(null, srcConn, srcConn);
+		List<EtlDatabaseObject> syncRecords = searchParams.search(null, null, null, srcConn, srcConn);
 		
 		OpenConnection dstConn = dstApp.openConnection();
 		
@@ -331,7 +333,7 @@ public class QuickTest {
 				
 				for (DstConf mappingInfo : etlConf.getDstConf()) {
 					
-					EtlDatabaseObject destObject = mappingInfo.getTransformerInstance().transform(null, null, mappingInfo,
+					EtlDatabaseObject destObject = mappingInfo.getTransformerInstance().transform(null, rec, mappingInfo,
 					    null, TransformationType.PRINCIPAL, srcConn, dstConn);
 					
 					if (destObject != null) {

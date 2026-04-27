@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.merge.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -22,8 +23,8 @@ public class DataBaseMergeFromSourceDBSearchParams extends AbstractEtlSearchPara
 	}
 	
 	@Override
-	public SearchClauses<EtlStageRecordVO> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
-	        Connection dstConn) throws DBException {
+	public SearchClauses<EtlStageRecordVO> generateSearchClauses(IntervalExtremeRecord limits, EtlStageRecordVO parentObject,
+	        List<EtlStageRecordVO> auxDataSourceObjects, Connection srcConn, Connection dstConn) throws DBException {
 		SearchClauses<EtlStageRecordVO> searchClauses = new SearchClauses<EtlStageRecordVO>(this);
 		
 		searchClauses.addColumnToSelect("*");

@@ -42,7 +42,8 @@ public interface EtlDataSource extends EtlDatabaseObjectConfiguration {
 	}
 	
 	default List<EtlDatabaseObject> searchRecords(Engine<? extends EtlDatabaseObject> engine,
-	        EtlDatabaseObject parentSrcObject, Connection srcConn) throws DBException {
+	        EtlDatabaseObject parentSrcObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn)
+	        throws DBException {
 		
 		List<EtlDatabaseObject> avaliableSrcObjects = parentSrcObject != null ? utilities.parseToList(parentSrcObject)
 		        : null;

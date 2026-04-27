@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.data.validation.missingrecords.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
@@ -50,7 +51,8 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 	
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord intervalExtremeRecord,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		SrcConf srcConfig = getSrcConf();
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
@@ -83,7 +85,8 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 			searchClauses.addToClauseFrom(clauseFrom);
 		}
 		
-		tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
+		    DbmsType.determineFromConnection(srcConn));
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());

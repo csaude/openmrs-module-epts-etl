@@ -167,9 +167,9 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 		List<T> records = null;
 		
 		if (useMultiThreadSearch) {
-			records = getSearchParams().searchNextRecordsInMultiThreads(getLimits(), srcConn, dstConn);
+			records = getSearchParams().searchNextRecordsInMultiThreads(getLimits(), null, null, srcConn, dstConn);
 		} else {
-			records = getSearchParams().search(getLimits(), srcConn, dstConn);
+			records = getSearchParams().search(getLimits(), null, null, srcConn, dstConn);
 		}
 		
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlItemConfiguration().getConfigCode() + "' ON TABLE '"

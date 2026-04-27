@@ -9,6 +9,7 @@ import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
+import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.pojogeneration.processor.PojoGenerationProcessor;
@@ -29,8 +30,8 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	}
 	
 	@Override
-	public List<PojoGenerationRecord> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
-	        Connection dstCOnn) throws DBException {
+	public List<PojoGenerationRecord> search(IntervalExtremeRecord intervalExtremeRecord, PojoGenerationRecord parentObject,
+	        List<PojoGenerationRecord> auxDataSourceObjects, Connection srcConn, Connection dstCOnn) throws DBException {
 		
 		if (processor.isPojoGenerated())
 			return null;
@@ -43,9 +44,10 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	}
 	
 	@Override
-	public SearchClauses<PojoGenerationRecord> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<PojoGenerationRecord> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        PojoGenerationRecord parentObject, List<PojoGenerationRecord> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
-		// TODO Auto-generated method stub
+		
 		return null;
 	}
 	

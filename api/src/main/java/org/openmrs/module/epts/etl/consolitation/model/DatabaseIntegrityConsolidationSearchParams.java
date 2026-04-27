@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.consolitation.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -29,14 +30,16 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		searchClauses.addColumnToSelect(getSrcConf().generateFullAliasedSelectColumns());
 		searchClauses.addToClauseFrom(getSrcConf().generateSelectFromClauseContent());
 		
-		searchClauses.addToClauseFrom("INNER JOIN " + getSrcConf().generateFullSrcStageTableName() + " ON record_uuid = uuid");
+		searchClauses
+		        .addToClauseFrom("INNER JOIN " + getSrcConf().generateFullSrcStageTableName() + " ON record_uuid = uuid");
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("consistent = -1");
@@ -45,7 +48,8 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 			
 			tryToAddLimits(limits, searchClauses);
 			
-			tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
+			tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
+			    DbmsType.determineFromConnection(srcConn));
 		}
 		
 		return searchClauses;

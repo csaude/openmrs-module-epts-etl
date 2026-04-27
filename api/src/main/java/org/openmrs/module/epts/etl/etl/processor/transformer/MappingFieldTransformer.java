@@ -188,7 +188,7 @@ public class MappingFieldTransformer extends AbstractEtlFieldTransformer {
 					this.tableConfig.setExtraConditionForExtract(this.extraCondition);
 					this.tableConfig.fullLoad(srcConn);
 					
-					List<EtlDatabaseObject> rows = this.tableConfig.searchRecords(null, null, srcConn);
+					List<EtlDatabaseObject> rows = this.tableConfig.searchRecords(null, null, null, srcConn);
 					
 					Map<String, Object> cache = new HashMap<>();
 					

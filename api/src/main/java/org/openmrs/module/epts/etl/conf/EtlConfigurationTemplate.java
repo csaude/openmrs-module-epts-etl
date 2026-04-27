@@ -101,15 +101,13 @@ public class EtlConfigurationTemplate {
 				EtlConfigurationTemplate baseTemplate = EtlConfigurationTemplate.findTemplate(this.getRelatedEtlConf(),
 				    this.getExtendsTemplate().getName());
 				
-				this.getExtendsTemplate().ensureReplacementOfParametersPlaceHolders(inputParams);
+				this.getExtendsTemplate().ensureReplacementOfPlaceHolders(inputParams);
 				
 				templateInfo.setParentTemplate(this.getExtendsTemplate());
 				
 				baseTemplate.setRelatedEtlConf(getRelatedEtlConf());
 				
 				parentFromTemplate = baseTemplate.parseToEtlDataConfiguration(clazz, this.getExtendsTemplate());
-				
-				parentFromTemplate.ensureTemplateOverride();
 			}
 			
 			T etlDataConf = new ObjectMapperProvider().getContext(clazz).readValue(json, clazz);
@@ -118,10 +116,21 @@ public class EtlConfigurationTemplate {
 				etlDataConf.copyFromTemplate(parentFromTemplate, this.getName());
 			}
 			
+			this.ensureOverride(etlDataConf, templateInfo);
+			
 			return etlDataConf;
 		}
 		catch (IOException | IllegalArgumentException e) {
 			throw new EtlExceptionImpl("Error happened loading template " + this.name, e);
+		}
+	}
+	
+	private void ensureOverride(EtlDataConfiguration toOverride, EtlTemplateInfo templateInfo) {
+		if (templateInfo.hasOverride()) {
+			for (TemplateOverride override : templateInfo.getOverride()) {
+				override.setParent(templateInfo);
+				override.apply(toOverride);
+			}
 		}
 	}
 	

@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.resolveconflictsinstagearea.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.common.model.SyncImportInfoSearchParams;
@@ -25,7 +26,8 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	}
 	
 	@Override
-	public SearchClauses<EtlStageRecordVO> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<EtlStageRecordVO> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        EtlStageRecordVO parentObject, List<EtlStageRecordVO> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		
 		SearchClauses<EtlStageRecordVO> searchClauses = new SearchClauses<EtlStageRecordVO>(this);
@@ -68,7 +70,7 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	}
 	
 	@Override
-	public int countAllRecords(OperationController<EtlStageRecordVO> controller,Connection conn) throws DBException {
+	public int countAllRecords(OperationController<EtlStageRecordVO> controller, Connection conn) throws DBException {
 		ResolveConflictsInStageAreaSearchParams auxSearchParams = new ResolveConflictsInStageAreaSearchParams(
 		        this.getRelatedEngine(), this.getThreadRecordIntervalsManager());
 		auxSearchParams.selectAllRecords = true;
@@ -77,7 +79,8 @@ public class ResolveConflictsInStageAreaSearchParams extends SyncImportInfoSearc
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(OperationController<EtlStageRecordVO> controller,Connection conn) throws DBException {
+	public synchronized int countNotProcessedRecords(OperationController<EtlStageRecordVO> controller, Connection conn)
+	        throws DBException {
 		ThreadRecordIntervalsManager<EtlStageRecordVO> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();

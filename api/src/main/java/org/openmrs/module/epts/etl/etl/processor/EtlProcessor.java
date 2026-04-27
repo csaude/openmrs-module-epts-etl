@@ -138,7 +138,8 @@ public class EtlProcessor extends TaskProcessor<EtlDatabaseObject> {
 	        Connection srcConn, Connection dstConn) throws DBException {
 		
 		List<EtlDatabaseObject> etlObjects = itemConf.getSrcConf().searchRecords(this.getEngine(),
-		    transformedParent.getEtlInfo().getRelatedSrcObject(), srcConn);
+		    transformedParent.getEtlInfo().getRelatedSrcObject(), transformedParent.getEtlInfo().getAvaliableSrcObjects(),
+		    srcConn);
 		
 		if (!etlObjects.isEmpty()) {
 			perform(itemConf, etlObjects, transformedParent, LoadingType.INNER, srcConn, dstConn);

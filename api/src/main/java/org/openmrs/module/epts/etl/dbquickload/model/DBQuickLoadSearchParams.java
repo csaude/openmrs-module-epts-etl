@@ -53,7 +53,8 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		return null;
 	}
@@ -74,8 +75,8 @@ public class DBQuickLoadSearchParams extends AbstractEtlSearchParams<EtlDatabase
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
-	        Connection dstCOnn) throws DBException {
+	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, EtlDatabaseObject parentObject,
+	        List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn, Connection dstCOnn) throws DBException {
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
 		if (this.currJSONSourceFile == null)

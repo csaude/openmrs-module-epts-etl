@@ -17,7 +17,7 @@ public class SearchParamsDAO extends BaseDAO {
 	
 	public static <T extends VO> int countAll(AbstractSearchParams<T> parametros, IntervalExtremeRecord interval,
 	        Connection conn) throws DBException {
-		SearchClauses<T> searchClauses = parametros.generateSearchClauses(interval, conn, null);
+		SearchClauses<T> searchClauses = parametros.generateSearchClauses(interval, null, null, conn, null);
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		searchClauses.getSearchParameters().setQtdRecordPerSelected(0);
@@ -36,10 +36,11 @@ public class SearchParamsDAO extends BaseDAO {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T extends EtlDatabaseObject> long retrieveExtremRecord(@SuppressWarnings("rawtypes") AbstractEtlSearchParams parametros,
-	        SqlFunctionType sqlFunctionType, IntervalExtremeRecord interval, Connection conn) throws DBException {
+	public static <T extends EtlDatabaseObject> long retrieveExtremRecord(
+	        @SuppressWarnings("rawtypes") AbstractEtlSearchParams parametros, SqlFunctionType sqlFunctionType,
+	        IntervalExtremeRecord interval, Connection conn) throws DBException {
 		
-		SearchClauses<T> searchClauses = parametros.generateSearchClauses(interval, conn, null);
+		SearchClauses<T> searchClauses = parametros.generateSearchClauses(interval, null, null, conn, null);
 		
 		int bkpQtyRecsPerSelect = searchClauses.getSearchParameters().getQtdRecordPerSelected();
 		searchClauses.getSearchParameters().setQtdRecordPerSelected(0);
@@ -64,7 +65,7 @@ public class SearchParamsDAO extends BaseDAO {
 	
 	public static <T extends VO> List<T> search(AbstractSearchParams<T> searchParams, Connection conn) throws DBException {
 		
-		SearchClauses<T> searchClauses = searchParams.generateSearchClauses(null, conn, null);
+		SearchClauses<T> searchClauses = searchParams.generateSearchClauses(null, null, null, conn, null);
 		
 		if (searchParams.getOrderByFields() != null) {
 			searchClauses.addToOrderByFields(searchParams.getOrderByFields());
@@ -77,7 +78,8 @@ public class SearchParamsDAO extends BaseDAO {
 	
 	@SuppressWarnings("unchecked")
 	public static <T extends VO> List<T> search_(Engine<EtlDatabaseObject> engine, Connection conn) throws DBException {
-		SearchClauses<T> searchClauses = (SearchClauses<T>) engine.getSearchParams().generateSearchClauses(null, conn, null);
+		SearchClauses<T> searchClauses = (SearchClauses<T>) engine.getSearchParams().generateSearchClauses(null, null, null,
+		    conn, null);
 		
 		if (engine.getSearchParams().getOrderByFields() != null) {
 			searchClauses.addToOrderByFields(engine.getSearchParams().getOrderByFields());

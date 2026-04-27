@@ -12,6 +12,12 @@ import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+
 public class EtlTemplateInfo extends AbstractEtlDataConfiguration {
 	
 	private static CommonUtilities utilities = CommonUtilities.getInstance();
@@ -107,12 +113,66 @@ public class EtlTemplateInfo extends AbstractEtlDataConfiguration {
 		return utilities.listHasElement(this.getOverride());
 	}
 	
-	public void ensureReplacementOfParametersPlaceHolders(Map<String, Object> params) {
+	public void ensureReplacementOfPlaceHolders(Map<String, Object> params) {
+		
+		// parameters normais
 		for (Entry<String, Object> e : this.getParameters().entrySet()) {
 			if (e.getValue() instanceof String) {
 				e.setValue(EtlDataConfiguration.resolvePlaceholders(e.getValue().toString(), null, null, null, params));
 			}
 		}
+		
+		// overrides (JsonNode)
+		if (this.hasOverride()) {
+			for (TemplateOverride override : this.getOverride()) {
+				
+				if (override.getValue() != null) {
+					
+					JsonNode resolved = resolveJsonNodePlaceholders(override.getValue(), params);
+					
+					override.setValue(resolved);
+				}
+			}
+		}
+	}
+	
+	private JsonNode resolveJsonNodePlaceholders(JsonNode node, Map<String, Object> params) {
+		
+		if (node == null) {
+			return null;
+		}
+		
+		// STRING
+		if (node.isTextual()) {
+			String resolved = EtlDataConfiguration.resolvePlaceholders(node.asText(), null, null, null, params);
+			
+			return new TextNode(resolved);
+		}
+		
+		// OBJECT
+		if (node.isObject()) {
+			ObjectNode newObj = JsonNodeFactory.instance.objectNode();
+			
+			node.fields().forEachRemaining(entry -> {
+				newObj.set(entry.getKey(), resolveJsonNodePlaceholders(entry.getValue(), params));
+			});
+			
+			return newObj;
+		}
+		
+		// ARRAY
+		if (node.isArray()) {
+			ArrayNode newArray = JsonNodeFactory.instance.arrayNode();
+			
+			for (JsonNode element : node) {
+				newArray.add(resolveJsonNodePlaceholders(element, params));
+			}
+			
+			return newArray;
+		}
+		
+		// outros tipos (number, boolean, etc)
+		return node;
 	}
 	
 	@Override

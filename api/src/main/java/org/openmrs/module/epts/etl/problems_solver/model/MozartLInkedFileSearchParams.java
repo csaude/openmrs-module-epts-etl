@@ -26,9 +26,10 @@ public class MozartLInkedFileSearchParams extends EtlDatabaseObjectSearchParams 
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> searchNextRecordsInMultiThreads(IntervalExtremeRecord interval, Connection srcConn,
+	public List<EtlDatabaseObject> searchNextRecordsInMultiThreads(IntervalExtremeRecord interval,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
-		return search(interval, srcConn, dstConn);
+		return search(interval, parentObject, auxDataSourceObjects, srcConn, dstConn);
 	}
 	
 	public Engine<EtlDatabaseObject> getRelatedEngine() {
@@ -40,8 +41,8 @@ public class MozartLInkedFileSearchParams extends EtlDatabaseObjectSearchParams 
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
-	        Connection dstCOnn) throws DBException {
+	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, EtlDatabaseObject parentObject,
+	        List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn, Connection dstCOnn) throws DBException {
 		
 		if (getRelatedController().isDone()) {
 			return null;
@@ -51,7 +52,8 @@ public class MozartLInkedFileSearchParams extends EtlDatabaseObjectSearchParams 
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		return null;
 	}

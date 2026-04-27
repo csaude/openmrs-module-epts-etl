@@ -1,5 +1,6 @@
 package org.openmrs.module.epts.etl.conf;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -8,10 +9,11 @@ import java.util.List;
 import java.util.Objects;
 
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
-import org.openmrs.module.epts.etl.conf.types.EtlActionType;
 import org.openmrs.module.epts.etl.conf.types.EtlTemplatOverrideType;
+import org.openmrs.module.epts.etl.exceptions.EtlConfException;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.ObjectMapperProvider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +30,7 @@ public class TemplateOverride extends AbstractEtlDataConfiguration {
 	
 	private EtlTemplatOverrideType type;
 	
-	private EtlTemplateInfo parent;
+	private EtlTemplateInfo templateInfo;
 	
 	public String getPath() {
 		return path;
@@ -54,16 +56,16 @@ public class TemplateOverride extends AbstractEtlDataConfiguration {
 		this.value = value;
 	}
 	
-	public EtlActionType getType() {
+	public EtlTemplatOverrideType getType() {
 		return type;
 	}
 	
-	public void setType(EtlActionType type) {
+	public void setType(EtlTemplatOverrideType type) {
 		this.type = type;
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public void applyOverride(EtlDataConfiguration etlDataConfiguration) {
+	public void apply(EtlDataConfiguration etlDataConfiguration) {
 		
 		if (etlDataConfiguration == null) {
 			throw new EtlExceptionImpl("etlDataConfiguration cannot be null");
@@ -86,7 +88,7 @@ public class TemplateOverride extends AbstractEtlDataConfiguration {
 			
 			Object currentFieldValue = targetField.get(parentObject);
 			
-			if (this.type.isUpdate() &&  List.class.isAssignableFrom(targetField.getType())) {
+			if (!this.type.isOverride() && List.class.isAssignableFrom(targetField.getType())) {
 				List targetList = (List) currentFieldValue;
 				
 				if (targetList == null) {
@@ -96,52 +98,54 @@ public class TemplateOverride extends AbstractEtlDataConfiguration {
 				
 				Class<?> itemType = resolveListItemType(targetField);
 				
-				if (this.type == EtlActionType.CREATE) {
+				Object itemValue = prepareValue(templateInfo, itemType);
+				
+				if (this.type.isAddToList()) {
 					if (this.value == null || this.value.isNull()) {
-						throw new EtlExceptionImpl("CREATE override requires a non-null value for path: " + this.path);
+						throw new EtlExceptionImpl("ADD_TO_LIST override requires a non-null value for path: " + this.path);
 					}
 					
-					Object newItem = MAPPER.treeToValue(this.value, itemType);
-					targetList.add(newItem);
-					return;
-				}
-				
-				int matchedIndex = findMatchingElementIndex(targetList, this.match);
-				
-				if (matchedIndex < 0) {
-					throw new EtlExceptionImpl("No matching element found in list '" + targetField.getName()
-					        + "' for override path: '" + this.path + "' within the template " + this.getParentConf());
-				}
-				
-				if (this.type == EtlActionType.UPDATE) {
-					if (this.value == null || this.value.isNull()) {
-						throw new EtlExceptionImpl("UPDATE override requires a non-null value for path: " + this.path);
+					targetList.add(itemValue);
+				} else {
+					
+					int matchedIndex = findMatchingElementIndex(targetList, this.match);
+					
+					if (matchedIndex < 0) {
+						throw new EtlExceptionImpl("No matching element found in list '" + targetField.getName()
+						        + "' for override path: '" + this.path + "' within the template " + this.getParentConf());
 					}
 					
-					Object replacement = MAPPER.treeToValue(this.value, itemType);
-					targetList.set(matchedIndex, replacement);
-					return;
+					if (this.type.isUpdateOnList()) {
+						if (this.value == null || this.value.isNull()) {
+							throw new EtlExceptionImpl("UPDATE override requires a non-null value for path: " + this.path);
+						}
+						
+						targetList.set(matchedIndex, itemValue);
+						return;
+					}
+					
+					if (this.type.isDeleteOnList()) {
+						targetList.remove(matchedIndex);
+						return;
+					}
+					
+					throw new EtlExceptionImpl("Unsupported override type: " + this.type + " on List element!!!");
 				}
-				
-				if (this.type == EtlActionType.DELETE) {
-					targetList.remove(matchedIndex);
-					return;
-				}
-				
-				throw new EtlExceptionImpl("Unsupported override type: " + this.type);
-			}
-			
-			if (this.type == EtlActionType.DELETE) {
+			} else if (this.type.isEmpty()) {
 				targetField.set(parentObject, null);
+			} else if (this.type.isOverride()) {
+				if (this.value == null || this.value.isNull()) {
+					throw new EtlExceptionImpl(
+					        this.type + " override type requires a non-null value for path: " + this.path);
+				}
+				
+				Object newValue = prepareValue(templateInfo, targetField.getType());
+				
+				targetField.set(parentObject, newValue);
+				
 				return;
-			}
-			
-			if (this.value == null || this.value.isNull()) {
-				throw new EtlExceptionImpl(this.type + " override requires a non-null value for path: " + this.path);
-			}
-			
-			Object newValue = MAPPER.treeToValue(this.value, targetField.getType());
-			targetField.set(parentObject, newValue);
+			} else
+				throw new EtlConfException("Unsupported override type " + this.type + " for path: " + this.path);
 			
 		}
 		catch (EtlExceptionImpl e) {
@@ -150,6 +154,18 @@ public class TemplateOverride extends AbstractEtlDataConfiguration {
 		catch (Exception e) {
 			throw new EtlExceptionImpl("Error applying override on path '" + this.path + "'", e);
 		}
+	}
+	
+	private Object prepareValue(EtlTemplateInfo templateInfo, Class<?> type) throws IOException {
+		
+		if (this.value != null) {
+			
+			String json = EtlDataConfiguration.resolvePlaceholders(this.value.toString(), null, null, null,
+			    templateInfo.getAllAvailableParameters());
+			
+			return new ObjectMapperProvider().getContext(type).readValue(json, type);
+		} else
+			return null;
 	}
 	
 	private int findMatchingElementIndex(List<?> list, JsonNode matchNode) {
@@ -328,15 +344,20 @@ public class TemplateOverride extends AbstractEtlDataConfiguration {
 			this.parentObject = parentObject;
 			this.field = field;
 		}
+		
+		@Override
+		public String toString() {
+			return this.parentObject + " > " + field.getName();
+		}
 	}
 	
 	@Override
 	public EtlTemplateInfo getParentConf() {
-		return this.parent;
+		return this.templateInfo;
 	}
 	
 	public void setParent(EtlTemplateInfo parent) {
-		this.parent = parent;
+		this.templateInfo = parent;
 	}
 	
 	@Override

@@ -48,7 +48,7 @@ public class DynamicProcessStarter extends ProcessStarter implements ControllerS
 			
 			EtlDynamicSearchParams searchParams = new EtlDynamicSearchParams(etlConfig.getDynamicSrcConf());
 			
-			return searchParams.search(null, conn, conn);
+			return searchParams.search(null, null, null, conn, conn);
 		}
 		catch (DBException e) {
 			throw new RuntimeException(e);

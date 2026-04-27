@@ -1,6 +1,7 @@
 package org.openmrs.module.epts.etl.detectgapes.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.DbmsType;
@@ -35,7 +36,8 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstCOnn) throws DBException {
 		AbstractTableConfiguration tableInfo = getSrcConf();
 		
@@ -46,7 +48,8 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 		
 		tryToAddLimits(limits, searchClauses);
 		
-		tryToAddExtraConditionForExport(searchClauses, null, DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
+		    DbmsType.determineFromConnection(srcConn));
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());
