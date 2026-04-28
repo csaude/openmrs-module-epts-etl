@@ -51,7 +51,7 @@ public class InconsistenceSolverController extends OperationController<EtlDataba
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			EtlDatabaseObject obj = DatabaseObjectDAO.getFirstNeverProcessedRecordOnOrigin(engine.getSrcConf(), conn);
 			
@@ -66,8 +66,7 @@ public class InconsistenceSolverController extends OperationController<EtlDataba
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn);
 		}
 	}
 	
@@ -76,7 +75,7 @@ public class InconsistenceSolverController extends OperationController<EtlDataba
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			EtlDatabaseObject obj = DatabaseObjectDAO.getLastNeverProcessedRecordOnOrigin(engine.getSrcConf(), conn);
 			
@@ -91,8 +90,7 @@ public class InconsistenceSolverController extends OperationController<EtlDataba
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn);
 		}
 	}
 	

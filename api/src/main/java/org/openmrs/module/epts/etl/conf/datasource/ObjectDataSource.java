@@ -139,19 +139,13 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	
 	@Override
 	public synchronized void fullLoad() throws DBException {
-		OpenConnection mainConn = getRelatedEtlConf().getSrcConnInfo().openConnection();
-		
-		OpenConnection dstConn = null;
+		OpenConnection mainConn = getRelatedEtlConf().getSrcConnInfo().openConnection(this);
 		
 		try {
 			fullLoad(mainConn);
 		}
 		finally {
-			mainConn.finalizeConnection();
-			
-			if (dstConn != null) {
-				dstConn.finalizeConnection();
-			}
+			mainConn.finalizeConnection(this);
 		}
 	}
 	

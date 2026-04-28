@@ -293,7 +293,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 	 * @throws DBException
 	 */
 	private void tryToLoadExtraDatasource(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
-		OpenConnection srcConn = this.getRelatedConnInfo().openConnection();
+		OpenConnection srcConn = this.getRelatedConnInfo().openConnection(this);
 		
 		try {
 			
@@ -354,7 +354,7 @@ public class SrcConf extends AbstractTableConfiguration implements MainJoiningEn
 			}
 		}
 		finally {
-			srcConn.finalizeConnection();
+			srcConn.finalizeConnection(this);
 		}
 	}
 	

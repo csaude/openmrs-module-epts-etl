@@ -623,7 +623,7 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 		OpenConnection conn = null;
 		
 		try {
-			conn = this.getRelatedEtlConf().openSrcConn();
+			conn = this.getRelatedEtlConf().openSrcConn(this);
 			
 			this.loadUniqueKeys(conn);
 		}
@@ -631,8 +631,7 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 	}
 	
@@ -1549,7 +1548,7 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 	@Override
 	default void fullLoad() throws DBException {
 		synchronized (this) {
-			OpenConnection mainConn = this.getRelatedEtlConf().openSrcConn();
+			OpenConnection mainConn = this.getRelatedEtlConf().openSrcConn(this);
 			
 			OpenConnection dstConn = null;
 			
@@ -1557,11 +1556,9 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 				this.fullLoad(mainConn);
 			}
 			finally {
-				mainConn.finalizeConnection();
+				mainConn.finalizeConnection(this);
 				
-				if (dstConn != null) {
-					dstConn.finalizeConnection();
-				}
+				finalizeConnection(dstConn, this);
 			}
 		}
 	}
@@ -1586,7 +1583,7 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 						try {
 							
 							if (conn == null) {
-								conn = this.getRelatedEtlConf().openSrcConn();
+								conn = this.getRelatedEtlConf().openSrcConn(this);
 							}
 							
 							parent.fullLoad(conn);
@@ -1595,9 +1592,7 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 							throw new EtlExceptionImpl(e);
 						}
 						finally {
-							if (conn != null) {
-								((OpenConnection) conn).finalizeConnection();
-							}
+								finalizeConnection((OpenConnection) conn, this);
 						}
 					}
 					
@@ -1822,6 +1817,8 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 		if (this.getPrimaryKey() == null || this.getPrimaryKey().isCompositeKey()) {
 			return false;
 		}
+		
+		stepIntoBreakpoint(getRelatedEtlConf(), ((OpenConnection) conn).getConnection() == null);
 		
 		return DBUtilities.checkIfTableUseAutoIcrement(this.getSchema(), this.getTableName(), conn);
 	}

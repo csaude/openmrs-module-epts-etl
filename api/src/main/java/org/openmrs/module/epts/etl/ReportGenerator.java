@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -17,7 +18,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class ReportGenerator {
+public class ReportGenerator extends AbstractBaseConfiguration {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -26,12 +27,12 @@ public class ReportGenerator {
 		
 		ProcessController controller = new ProcessController(null, syncConfigs.get(0));
 		
-		OpenConnection conn = controller.openDefaultConn();
+		OpenConnection conn = controller.openDefaultConn(controller);
 		
 		generateDataInconsistencyReport(syncConfigs.get(0), conn);
 		
 		conn.markAsSuccessifullyTerminated();
-		conn.finalizeConnection();
+		conn.finalizeConnection(controller);
 	}
 	
 	private static void generateDataInconsistencyReport(EtlConfiguration etlConfiguration, Connection conn)

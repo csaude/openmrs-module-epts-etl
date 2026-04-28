@@ -30,9 +30,15 @@ public interface BaseConfiguration {
 		throw new ForbiddenOperationException("Not defined extension '" + coding + "");
 	}
 	
+	default void finalizeConnection(OpenConnection conn, BaseConfiguration finalizer) {
+		if (conn != null) {
+			conn.finalizeConnection(finalizer);
+		}
+	}
+	
 	default void finalizeConnection(OpenConnection conn) {
 		if (conn != null) {
-			conn.finalizeConnection();
+			conn.finalizeConnection(this);
 		}
 	}
 	

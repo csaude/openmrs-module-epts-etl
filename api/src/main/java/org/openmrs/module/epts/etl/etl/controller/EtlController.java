@@ -58,7 +58,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			return engine.getSrcConf().getMinRecordId(engine, conn);
 		}
@@ -68,8 +68,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 	}
 	
@@ -78,7 +77,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			return engine.getSrcConf().getMaxRecordId(engine, conn);
 		}
@@ -88,8 +87,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 	}
 	

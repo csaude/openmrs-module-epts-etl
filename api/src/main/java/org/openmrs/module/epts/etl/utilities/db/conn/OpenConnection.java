@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import javax.ws.rs.ForbiddenException;
+
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 /**
@@ -51,12 +54,15 @@ public class OpenConnection implements Connection, Closeable {
 	
 	private DBConnectionService connService;
 	
-	protected OpenConnection(Connection conn, DBConnectionService service) {
+	private BaseConfiguration openedFrom;
+	
+	protected OpenConnection(Connection conn, BaseConfiguration openedFrom, DBConnectionService service) {
 		this.connection = conn;
 		this.operationTerminatedSuccessifully = false;
 		this.id = "CONN_" + hashCode();
 		this.openDate = new Date();
 		this.connService = service;
+		this.openedFrom = openedFrom;
 		
 		qtyOpenedConnections++;
 	}
@@ -85,8 +91,8 @@ public class OpenConnection implements Connection, Closeable {
 		markAllAsSuccessifullyTerminected(Arrays.asList(conns));
 	}
 	
-	public static void finalizeAllConnections(OpenConnection... conns) {
-		finalizeAllConnections(Arrays.asList(conns));
+	public static void finalizeAllConnections(BaseConfiguration finalizer, OpenConnection... conns) {
+		finalizeAllConnections(Arrays.asList(conns), finalizer);
 	}
 	
 	public static void markAllAsSuccessifullyTerminected(List<OpenConnection> conns) {
@@ -100,13 +106,13 @@ public class OpenConnection implements Connection, Closeable {
 		}
 	}
 	
-	public static void finalizeAllConnections(List<OpenConnection> conns) {
+	public static void finalizeAllConnections(List<OpenConnection> conns, BaseConfiguration finalizer) {
 		if (!CommonUtilities.getInstance().listHasElement(conns))
 			return;
 		
 		for (OpenConnection conn : conns) {
 			if (conn != null) {
-				conn.finalizeConnection();
+				conn.finalizeConnection(finalizer);
 			}
 		}
 	}
@@ -156,7 +162,12 @@ public class OpenConnection implements Connection, Closeable {
 	/**
 	 * Finaliza a conexao associada a este objecto
 	 */
-	public void finalizeConnection() {
+	public void finalizeConnection(BaseConfiguration finalizedFrom) {
+		
+		if (finalizedFrom != openedFrom) {
+			throw new ForbiddenException("Only the opening object can finalize the connection!!");
+		}
+		
 		if (connection == null)
 			return;
 		
@@ -190,7 +201,7 @@ public class OpenConnection implements Connection, Closeable {
 	private void tryToReopen() throws SQLException {
 		if (!this.isFinalized()) {
 			if (isClosed()) {
-				this.connection = connService.openConnection();
+				this.connection = connService.openConnection(this.openedFrom);
 			}
 		}
 	}

@@ -5,10 +5,12 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -41,7 +43,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * @author jpboane
  */
-public abstract class OperationController<T extends EtlDatabaseObject> implements Controller {
+public abstract class OperationController<T extends EtlDatabaseObject> extends AbstractBaseConfiguration implements Controller {
 	
 	protected EptsEtlLogger logger;
 	
@@ -85,7 +87,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		OpenConnection conn = null;
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			this.progressInfo = this.processController.initOperationProgressMeter(this, conn);
 			
@@ -95,8 +97,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 		
 	}
@@ -186,8 +187,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	void basicInitAllConfElements() throws DBException {
-		OpenConnection srcConn = openSrcConnection();
-		OpenConnection dstConn = tryToOpenDstConn();
+		OpenConnection srcConn = openSrcConnection(this);
+		OpenConnection dstConn = tryToOpenDstConn(this);
 		
 		try {
 			for (EtlItemConfiguration config : getProcessController().getEtlConf().getEtlItemConfiguration()) {
@@ -195,11 +196,8 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 			}
 		}
 		finally {
-			srcConn.finalizeConnection();
-			
-			if (dstConn != null) {
-				dstConn.finalizeConnection();
-			}
+			finalizeConnection(srcConn, this);
+			finalizeConnection(dstConn, this);
 		}
 		
 	}
@@ -274,7 +272,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				logTrace("Opening connection for saving Progress Info");
 				
-				OpenConnection conn = openDefaultConn();
+				OpenConnection conn = openDefaultConn(this);
 				
 				try {
 					if (isResumable()) {
@@ -296,7 +294,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 					throw new RuntimeException(e);
 				}
 				finally {
-					conn.finalizeConnection();
+					finalizeConnection(conn, this);
 				}
 				
 				this.enginesActivititieMonitor.add(engine);
@@ -383,7 +381,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				Engine<T> engine = Engine.init(this, config, progressInfo);
 				
-				OpenConnection conn = openDefaultConn();
+				OpenConnection conn = openDefaultConn(this);
 				
 				try {
 					if (isResumable()) {
@@ -400,7 +398,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 					throw new RuntimeException(e);
 				}
 				finally {
-					conn.finalizeConnection();
+					conn.finalizeConnection(this);
 				}
 				
 				startAndAddToEnginesActivititieMonitor(engine);
@@ -647,7 +645,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		progressInfo.getProgressMeter().changeStatusToFinished();
 		
 		if (isResumable()) {
-			OpenConnection conn = openDefaultConn();
+			OpenConnection conn = openDefaultConn(this);
 			
 			try {
 				progressInfo.save(conn);
@@ -657,7 +655,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				throw new RuntimeException(e);
 			}
 			finally {
-				conn.finalizeConnection();
+				conn.finalizeConnection(this);
 			}
 		}
 	}
@@ -921,16 +919,16 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	@JsonIgnore
-	public OpenConnection openDefaultConn() {
-		return getProcessController().openDefaultConn();
+	public OpenConnection openDefaultConn(BaseConfiguration opendFrom) {
+		return getProcessController().openDefaultConn(opendFrom);
 	}
 	
-	public OpenConnection openSrcConnection() throws DBException {
-		return getProcessController().openConnection();
+	public OpenConnection openSrcConnection(BaseConfiguration opendFrom) throws DBException {
+		return getProcessController().openConnection(opendFrom);
 	}
 	
-	public OpenConnection tryToOpenDstConn() throws DBException {
-		return getProcessController().tryToOpenDstConn();
+	public OpenConnection tryToOpenDstConn(BaseConfiguration opendFrom) throws DBException {
+		return getProcessController().tryToOpenDstConn(opendFrom);
 	}
 	
 	public void logWarn(String msg) {

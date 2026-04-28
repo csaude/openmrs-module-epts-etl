@@ -90,7 +90,7 @@ public class PojoGenerationProcessor extends TaskProcessor<PojoGenerationRecord>
 			OpenConnection appConn = null;
 			
 			try {
-				appConn = app.openConnection();
+				appConn = app.openConnection(this);
 				
 				tableConfiguration.generateRecordClass(app, true);
 				
@@ -100,8 +100,7 @@ public class PojoGenerationProcessor extends TaskProcessor<PojoGenerationRecord>
 				throw new RuntimeException(e);
 			}
 			finally {
-				if (appConn != null)
-					appConn.finalizeConnection();
+				finalizeConnection(appConn);
 			}
 		}
 	}

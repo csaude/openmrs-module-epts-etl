@@ -1,12 +1,16 @@
 package org.openmrs.module.epts.etl.controller;
 
+import java.util.List;
+
+import org.openmrs.module.epts.etl.conf.Extension;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
-public class SqlProcessFInalizer extends AbstractProcessFinalizer {
+public class SqlProcessFInalizer extends AbstractProcessFinalizer implements BaseConfiguration {
 	
 	public SqlProcessFInalizer(ProcessController relatedProcessController) {
 		super(relatedProcessController);
@@ -20,11 +24,11 @@ public class SqlProcessFInalizer extends AbstractProcessFinalizer {
 		
 		try {
 			if (getRelatedFinalizerConf().getConnectionToUse().isMain()) {
-				conn = getRelatedProcessController().tryToOpenMainConnection();
+				conn = getRelatedProcessController().tryToOpenMainConnection(this);
 			} else if (getRelatedFinalizerConf().getConnectionToUse().isDst()) {
-				conn = getRelatedProcessController().tryToOpenMainConnection();
+				conn = getRelatedProcessController().tryToOpenMainConnection(this);
 			} else {
-				conn = getRelatedProcessController().openConnection();
+				conn = getRelatedProcessController().openConnection(this);
 			}
 			
 			if (getRelatedProcessController().getSchemaInfoSrc() != null) {
@@ -40,10 +44,20 @@ public class SqlProcessFInalizer extends AbstractProcessFinalizer {
 			throw new EtlExceptionImpl(e);
 		}
 		finally {
-			if (conn != null) {
-				conn.finalizeConnection();
-			}
+			finalizeConnection(conn, this);
 		}
+	}
+
+	@Override
+	public List<Extension> getExtension() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setExtension(List<Extension> extension) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

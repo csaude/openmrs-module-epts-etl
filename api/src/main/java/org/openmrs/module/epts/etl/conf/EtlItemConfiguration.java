@@ -333,7 +333,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	}
 	
 	public void tryToCreateDefaultRecordsForAllTables() throws DBException {
-		OpenConnection dstConn = getRelatedEtlConf().tryOpenDstConn();
+		OpenConnection dstConn = getRelatedEtlConf().tryOpenDstConn(this);
 		
 		if (dstConn == null)
 			return;
@@ -381,7 +381,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			}
 		}
 		finally {
-			dstConn.finalizeConnection();
+			dstConn.finalizeConnection(this);
 		}
 		
 	}
@@ -392,20 +392,16 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 	
 	public synchronized void fullLoad(EtlOperationConfig operationConfig) throws DBException {
 		
-		OpenConnection dstConn = this.getRelatedEtlConf().tryOpenDstConn();
-		OpenConnection srcConn = this.getRelatedEtlConf().openSrcConn();
+		OpenConnection dstConn = this.getRelatedEtlConf().tryOpenDstConn(this);
+		OpenConnection srcConn = this.getRelatedEtlConf().openSrcConn(this);
 		
 		try {
 			fullLoad(operationConfig, srcConn, dstConn);
 		}
 		finally {
-			if (dstConn != null) {
-				dstConn.finalizeConnection();
-			}
+			finalizeConnection(srcConn, this);
 			
-			if (srcConn != null) {
-				srcConn.finalizeConnection();
-			}
+			finalizeConnection(dstConn, this);
 		}
 		
 	}
@@ -797,23 +793,11 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		
 		this.getSrcConf().ensureEtlStageTableExists(counter, srcConn, dstConn);
 		
-		commitConn(srcConn);
-		
 		if (hasDstConf()) {
 			for (DstConf dstConf : this.getDstConf()) {
 				dstConf.setRelatedConnInfo(((OpenConnection) dstConn).getDbConnInfo());
 				
-				try {
-					
-					dstConf.ensureEtlStageTableExists(counter, srcConn, dstConn);
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-					
-					throw e;
-				}
-				commitConn(dstConn);
-				commitConn(srcConn);
+				dstConf.ensureEtlStageTableExists(counter, srcConn, dstConn);
 			}
 		}
 		

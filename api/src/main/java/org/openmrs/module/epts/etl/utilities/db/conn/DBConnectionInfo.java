@@ -4,13 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
-public class DBConnectionInfo {
+public class DBConnectionInfo extends AbstractEtlDataConfiguration {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -78,8 +81,8 @@ public class DBConnectionInfo {
 		return this.dbService;
 	}
 	
-	public OpenConnection openConnection() throws DBException {
-		return getRelatedDBConnectionService().openConnection();
+	public OpenConnection openConnection(BaseConfiguration opendFrom) throws DBException {
+		return getRelatedDBConnectionService().openConnection(opendFrom);
 	}
 	
 	private synchronized void initRelatedDBConnectionService() {
@@ -303,8 +306,6 @@ public class DBConnectionInfo {
 		
 		etlConf.logDebug("Database '" + databaseName + "' created!");
 		
-		OpenConnection dstConn = null;
-		
 		try {
 			DBUtilities.createDb(this, this.determineSchema());
 			
@@ -320,11 +321,18 @@ public class DBConnectionInfo {
 			
 			throw new EtlExceptionImpl(e);
 		}
-		finally {
-			if (dstConn != null) {
-				dstConn.finalizeConnection();
-			}
-		}
+	}
+
+	@Override
+	public EtlDataConfiguration getParentConf() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

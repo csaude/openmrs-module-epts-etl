@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
-import org.openmrs.module.epts.etl.model.base.BaseDAO;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 
@@ -121,8 +121,8 @@ public class DBConnectionService {
 	}
 	
 	@JsonIgnore
-	public synchronized OpenConnection openConnection() throws DBException {
-		OpenConnection conn = new OpenConnection(openConnection(50, null), this);
+	public synchronized OpenConnection openConnection(BaseConfiguration openedFrom) throws DBException {
+		OpenConnection conn = new OpenConnection(openConnection(50, null), openedFrom, this);
 		addOpenConnection(conn);
 		
 		return conn;
@@ -166,26 +166,4 @@ public class DBConnectionService {
 			return openConnection(--qtyTry, e1);
 		}
 	}
-	
-	public static void main(String[] args) throws DBException {
-		String dataBaseUserName = "root";
-		String dataBaseUserPassword = "#eIPDB123#";
-		String connectionURI = "jdbc:mysql://10.10.2.2:53307/test?autoReconnect=true&useSSL=false";
-		String driveClassName = "com.mysql.jdbc.Driver";
-		
-		DBConnectionInfo dbConnInfo = new DBConnectionInfo(dataBaseUserName, dataBaseUserPassword, connectionURI,
-		        driveClassName);
-		
-		DBConnectionService service = DBConnectionService.init(dbConnInfo);
-		
-		OpenConnection conn = service.openConnection();
-		
-		try {
-			BaseDAO.insert(null, "INSERT INTO item (header_id, date_created) VALUES(1, now()) ", null, conn);
-		}
-		catch (DBException e) {
-			System.out.println(e.getLocalizedMessage());
-		}
-	}
-	
 }

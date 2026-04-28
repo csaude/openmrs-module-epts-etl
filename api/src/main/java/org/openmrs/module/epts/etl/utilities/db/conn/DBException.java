@@ -7,7 +7,6 @@ import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
@@ -98,28 +97,6 @@ public class DBException extends SQLException implements EtlException {
 	
 	public void setDataBaseName(String dataBaseName) {
 		this.dataBaseName = dataBaseName;
-	}
-	
-	public static void main(String[] args) throws DBException {
-		String dataBaseUserName = "root";
-		String dataBaseUserPassword = "#eIPDB123#";
-		String connectionURI = "jdbc:mysql://10.10.2.2:53307/test?autoReconnect=true&useSSL=false";
-		String driveClassName = "com.mysql.jdbc.Driver";
-		
-		DBConnectionInfo dbConnInfo = new DBConnectionInfo(dataBaseUserName, dataBaseUserPassword, connectionURI,
-		        driveClassName);
-		
-		DBConnectionService service = DBConnectionService.init(dbConnInfo);
-		
-		OpenConnection conn = service.openConnection();
-		
-		try {
-			BaseDAO.insert(null, "INSERT INTO header (date_created, uuid) VALUES(now(), '123') ", null, conn);
-			BaseDAO.insert(null, "INSERT INTO header (date_created, uuid) VALUES(now(), '123') ", null, conn);
-		}
-		catch (DBException e) {
-			System.out.println(e.getLocalizedMessage());
-		}
 	}
 	
 	/**

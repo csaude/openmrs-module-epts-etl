@@ -212,13 +212,13 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	
 	@Override
 	public void fullLoad() throws DBException {
-		OpenConnection conn = this.relatedSrcConf.getRelatedConnInfo().openConnection();
+		OpenConnection conn = this.relatedSrcConf.getRelatedConnInfo().openConnection(this);
 		
 		try {
 			fullLoad(conn);
 		}
 		finally {
-			conn.finalizeConnection();
+			conn.finalizeConnection(this);
 		}
 	}
 	

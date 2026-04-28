@@ -8,8 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -36,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * @author jpboane
  */
-public class ProcessController implements Controller, ControllerStarter {
+public class ProcessController extends AbstractBaseConfiguration implements Controller, ControllerStarter {
 	
 	private EtlConfiguration etlConf;
 	
@@ -127,7 +129,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		this.operationsControllers = new ArrayList<>();
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = openConnection(this);
 		
 		try {
 			
@@ -143,7 +145,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			conn.markAsSuccessifullyTerminated();
 		}
 		finally {
-			conn.finalizeConnection();
+			conn.finalizeConnection(this);
 		}
 	}
 	
@@ -211,9 +213,9 @@ public class ProcessController implements Controller, ControllerStarter {
 		this.etlConf = etlConf;
 	}
 	
-	public OpenConnection openDefaultConn() {
+	public OpenConnection openDefaultConn(BaseConfiguration opendFrom) {
 		try {
-			return getEtlConf().getSrcConnInfo().openConnection();
+			return getEtlConf().getSrcConnInfo().openConnection(opendFrom);
 		}
 		catch (DBException e) {
 			throw new EtlExceptionImpl(e);
@@ -432,7 +434,7 @@ public class ProcessController implements Controller, ControllerStarter {
 					performePreReRunActions();
 				}
 				
-				conn = openDefaultConn();
+				conn = openDefaultConn(this);
 				
 				initOperationsControllers(conn);
 				conn.markAsSuccessifullyTerminated();
@@ -442,7 +444,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			}
 			finally {
 				if (conn != null) {
-					conn.finalizeConnection();
+					conn.finalizeConnection(this);
 				}
 			}
 			
@@ -476,7 +478,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		
 		FileUtilities.removeFile(this.getProcessInfo().generateProcessStatusFolder());
 		
-		OpenConnection conn = openConnection();
+		OpenConnection conn = openConnection(this);
 		
 		try {
 			this.progressInfo = new ProcessProgressInfo(this);
@@ -494,7 +496,7 @@ public class ProcessController implements Controller, ControllerStarter {
 			throw new RuntimeException(e);
 		}
 		finally {
-			conn.finalizeConnection();
+			conn.finalizeConnection(this);
 		}
 		
 	}
@@ -697,8 +699,8 @@ public class ProcessController implements Controller, ControllerStarter {
 		return null;
 	}
 	
-	public OpenConnection openConnection() throws DBException {
-		OpenConnection conn = openDefaultConn();
+	public OpenConnection openConnection(BaseConfiguration opendFrom) throws DBException {
+		OpenConnection conn = openDefaultConn(opendFrom);
 		
 		if (getEtlConf().doNotResolveRelationship()) {
 			DBUtilities.disableForegnKeyChecks(conn);
@@ -707,8 +709,8 @@ public class ProcessController implements Controller, ControllerStarter {
 		return conn;
 	}
 	
-	public OpenConnection tryToOpenMainConnection() throws DBException {
-		OpenConnection conn = getEtlConf().openMainConn();
+	public OpenConnection tryToOpenMainConnection(BaseConfiguration opendFrom) throws DBException {
+		OpenConnection conn = getEtlConf().openMainConn(opendFrom);
 		
 		if (getEtlConf().doNotResolveRelationship()) {
 			DBUtilities.disableForegnKeyChecks(conn);
@@ -717,11 +719,11 @@ public class ProcessController implements Controller, ControllerStarter {
 		return conn;
 	}
 	
-	public OpenConnection tryToOpenDstConn() throws DBException {
+	public OpenConnection tryToOpenDstConn(BaseConfiguration opendFrom) throws DBException {
 		OpenConnection conn = null;
 		
 		if (getEtlConf().hasDstConnInfo()) {
-			conn = getDstConnInfo().openConnection();
+			conn = getDstConnInfo().openConnection(opendFrom);
 			
 			if (getEtlConf().doNotResolveRelationship()) {
 				DBUtilities.disableForegnKeyChecks(conn);

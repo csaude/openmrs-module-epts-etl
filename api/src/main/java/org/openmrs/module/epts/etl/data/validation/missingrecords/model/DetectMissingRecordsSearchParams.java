@@ -35,7 +35,7 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 		OpenConnection dstConn = null;
 		
 		try {
-			dstConn = relatedEngine.tryToOpenDstConn();
+			dstConn = relatedEngine.tryToOpenDstConn(this);
 			
 			this.relatedDstConf.fullLoad(dstConn);
 		}
@@ -43,8 +43,7 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (dstConn != null)
-				dstConn.finalizeConnection();
+			finalizeConnection(dstConn);
 		}
 		
 	}

@@ -524,13 +524,13 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 	
 	@Override
 	public synchronized void fullLoad() throws DBException {
-		OpenConnection conn = this.relatedConnInfo.openConnection();
+		OpenConnection conn = this.relatedConnInfo.openConnection(this);
 		
 		try {
 			this.fullLoad(conn);
 		}
 		finally {
-			conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 	}
 	
@@ -1012,7 +1012,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 			
 			if (!itemConf.hasDstConf()) {
 				
-				dstConn = itemConf.getRelatedEtlConf().openDstConn();
+				dstConn = itemConf.getRelatedEtlConf().openDstConn(itemConf);
 				
 				try {
 					DstConf map = new DstConf();
@@ -1039,7 +1039,7 @@ public class DstConf extends AbstractTableConfiguration implements EtlDataSource
 					throw new DBException(e);
 				}
 				finally {
-					dstConn.finalizeConnection();
+					dstConn.finalizeConnection(itemConf);
 				}
 			} else {
 				return null;

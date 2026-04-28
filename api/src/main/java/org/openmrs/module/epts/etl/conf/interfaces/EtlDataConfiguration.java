@@ -22,7 +22,6 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 public interface EtlDataConfiguration extends BaseConfiguration {
@@ -123,15 +122,6 @@ public interface EtlDataConfiguration extends BaseConfiguration {
 	
 	default boolean hasTemplate() {
 		return this.getTemplate() != null;
-	}
-	
-	default OpenConnection replicateConnection(Connection conn) throws DBException {
-		
-		if (!(conn instanceof OpenConnection)) {
-			throw new EtlExceptionImpl("Only OpenConnection");
-		}
-		
-		return ((OpenConnection) conn).getDbConnInfo().openConnection();
 	}
 	
 	@SuppressWarnings("unchecked")

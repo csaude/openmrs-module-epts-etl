@@ -18,6 +18,7 @@ import java.util.regex.Matcher;
 
 import org.openmrs.module.epts.etl.conf.datasource.EtlConfigurationSrcConf;
 import org.openmrs.module.epts.etl.conf.datasource.EtlItemSrcConf;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -825,8 +826,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					}
 				}
 				
-				srcConn = openSrcConn();
-				dstConn = tryOpenDstConn();
+				srcConn = openSrcConn(this);
+				dstConn = tryOpenDstConn(this);
 				
 				ensureEtlBaseSchemaTablesExists(srcConn);
 				
@@ -898,8 +899,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 			}
 			finally {
-				finalizeConnection(srcConn);
-				finalizeConnection(dstConn);
+				finalizeConnection(srcConn, this);
+				finalizeConnection(dstConn, this);
 			}
 		}
 	}
@@ -957,8 +958,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			boolean dstDbExists = false;
 			OpenConnection dstConn = null;
 			try {
-				dstConn = getDstConnInfo().openConnection();
-				dstConn.finalizeConnection();
+				dstConn = getDstConnInfo().openConnection(this);
 				
 				dstDbExists = true;
 			}
@@ -971,7 +971,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					throw e;
 			}
 			finally {
-				finalizeConnection(dstConn);
+				finalizeConnection(dstConn, this);
 			}
 			
 			if (!dstDbExists) {
@@ -1711,29 +1711,29 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		tabConfig.setTableAlias(generatedTableAlias);
 	}
 	
-	public OpenConnection tryOpenDstConn() throws DBException {
+	public OpenConnection tryOpenDstConn(BaseConfiguration opendFrom) throws DBException {
 		try {
-			return openDstConn();
+			return openDstConn(opendFrom);
 		}
 		catch (ForbiddenOperationException e) {
 			return null;
 		}
 	}
 	
-	public OpenConnection tryOpenMainConn() throws DBException {
+	public OpenConnection tryOpenMainConn(BaseConfiguration opendFrom) throws DBException {
 		try {
-			return openMainConn();
+			return openMainConn(opendFrom);
 		}
 		catch (ForbiddenOperationException e) {
 			return null;
 		}
 	}
 	
-	public OpenConnection openDstConn() throws DBException, ForbiddenOperationException {
+	public OpenConnection openDstConn(BaseConfiguration opendFrom) throws DBException, ForbiddenOperationException {
 		OpenConnection dstConn = null;
 		
 		if (hasDstConnInfo()) {
-			dstConn = getDstConnInfo().openConnection();
+			dstConn = getDstConnInfo().openConnection(opendFrom);
 			
 			if (this.doNotResolveRelationship()) {
 				DBUtilities.disableForegnKeyChecks(dstConn);
@@ -1746,11 +1746,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return dstConn;
 	}
 	
-	public OpenConnection openMainConn() throws DBException, ForbiddenOperationException {
+	public OpenConnection openMainConn(BaseConfiguration opendFrom) throws DBException, ForbiddenOperationException {
 		OpenConnection mainConn = null;
 		
 		if (hasMainConnInfo()) {
-			mainConn = getMainConnInfo().openConnection();
+			mainConn = getMainConnInfo().openConnection(opendFrom);
 		} else {
 			throw new ForbiddenOperationException("No main conn config defined!");
 		}
@@ -1758,8 +1758,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return mainConn;
 	}
 	
-	public OpenConnection openSrcConn() throws DBException, ForbiddenOperationException {
-		OpenConnection conn = getSrcConnInfo().openConnection();
+	public OpenConnection openSrcConn(BaseConfiguration opendFrom) throws DBException, ForbiddenOperationException {
+		OpenConnection conn = getSrcConnInfo().openConnection(opendFrom);
 		
 		if (this.doNotResolveRelationship()) {
 			DBUtilities.disableForegnKeyChecks(conn);
@@ -1831,7 +1831,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		OpenConnection conn = null;
 		
 		try {
-			conn = clonedEtlConf.openSrcConn();
+			conn = clonedEtlConf.openSrcConn(this);
 			
 			for (EtlItemConfiguration item : this.getEtlItemConfiguration()) {
 				
@@ -1855,9 +1855,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			throw new EtlExceptionImpl(e);
 		}
 		finally {
-			if (conn != null) {
-				conn.finalizeConnection();
-			}
+			finalizeConnection(conn, this);
 		}
 		
 		return clonedEtlConf;
@@ -1963,8 +1961,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = this.getRecordWithDefaultParentInfoTableName();
-		
-		conn = openSrcConn();
 		
 		return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 	}

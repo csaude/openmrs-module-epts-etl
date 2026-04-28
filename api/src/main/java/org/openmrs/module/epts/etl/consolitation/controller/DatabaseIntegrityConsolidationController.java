@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.consolitation.model.DatabaseIntegrityConsolidationSearchParams;
 import org.openmrs.module.epts.etl.consolitation.processor.DatabaseIntegrityConsolidationProcessor;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -42,7 +43,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			return DatabaseObjectDAO.getFirstRecord(engine.getSrcConf(), conn);
 		}
@@ -52,8 +53,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 	}
 	
@@ -62,7 +62,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			return DatabaseObjectDAO.getLastRecord(engine.getSrcConf(), conn);
 		}
@@ -72,8 +72,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 	}
 	
@@ -82,8 +81,8 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		return false;
 	}
 	
-	public OpenConnection openSrcConnection() throws DBException {
-		OpenConnection conn = openDefaultConn();
+	public OpenConnection openSrcConnection(BaseConfiguration opendFrom) throws DBException {
+		OpenConnection conn = openDefaultConn(opendFrom);
 		
 		try {
 			DBUtilities.disableForegnKeyChecks(conn);

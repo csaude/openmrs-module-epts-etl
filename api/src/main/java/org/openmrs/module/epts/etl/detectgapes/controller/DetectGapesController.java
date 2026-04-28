@@ -50,7 +50,7 @@ public class DetectGapesController extends EtlController {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			String syncStageSchema = operationConfig.getRelatedEtlConfig().getSyncStageSchema();
 			
@@ -64,8 +64,7 @@ public class DetectGapesController extends EtlController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 		
 	}
