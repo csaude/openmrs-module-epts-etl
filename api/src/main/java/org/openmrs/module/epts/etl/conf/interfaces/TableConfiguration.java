@@ -1594,6 +1594,11 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 						catch (DBException e) {
 							throw new EtlExceptionImpl(e);
 						}
+						finally {
+							if (conn != null) {
+								((OpenConnection) conn).finalizeConnection();
+							}
+						}
 					}
 					
 					PrimaryKey pk = (PrimaryKey) parent.getPrimaryKey();
@@ -2556,9 +2561,6 @@ public interface TableConfiguration extends EtlDatabaseObjectConfiguration, EtlD
 	default void generateStagingTables(Connection conn) throws DBException {
 		
 		synchronized (this.getTableName()) {
-			
-			conn = this.getRelatedEtlConf().openSrcConn();
-			
 			this.logDebug("UPGRATING TABLE INFO [" + this.getTableName() + "]");
 			
 			if (!this.existRelatedExportStageTable(conn)) {

@@ -213,7 +213,7 @@ public class ProcessController implements Controller, ControllerStarter {
 	
 	public OpenConnection openDefaultConn() {
 		try {
-			return getEtlConf().getSrcConnInfo().openConnection_();
+			return getEtlConf().getSrcConnInfo().openConnection();
 		}
 		catch (DBException e) {
 			throw new EtlExceptionImpl(e);
@@ -721,7 +721,7 @@ public class ProcessController implements Controller, ControllerStarter {
 		OpenConnection conn = null;
 		
 		if (getEtlConf().hasDstConnInfo()) {
-			conn = getDstConnInfo().openConnection_();
+			conn = getDstConnInfo().openConnection();
 			
 			if (getEtlConf().doNotResolveRelationship()) {
 				DBUtilities.disableForegnKeyChecks(conn);

@@ -396,7 +396,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		OpenConnection conn = null;
 		
 		try {
-			conn = getRelatedConnInfo().openConnection_();
+			conn = getRelatedConnInfo().openConnection();
 			
 			tryToManualLoadConfiguredPk(conn);
 			

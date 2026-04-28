@@ -35,6 +35,10 @@ public class OpenConnection implements Connection, Closeable {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
+	static int qtyOpenedConnections;
+	
+	static int qtyClosedConnections;
+	
 	private Connection connection;
 	
 	private boolean operationTerminatedSuccessifully;
@@ -53,6 +57,8 @@ public class OpenConnection implements Connection, Closeable {
 		this.id = "CONN_" + hashCode();
 		this.openDate = new Date();
 		this.connService = service;
+		
+		qtyOpenedConnections++;
 	}
 	
 	public DBConnectionInfo getDbConnInfo() {
@@ -173,6 +179,9 @@ public class OpenConnection implements Connection, Closeable {
 			e.printStackTrace();
 			
 			throw new RuntimeException(e);
+		}
+		finally {
+			qtyClosedConnections++;
 		}
 		
 		connection = null;

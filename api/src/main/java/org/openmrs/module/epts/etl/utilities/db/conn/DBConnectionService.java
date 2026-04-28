@@ -17,10 +17,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class DBConnectionService {
 	
-	static int qtyOpenedConnections;
-	
-	static int qtyClosedConnections;
-	
 	private static final EptsEtlLogger logger = EptsEtlLogger.getLogger(DBConnectionService.class);
 	
 	private static final Object LOCK = new Object();
@@ -125,9 +121,8 @@ public class DBConnectionService {
 	}
 	
 	@JsonIgnore
-	public OpenConnection openConnection() throws DBException {
+	public synchronized OpenConnection openConnection() throws DBException {
 		OpenConnection conn = new OpenConnection(openConnection(50, null), this);
-		
 		addOpenConnection(conn);
 		
 		return conn;
@@ -145,15 +140,16 @@ public class DBConnectionService {
 		}
 	}
 	
-	private Connection openConnection(int qtyTry, SQLException e) throws DBException {
+	private synchronized Connection openConnection(int qtyTry, SQLException e) throws DBException {
 		if (qtyTry <= 0)
 			throw new DBException(e);
 		
 		try {
-			
 			return this.dataSource.getConnection();
 		}
 		catch (SQLException e1) {
+			logger.warn("OpenedConnections: " + OpenConnection.qtyOpenedConnections + ", ClosedConnections: "
+			        + OpenConnection.qtyClosedConnections);
 			
 			if (DBUtilities.determineDataBaseFromException(e1).equals(DBUtilities.MYSQL_DATABASE)) {
 				if (DBException.checkIfExceptionContainsMessage(e1, "Unknown database")) {
@@ -163,7 +159,7 @@ public class DBConnectionService {
 			
 			e1.printStackTrace();
 			
-			logger.warn("Tentando novamente Obter uma conexao");
+			logger.warn("Nao foi possivel obter a conexao. Tentando novamente obter a conexao novamente...");
 			
 			TimeCountDown.sleep(5);
 			

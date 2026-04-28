@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
@@ -795,8 +794,6 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					this.getDstConnInfo().tryToLoadPlaceHolders(this);
 				}
 				
-				ensureEtlBaseSchemaTablesExists();
-				
 				if (this.getAutoIncrementHandlingType() == null) {
 					if (this.getPrimaryKeyInitialIncrementValue() != null && this.getPrimaryKeyInitialIncrementValue() > 0) {
 						this.autoIncrementHandlingType = AutoIncrementHandlingType.IGNORE_SCHEMA_DEFINITION;
@@ -830,6 +827,8 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 				
 				srcConn = openSrcConn();
 				dstConn = tryOpenDstConn();
+				
+				ensureEtlBaseSchemaTablesExists(srcConn);
 				
 				List<EtlItemConfiguration> allItem = new ArrayList<>();
 				
@@ -919,35 +918,35 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		
 	}
 	
-	private void ensureEtlBaseSchemaTablesExists() throws DBException {
-		if (!this.isImportStageSchemaExists()) {
-			this.createStageSchema();
+	private void ensureEtlBaseSchemaTablesExists(OpenConnection conn) throws DBException {
+		if (!this.isImportStageSchemaExists(conn)) {
+			this.createStageSchema(conn);
 		}
 		
-		if (!existInconsistenceInfoTable()) {
-			createInconsistenceInfoTable();
+		if (!existInconsistenceInfoTable(conn)) {
+			createInconsistenceInfoTable(conn);
 		}
 		
-		if (!existOperationProgressInfoTable()) {
-			createTableOperationProgressInfo();
+		if (!existOperationProgressInfoTable(conn)) {
+			createTableOperationProgressInfo(conn);
 		}
 		
-		if (!existsDefaultGeneratedObjectKeyTable()) {
-			createDefaultGeneratedObjectKeyTable();
+		if (!existsDefaultGeneratedObjectKeyTable(conn)) {
+			createDefaultGeneratedObjectKeyTable(conn);
 		}
 		
-		if (!existEtlRecordErrorTable()) {
-			createEtlRecordErrorTable();
+		if (!existEtlRecordErrorTable(conn)) {
+			createEtlRecordErrorTable(conn);
 		}
 		
-		if (!existsSkippedRecordsTable()) {
-			createSkippedRecordsTable();
+		if (!existsSkippedRecordsTable(conn)) {
+			createSkippedRecordsTable(conn);
 		}
 		
-		if (!existRelatedRecursiveRecordInfoTable()) {
+		if (!existRelatedRecursiveRecordInfoTable(conn)) {
 			logDebug("GENERATING RELATED RECURSIVE TABLE");
 			
-			createRecordWithDefaultParentInfoTable();
+			createRecordWithDefaultParentInfoTable(conn);
 			
 			logDebug("RELATEDRECURSIVE TABLE GENERATED");
 		}
@@ -958,7 +957,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 			boolean dstDbExists = false;
 			OpenConnection dstConn = null;
 			try {
-				dstConn = getDstConnInfo().openConnection_();
+				dstConn = getDstConnInfo().openConnection();
 				dstConn.finalizeConnection();
 				
 				dstDbExists = true;
@@ -972,8 +971,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 					throw e;
 			}
 			finally {
-				if (dstConn != null)
-					dstConn.finalizeConnection();
+				finalizeConnection(dstConn);
 			}
 			
 			if (!dstDbExists) {
@@ -1735,7 +1733,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		OpenConnection dstConn = null;
 		
 		if (hasDstConnInfo()) {
-			dstConn = getDstConnInfo().openConnection_();
+			dstConn = getDstConnInfo().openConnection();
 			
 			if (this.doNotResolveRelationship()) {
 				DBUtilities.disableForegnKeyChecks(dstConn);
@@ -1748,15 +1746,11 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return dstConn;
 	}
 	
-	public boolean doNotResolveRelationship() {
-		return this.getRelationshipResolutionStrategy().skip();
-	}
-	
 	public OpenConnection openMainConn() throws DBException, ForbiddenOperationException {
 		OpenConnection mainConn = null;
 		
 		if (hasMainConnInfo()) {
-			mainConn = getMainConnInfo().openConnection_();
+			mainConn = getMainConnInfo().openConnection();
 		} else {
 			throw new ForbiddenOperationException("No main conn config defined!");
 		}
@@ -1765,13 +1759,17 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 	}
 	
 	public OpenConnection openSrcConn() throws DBException, ForbiddenOperationException {
-		OpenConnection conn = getSrcConnInfo().openConnection_();
+		OpenConnection conn = getSrcConnInfo().openConnection();
 		
 		if (this.doNotResolveRelationship()) {
 			DBUtilities.disableForegnKeyChecks(conn);
 		}
 		
 		return conn;
+	}
+	
+	public boolean doNotResolveRelationship() {
+		return this.getRelationshipResolutionStrategy().skip();
 	}
 	
 	@Override
@@ -1949,211 +1947,101 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		return getSqlScriptsDirectory() + FileUtilities.getPathSeparator() + dbConnConf.getDatabaseSchemaPath();
 	}
 	
-	private void createStageSchema() throws DBException {
-		OpenConnection conn = getSrcConnInfo().openConnection_();
-		
-		try {
-			if (DBUtilities.isMySQLDB(conn)) {
-				DBUtilities.createDb(getSrcConnInfo(), this.getSyncStageSchema());
-			} else {
-				BaseDAO.executeBatch(conn, "CREATE SCHEMA " + this.getSyncStageSchema());
-			}
-			
-			conn.markAsSuccessifullyTerminated();
-		}
-		finally {
-			conn.finalizeConnection();
+	private void createStageSchema(Connection conn) throws DBException {
+		if (DBUtilities.isMySQLDB(conn)) {
+			DBUtilities.createDb(getSrcConnInfo(), this.getSyncStageSchema());
+		} else {
+			BaseDAO.executeBatch(conn, "CREATE SCHEMA " + this.getSyncStageSchema());
 		}
 	}
 	
-	private boolean isImportStageSchemaExists() throws DBException {
-		OpenConnection conn = openSrcConn();
-		
-		try {
-			return DBUtilities.isResourceExist(null, null, DBUtilities.RESOURCE_TYPE_SCHEMA, this.getSyncStageSchema(),
-			    conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.finalizeConnection();
-		}
+	private boolean isImportStageSchemaExists(Connection conn) throws DBException {
+		return DBUtilities.isResourceExist(null, null, DBUtilities.RESOURCE_TYPE_SCHEMA, this.getSyncStageSchema(), conn);
 	}
 	
-	private boolean existRelatedRecursiveRecordInfoTable() {
-		OpenConnection conn = null;
+	private boolean existRelatedRecursiveRecordInfoTable(Connection conn) throws DBException {
+		String schema = this.getSyncStageSchema();
+		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
+		String tabName = this.getRecordWithDefaultParentInfoTableName();
 		
-		try {
-			String schema = this.getSyncStageSchema();
-			String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
-			String tabName = this.getRecordWithDefaultParentInfoTableName();
-			
-			conn = openSrcConn();
-			
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			if (conn != null) {
-				conn.finalizeConnection();
-			}
-			
-		}
+		conn = openSrcConn();
+		
+		return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 	}
 	
-	public boolean existInconsistenceInfoTable() throws DBException {
-		OpenConnection conn = openSrcConn();
-		
+	public boolean existInconsistenceInfoTable(Connection conn) throws DBException {
 		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = "inconsistence_info";
 		
-		try {
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.markAsSuccessifullyTerminated();
-			conn.finalizeConnection();
-		}
+		return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		
 	}
 	
-	public boolean existsDefaultGeneratedObjectKeyTable() throws DBException {
-		OpenConnection conn = openSrcConn();
+	public boolean existsDefaultGeneratedObjectKeyTable(Connection conn) throws DBException {
 		
 		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = EtlConfiguration.DEFAULT_GENERATED_OBJECT_KEY_TABLE_NAME;
 		
-		try {
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.markAsSuccessifullyTerminated();
-			conn.finalizeConnection();
-		}
+		return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
+		
 	}
 	
-	public boolean existsSkippedRecordsTable() throws DBException {
-		OpenConnection conn = openSrcConn();
-		
+	public boolean existsSkippedRecordsTable(Connection conn) throws DBException {
 		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = EtlConfiguration.SKIPPED_RECORD_TABLE_NAME;
 		
-		try {
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.markAsSuccessifullyTerminated();
-			conn.finalizeConnection();
-		}
+		return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 	}
 	
-	public boolean existOperationProgressInfoTable() throws DBException {
-		OpenConnection conn = openSrcConn();
-		
+	public boolean existOperationProgressInfoTable(Connection conn) throws DBException {
 		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = "table_operation_progress_info";
 		
-		try {
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.markAsSuccessifullyTerminated();
-			conn.finalizeConnection();
-		}
+		return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 	}
 	
-	public boolean existEtlRecordErrorTable() throws DBException {
-		OpenConnection conn = openSrcConn();
-		
+	public boolean existEtlRecordErrorTable(Connection conn) throws DBException {
 		String schema = this.getSyncStageSchema();
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = EtlConfiguration.ETL_RECORD_ERROR_TABLE_NAME;
 		
-		try {
-			return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
-		}
-		catch (SQLException e) {
-			e.printStackTrace();
-			
-			throw new RuntimeException(e);
-		}
-		finally {
-			conn.markAsSuccessifullyTerminated();
-			conn.finalizeConnection();
-		}
+		return DBUtilities.isResourceExist(schema, null, resourceType, tabName, conn);
 	}
 	
-	private void createTableOperationProgressInfo() throws DBException {
+	private void createTableOperationProgressInfo(Connection conn) throws DBException {
 		
 		EtlConfiguration config = this;
 		
-		OpenConnection conn = openSrcConn();
+		String sql = "";
 		
-		try {
-			String sql = "";
-			
-			sql += "CREATE TABLE " + config.getSyncStageSchema() + ".table_operation_progress_info (\n";
-			sql += DBUtilities.generateTableAutoIncrementField("id", conn) + ",\n";
-			sql += DBUtilities.generateTableVarcharField("operation_id", 250, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableVarcharField("operation_name", 250, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableVarcharField("table_name", 200, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableDateTimeField("started_at", "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableDateTimeField("last_refresh_at", "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableIntegerField("min_record_id", 11, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableIntegerField("max_record_id", 11, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableIntegerField("total_records", 11, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableIntegerField("total_processed_records", 11, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableVarcharField("status", 50, "NOT NULL", conn) + ",\n";
-			sql += DBUtilities.generateTableTimeStampField("creation_date", conn) + ",\n";
-			sql += DBUtilities.generateTableUniqueKeyDefinition(
-			    config.getSyncStageSchema() + "_UNQ_OPERATION_ID".toLowerCase(), "operation_id", conn) + ",\n";
-			sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "table_operation_progress_info_pk", conn) + "\n";
-			
-			sql += ");\n";
-			
-			BaseDAO.executeBatch(conn, sql);
-			
-			conn.markAsSuccessifullyTerminated();
-		}
-		finally {
-			conn.finalizeConnection();
-		}
+		sql += "CREATE TABLE " + config.getSyncStageSchema() + ".table_operation_progress_info (\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + ",\n";
+		sql += DBUtilities.generateTableVarcharField("operation_id", 250, "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableVarcharField("operation_name", 250, "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableVarcharField("table_name", 200, "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableDateTimeField("started_at", "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableDateTimeField("last_refresh_at", "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableIntegerField("min_record_id", 11, "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableIntegerField("max_record_id", 11, "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableIntegerField("total_records", 11, "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableIntegerField("total_processed_records", 11, "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableVarcharField("status", 50, "NOT NULL", conn) + ",\n";
+		sql += DBUtilities.generateTableTimeStampField("creation_date", conn) + ",\n";
+		sql += DBUtilities.generateTableUniqueKeyDefinition(config.getSyncStageSchema() + "_UNQ_OPERATION_ID".toLowerCase(),
+		    "operation_id", conn) + ",\n";
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "table_operation_progress_info_pk", conn) + "\n";
+		
+		sql += ");\n";
+		
+		BaseDAO.executeBatch(conn, sql);
 	}
 	
-	private void createSkippedRecordsTable() throws DBException {
-		OpenConnection conn = openSrcConn();
-		
+	private void createSkippedRecordsTable(Connection conn) throws DBException {
 		String sql = "";
 		String notNullConstraint = "NOT NULL";
 		String endLineMarker = ",\n";
@@ -2172,71 +2060,46 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
 		sql += ")";
 		
-		try {
-			BaseDAO.executeBatch(conn, sql);
-			
-			conn.markAsSuccessifullyTerminated();
-		}
-		finally {
-			conn.finalizeConnection();
-		}
+		BaseDAO.executeBatch(conn, sql);
 	}
 	
-	private void createRecordWithDefaultParentInfoTable() {
-		OpenConnection conn = null;
+	private void createRecordWithDefaultParentInfoTable(Connection conn) throws DBException {
+		String tableName = this.getRecordWithDefaultParentInfoTableName();
 		
-		try {
-			conn = openSrcConn();
-			
-			String tableName = this.getRecordWithDefaultParentInfoTableName();
-			
-			String sql = "";
-			String notNullConstraint = "NOT NULL";
-			String endLineMarker = ",\n";
-			
-			sql += "CREATE TABLE " + this.generateFullRecursiveInfoTableName() + "(\n";
-			sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
-			sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
-			        + endLineMarker;
-			sql += DBUtilities.generateTableVarcharField("src_table_name", 100, notNullConstraint, conn) + endLineMarker;
-			sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
-			sql += DBUtilities.generateTableBigIntField("src_rec_id", notNullConstraint, conn) + endLineMarker;
-			sql += DBUtilities.generateTableBigIntField("dst_rec_id", notNullConstraint, conn) + endLineMarker;
-			sql += DBUtilities.generateTableVarcharField("parent_table", 50, notNullConstraint, conn) + endLineMarker;
-			sql += DBUtilities.generateTableVarcharField("parent_field", 50, notNullConstraint, conn) + endLineMarker;
-			sql += DBUtilities.generateTableBigIntField("src_parent_id", notNullConstraint, conn) + endLineMarker;
-			sql += DBUtilities.generateTableNumericField("inconsistent_parent", 1, notNullConstraint, -1, conn)
-			        + endLineMarker;
-			sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
-			
-			sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
-			    "src_rec_id, parent_table, parent_field", conn) + endLineMarker;
-			
-			sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
-			sql += ")";
-			
-			String indexName = tableName + "location_idx";
-			String indexFields = "record_origin_location_code";
-			
-			String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullRecursiveInfoTableName(), indexName,
-			    indexFields, conn);
-			
-			BaseDAO.executeBatch(conn, sql, idxDefinition);
-			
-			conn.markAsSuccessifullyTerminated();
-		}
-		catch (DBException e) {
-			throw new EtlExceptionImpl(e);
-		}
-		finally {
-			if (conn != null) {
-				conn.finalizeConnection();
-			}
-		}
+		String sql = "";
+		String notNullConstraint = "NOT NULL";
+		String endLineMarker = ",\n";
+		
+		sql += "CREATE TABLE " + this.generateFullRecursiveInfoTableName() + "(\n";
+		sql += DBUtilities.generateTableAutoIncrementField("id", conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("record_origin_location_code", 100, notNullConstraint, conn)
+		        + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("src_table_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("dst_table_name", 100, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("src_rec_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("dst_rec_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("parent_table", 50, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableVarcharField("parent_field", 50, notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableBigIntField("src_parent_id", notNullConstraint, conn) + endLineMarker;
+		sql += DBUtilities.generateTableNumericField("inconsistent_parent", 1, notNullConstraint, -1, conn) + endLineMarker;
+		sql += DBUtilities.generateTableDateTimeFieldWithDefaultValue("creation_date", conn) + endLineMarker;
+		
+		sql += DBUtilities.generateTableUniqueKeyDefinition(tableName + "_unq_record_key".toLowerCase(),
+		    "src_rec_id, parent_table, parent_field", conn) + endLineMarker;
+		
+		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn);
+		sql += ")";
+		
+		String indexName = tableName + "location_idx";
+		String indexFields = "record_origin_location_code";
+		
+		String idxDefinition = DBUtilities.generateIndexDefinition(this.generateFullRecursiveInfoTableName(), indexName,
+		    indexFields, conn);
+		
+		BaseDAO.executeBatch(conn, sql, idxDefinition);
 	}
 	
-	private void createDefaultGeneratedObjectKeyTable() throws DBException {
-		OpenConnection conn = openSrcConn();
+	private void createDefaultGeneratedObjectKeyTable(Connection conn) throws DBException {
 		
 		String sql = "";
 		String notNullConstraint = "NOT NULL";
@@ -2257,19 +2120,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", tableName + "_pk", conn) + "\n";
 		sql += ")";
 		
-		try {
-			BaseDAO.executeBatch(conn, sql);
-			
-			conn.markAsSuccessifullyTerminated();
-		}
-		finally {
-			conn.finalizeConnection();
-		}
+		BaseDAO.executeBatch(conn, sql);
 	}
 	
-	private void createEtlRecordErrorTable() throws DBException {
-		OpenConnection conn = openSrcConn();
-		
+	private void createEtlRecordErrorTable(Connection conn) throws DBException {
 		String sql = "";
 		String notNullConstraint = "NOT NULL";
 		String endLineMarker = ",\n";
@@ -2292,19 +2146,10 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		String idxDefinition = DBUtilities.generateIndexDefinition(schema + "." + tableName,
 		    tableName + "_idx".toLowerCase(), "table_name, origin_location_code", conn) + ";";
 		
-		try {
-			BaseDAO.executeBatch(conn, sql, idxDefinition);
-			
-			conn.markAsSuccessifullyTerminated();
-		}
-		finally {
-			conn.finalizeConnection();
-		}
+		BaseDAO.executeBatch(conn, sql, idxDefinition);
 	}
 	
-	private void createInconsistenceInfoTable() throws DBException {
-		OpenConnection conn = openSrcConn();
-		
+	private void createInconsistenceInfoTable(Connection conn) throws DBException {
 		String notNullConstraint = "NOT NULL";
 		String endLineMarker = ",\n";
 		
@@ -2323,13 +2168,7 @@ public class EtlConfiguration extends AbstractBaseConfiguration implements Table
 		sql += DBUtilities.generateTablePrimaryKeyDefinition("id", "inconsistence_info_pk", conn);
 		sql += ");";
 		
-		try {
-			BaseDAO.executeBatch(conn, sql);
-			conn.markAsSuccessifullyTerminated();
-		}
-		finally {
-			conn.finalizeConnection();
-		}
+		BaseDAO.executeBatch(conn, sql);
 	}
 	
 	public boolean checkIfIsValidDumpScript(String path) {

@@ -109,7 +109,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 			throw new ForbiddenOperationException("The relatedItemConf must be full loaded!!!");
 		}
 		
-		DstConf dstConf = relatedItemConf.findDstTable(null, this.getDstTableName());
+		DstConf dstConf = relatedItemConf.findDstTable_(null, this.getDstTableName());
 		
 		this.parentRefInfo = relatedSrcConf.getFieldIsRelatedParent(Field.fastCreateField(this.getParentField()));
 		

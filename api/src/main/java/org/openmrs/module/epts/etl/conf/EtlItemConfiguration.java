@@ -432,8 +432,6 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 			
 			if (this.getRelatedEtlConf().hasDstConnInfo()) {
 				
-				dstConn = this.getRelatedEtlConf().openDstConn();
-				
 				if (!this.hasDstConf()) {
 					this.setDstConf(DstConf.generateDefaultDstConf(this));
 				}
@@ -655,7 +653,7 @@ public class EtlItemConfiguration extends AbstractEtlDataConfiguration {
 		return false;
 	}
 	
-	public DstConf findDstTable(EtlOperationConfig operationConfig, String tableName) throws DBException {
+	public DstConf findDstTable_(EtlOperationConfig operationConfig, String tableName) throws DBException {
 		
 		if (!containsDstTable(tableName))
 			return null;

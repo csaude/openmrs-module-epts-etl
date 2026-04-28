@@ -201,7 +201,7 @@ public class EtlInfo {
 				EtlDatabaseObject recordAsSrc = null;
 				
 				for (SrcConf src : avaliableSrcForCurrParent) {
-					DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable(getEtlOperationConfig(),
+					DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable_(getEtlOperationConfig(),
 					    parentInfo.getParentTableConfInDst().getTableName());
 					
 					recordAsSrc = src.createRecordInstance();

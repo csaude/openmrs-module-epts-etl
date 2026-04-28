@@ -130,7 +130,7 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 			EtlDatabaseObject parentAsSrc = null;
 			
 			for (SrcConf src : avaliableSrcForCurrParent) {
-				DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable(getRelatedEtlOperationConfig(),
+				DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable_(getRelatedEtlOperationConfig(),
 				    parentRefInfo.getTableName());
 				
 				parentAsSrc = src.createRecordInstance();
