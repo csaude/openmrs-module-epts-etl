@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -18,7 +17,7 @@ import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class ReportGenerator extends AbstractBaseConfiguration {
+public class ReportGenerator {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -27,12 +26,12 @@ public class ReportGenerator extends AbstractBaseConfiguration {
 		
 		ProcessController controller = new ProcessController(null, syncConfigs.get(0));
 		
-		OpenConnection conn = controller.openDefaultConn(controller);
+		OpenConnection conn = controller.getDefaultConnInfo().openConnection();
 		
 		generateDataInconsistencyReport(syncConfigs.get(0), conn);
 		
 		conn.markAsSuccessifullyTerminated();
-		conn.finalizeConnection(controller);
+		conn.finalizeConnection();
 	}
 	
 	private static void generateDataInconsistencyReport(EtlConfiguration etlConfiguration, Connection conn)
@@ -66,7 +65,7 @@ public class ReportGenerator extends AbstractBaseConfiguration {
 			}
 			
 			if (parentMissingRecords > 0) {
-				report += "," + (parent != null ? parent.getTableName() : "") + "," + parentMissingRecords;
+				report += "," + parent.getTableName() + "," + parentMissingRecords;
 				
 				for (int i = firstMissingParentPos; i < config.getParents().size(); i++) {
 					String nextLine = ",,,";
@@ -98,13 +97,13 @@ public class ReportGenerator extends AbstractBaseConfiguration {
 	}
 	
 	private static int countRecordsOnStageTable(TableConfiguration config, Connection conn) throws DBException {
-		String sql = "SELECT COUNT(*) as value FROM " + config.generateFullSrcStageTableName();
+		String sql = "SELECT COUNT(*) as value FROM " + config.generateFullStageTableName();
 		
 		return BaseDAO.find(SimpleValue.class, sql, null, conn).intValue();
 	}
 	
 	private static int countMissingParents(TableConfiguration config, String tableName, Connection conn) throws DBException {
-		String sql = "SELECT COUNT(*) as value FROM " + config.generateFullSrcStageTableName()
+		String sql = "SELECT COUNT(*) as value FROM " + config.generateFullStageTableName()
 		        + " WHERE last_migration_try_err LIKE '%" + tableName + ":%'";
 		
 		return BaseDAO.find(SimpleValue.class, sql, null, conn).intValue();

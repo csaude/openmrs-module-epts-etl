@@ -3,11 +3,8 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
-import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
 public class FieldTransformingInfo {
-	
-	private static CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	private EtlDataSource transformationDatasource;
 	
@@ -23,22 +20,6 @@ public class FieldTransformingInfo {
 		this.srcField = srcField;
 		this.transformationDatasource = transformationDatasource;
 		this.transformedValue = transformedValue;
-		
-		tryToParseValue();
-	}
-	
-	void tryToParseValue() {
-		if (!this.srcField.hasDataType()) {
-			return;
-		}
-		
-		if (!this.srcField.hasTypeClass()) {
-			this.srcField.determineTypeClass();
-		}
-		
-		if (this.transformedValue != null) {
-			this.transformedValue = utilities.parseValue(transformedValue, srcField.getTypeClass());
-		}
 	}
 	
 	public EtlDataSource getTransformationDatasource() {
@@ -63,8 +44,6 @@ public class FieldTransformingInfo {
 	
 	public void setTransformedValue(Object transformedValue) {
 		this.transformedValue = transformedValue;
-		
-		tryToParseValue();
 	}
 	
 	public boolean loadedWithDefaultValue() {
@@ -80,11 +59,8 @@ public class FieldTransformingInfo {
 	}
 	
 	public boolean isLoadedWithDstValue() {
-		return this.loadedWithDefaultValue || (this.getTransformationDatasource() != null && this.getTransformationDatasource() instanceof DstConf);
-	}
-	
-	public boolean skipRelationshipResolution() {
-		return isLoadedWithDefaultValue() || isLoadedWithDstValue() || srcField.relationshipResolutionStrategy().skip();
+		return this.loadedWithDefaultValue || this.getTransformationDatasource() == null
+		        || this.getTransformationDatasource() instanceof DstConf;
 	}
 	
 	@Override

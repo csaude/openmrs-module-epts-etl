@@ -22,12 +22,11 @@ import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.EtlObject;
 import org.openmrs.module.epts.etl.model.base.VO;
-import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -431,7 +430,7 @@ public class CommonUtilities implements Serializable {
 		return FuncoesGenericas.arraySize(list);
 	}
 	
-	public boolean listHasExactlyOneElement(List<?> list) {
+	public boolean arrayHasExactlyOneElement(List<?> list) {
 		return FuncoesGenericas.arrayHasExactlyOneElement(list);
 	}
 	
@@ -1237,8 +1236,11 @@ public class CommonUtilities implements Serializable {
 		for (Field field : getInstanceFields(obj)) {
 			
 			if (field.getName().equals(fieldName)) {
+				
 				try {
-					return field.get(obj);
+					if (field.get(obj) != null) {
+						return field.get(obj);
+					}
 				}
 				catch (IllegalArgumentException e) {
 					throw new RuntimeException(e);
@@ -1250,22 +1252,6 @@ public class CommonUtilities implements Serializable {
 		}
 		
 		throw new ForbiddenOperationException("The field '" + fieldName + "' was not found on object '" + objectName + "'");
-	}
-	
-	public void setFieldValue(Object obj, String fieldName, Object fieldValue) {
-		Field f = getField(obj, fieldName);
-		
-		if (f != null) {
-			try {
-				f.set(obj, fieldValue);
-			}
-			catch (IllegalArgumentException | IllegalAccessException e) {
-				throw new EtlExceptionImpl(e);
-			}
-		} else {
-			throw new EtlExceptionImpl("Field '" + fieldName + "' not found on object " + obj);
-		}
-		
 	}
 	
 	public Field getField(Object obj, String fieldName) throws ForbiddenOperationException {
@@ -1285,82 +1271,26 @@ public class CommonUtilities implements Serializable {
 		return getField(obj, fieldName).getType();
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Object parseValue(Object value, Class<?> destinationType) {
-		
-		if (value == null) {
-			return null;
-		}
-		
-		// 🔹 já compatível
-		if (destinationType.isAssignableFrom(value.getClass())) {
+	public Object parseValue(String value, Class<?> destinationType) {
+		if (destinationType.equals(String.class) && value instanceof String) {
 			return value;
+		} else if (destinationType.equals(Date.class) && value instanceof String) {
+			return DateAndTimeUtilities.createDate(value);
+			
+		} else if (destinationType.equals(Double.class) && value instanceof String) {
+			return Double.parseDouble(value);
+		} else if (destinationType.equals(Integer.class) && value instanceof String) {
+			return (int) utilities.forcarAproximacaoPorDefeito(value);
+		} else if (destinationType.equals(Long.class) && value instanceof String) {
+			return Long.parseLong(value);
+		} else if (destinationType.equals(Boolean.class) && value instanceof String) {
+			return Boolean.parseBoolean(isStringIn(value.toUpperCase(), "true", "1") ? "true" : "false");
+		} else if (destinationType.equals(Short.class) && value instanceof String) {
+			return Short.parseShort(value);
+		} else if (destinationType.equals(Float.class) && value instanceof String) {
+			return Float.parseFloat(value);
 		}
-		
-		String str = value.toString().trim();
-		
-		// 🔹 String
-		if (destinationType == String.class) {
-			return str;
-		}
-		
-		// 🔹 Integer
-		if (destinationType == Integer.class || destinationType == int.class) {
-			return Integer.parseInt(str);
-		}
-		
-		// 🔹 Long
-		if (destinationType == Long.class || destinationType == long.class) {
-			return Long.parseLong(str);
-		}
-		
-		// 🔹 Double
-		if (destinationType == Double.class || destinationType == double.class) {
-			return Double.parseDouble(str);
-		}
-		
-		// 🔹 Boolean
-		if (destinationType == Boolean.class || destinationType == boolean.class) {
-			return Boolean.parseBoolean(str);
-		}
-		
-		// 🔹 Character
-		if (destinationType == Character.class || destinationType == char.class) {
-			if (str.length() != 1) {
-				throw new IllegalArgumentException("Cannot convert to char: " + str);
-			}
-			return str.charAt(0);
-		}
-		
-		// 🔹 Enum
-		if (destinationType.isEnum()) {
-			return Enum.valueOf((Class<Enum>) destinationType, str);
-		}
-		
-		// 🔹 LocalDate
-		if (destinationType == java.time.LocalDate.class) {
-			return java.time.LocalDate.parse(str);
-		}
-		
-		// 🔹 LocalDateTime
-		if (destinationType == java.time.LocalDateTime.class) {
-			return java.time.LocalDateTime.parse(str);
-		}
-		
-		// 🔹 Date (java.util.Date)
-		if (destinationType == java.util.Date.class) {
-			try {
-				String format = DateAndTimeUtilities.determineDateFormat(str);
-				java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(format);
-				return sdf.parse(str);
-			}
-			catch (Exception e) {
-				throw new RuntimeException("Error parsing date: " + str, e);
-			}
-		}
-		
-		// 🔹 fallback
-		throw new IllegalArgumentException("Unsupported conversion from " + value.getClass() + " to " + destinationType);
+		return value;
 	}
 	
 	/**
@@ -1475,37 +1405,25 @@ public class CommonUtilities implements Serializable {
 		return Boolean.class.isAssignableFrom(fieldType) || fieldType == boolean.class;
 	}
 	
-	public boolean isDateType(Class<?> fieldType) {
-		return Date.class.isAssignableFrom(fieldType) || fieldType == Date.class;
-	}
-	
-	public <T> T tryToReplacePlaceholders(T toReplace, EtlDatabaseObject src) {
+	public String tryToReplacePlaceholders(String toReplace, EtlDatabaseObject src) {
 		if (src != null) {
-			return SQLUtilities.tryToReplaceParamsInQuery(toReplace, src);
+			return DBUtilities.tryToReplaceParamsInQuery(toReplace, src);
 		}
 		
 		return toReplace;
 	}
 	
-	public <T> List<T> tryToReplacePlaceholdersAll(List<T> toReplace, EtlDatabaseObject src) {
+	public List<String> tryToReplacePlaceholders(List<String> toReplace, EtlDatabaseObject src) {
 		
 		if (toReplace == null)
 			return null;
 		
-		List<T> replaced = new ArrayList<>(toReplace.size());
+		List<String> replaced = new ArrayList<>(toReplace.size());
 		
-		for (T r : toReplace) {
+		for (String r : toReplace) {
 			replaced.add(utilities.tryToReplacePlaceholders(r, src));
 		}
 		
 		return replaced;
-	}
-	
-	public boolean objectHasValue(Object obj) {
-		return obj != null && this.stringHasValue(obj.toString());
-	}
-	
-	public <T> List<T> fastCreateList() {
-		return new ArrayList<>();
 	}
 }

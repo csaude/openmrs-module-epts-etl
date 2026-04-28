@@ -173,7 +173,7 @@ public class ConfVM {
 			String json = this.etlConfiguration.getProcessType().isSourceSync() ? ConfigData.generateDefaultSourcetConfig()
 			        : ConfigData.generateDefaultDestinationConfig();
 			
-			reloadedSyncConfiguration = EtlConfiguration.loadFromJSON(json, new File(""));
+			reloadedSyncConfiguration = EtlConfiguration.loadFromJSON(json);
 			
 			reloadedSyncConfiguration.setEtlRootDirectory(
 			    rootDirectory + FileUtilities.getPathSeparator() + "sync" + FileUtilities.getPathSeparator() + "data");
@@ -195,7 +195,8 @@ public class ConfVM {
 		reloadedSyncConfiguration.setRelatedController(
 		    this.etlConfiguration.getRelatedController() == null ? new ProcessController(null, reloadedSyncConfiguration)
 		            : this.etlConfiguration.getRelatedController());
-		reloadedSyncConfiguration.getRelatedController().setEtlConf(reloadedSyncConfiguration);
+		reloadedSyncConfiguration.getRelatedController().setConfiguration(reloadedSyncConfiguration);
+		reloadedSyncConfiguration.loadAllTables();
 		
 		reloadedSyncConfiguration.setClassPath(retrieveClassPath());
 		reloadedSyncConfiguration.setModuleRootDirectory(retrieveModuleFolder());

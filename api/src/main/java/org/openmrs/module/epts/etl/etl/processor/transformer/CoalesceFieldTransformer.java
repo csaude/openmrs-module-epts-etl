@@ -5,16 +5,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
+import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
-import org.openmrs.module.epts.etl.exceptions.FieldAvaliableInMultipleDataSources;
-import org.openmrs.module.epts.etl.exceptions.FieldNotAvaliableInAnyDataSource;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -58,20 +57,20 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * <li>If still null, use the literal value {@code 'UNKNOWN'}</li>
  * </ol>
  */
-public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
+public class CoalesceFieldTransformer implements EtlFieldTransformer {
 	
 	private static final Map<String, CoalesceFieldTransformer> INSTANCES = new ConcurrentHashMap<>();
 	
 	private final List<FieldsMapping> coalesceFields;
 	
-	public CoalesceFieldTransformer(List<Object> parameters, EtlTranformTarget EtlTransformTarget, TransformableField field,
-	    Connection conn) throws FieldNotAvaliableInAnyDataSource, FieldAvaliableInMultipleDataSources, DBException {
-		
-		super(parameters, EtlTransformTarget, field);
+	private final DstConf dstConf;
+	
+	public CoalesceFieldTransformer(List<Object> coalesceValues, DstConf dstConf, TransformableField field) {
 		
 		this.coalesceFields = new ArrayList<>();
+		this.dstConf = dstConf;
 		
-		for (Object obj : parameters) {
+		for (Object obj : coalesceValues) {
 			
 			String[] fieldParts = obj.toString().split("\\.");
 			
@@ -85,12 +84,12 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 				srcFieldName = fieldParts[0];
 			}
 			
-			FieldsMapping fm = FieldsMapping.fastCreate(srcFieldName, field.getDstField(), true, conn);
-			fm.tryToLoadTransformer(EtlTransformTarget, conn);
+			FieldsMapping fm = FieldsMapping.fastCreate(srcFieldName, field.getDstField());
+			fm.tryToLoadTransformer(dstConf);
 			
 			if (dataSourceName != null) {
 				
-				EtlDataSource ds = EtlTransformTarget.findDataSource(dataSourceName);
+				EtlDataSource ds = dstConf.findDataSource(dataSourceName);
 				
 				if (ds != null) {
 					fm.setDataSourceName(ds.getAlias());
@@ -100,41 +99,42 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 				}
 				
 			} else {
-				EtlTransformTarget.tryToLoadDataSourceToFieldMapping(fm, conn);
+				dstConf.tryToLoadDataSourceToFieldMapping(fm);
 			}
 			
 			if (!fm.hasDataSourceName()) {
-				fm.setSrcValue(obj);
+				fm.setSrcValue(obj.toString());
 			}
 			
 			this.coalesceFields.add(fm);
 		}
+	}
+	
+	private static String buildCacheKey(List<Object> parameters, DstConf dstConf, TransformableField field) {
 		
-		EtlTransformTarget.getRelatedEtlConf().logTrace("CoalesceFieldTransformer initialized");
+		String params = parameters.stream().map(Object::toString).collect(Collectors.joining("|"));
+		
+		return dstConf.hashCode() + ":" + field.getDstField() + ":" + params;
+	}
+	
+	public DstConf getDstConf() {
+		return dstConf;
 	}
 	
 	public List<FieldsMapping> getCoalesceFields() {
 		return coalesceFields;
 	}
 	
-	public static CoalesceFieldTransformer getInstance(List<Object> parameters, EtlTranformTarget EtlTransformTarget,
-	        TransformableField field, Connection conn) {
+	public static CoalesceFieldTransformer getInstance(List<Object> parameters, DstConf dstConf, TransformableField field) {
 		
 		if (parameters == null || parameters.size() < 2) {
 			throw new ForbiddenOperationException("A CoalesceFieldTransformer needs at least 2 parameters.\n"
 			        + "Eg: CoalesceFieldTransformer(field1, field2)");
 		}
 		
-		String key = buildCacheKey(EtlTransformTarget, field, parameters);
+		String key = buildCacheKey(parameters, dstConf, field);
 		
-		return INSTANCES.computeIfAbsent(key, k -> {
-			try {
-				return new CoalesceFieldTransformer(parameters, EtlTransformTarget, field, conn);
-			}
-			catch (DBException e) {
-				throw new EtlExceptionImpl(e);
-			}
-		});
+		return INSTANCES.computeIfAbsent(key, k -> new CoalesceFieldTransformer(parameters, dstConf, field));
 	}
 	
 	@Override
@@ -144,13 +144,8 @@ public class CoalesceFieldTransformer extends AbstractEtlFieldTransformer {
 		
 		for (FieldsMapping map : this.getCoalesceFields()) {
 			
-			FieldTransformingInfo transformingInfo = null;
-			
-			try {
-				transformingInfo = map.getTransformerInstance().transform(processor, srcObject, transformedRecord,
-				    additionalSrcObjects, map, srcConn, dstConn);
-			}
-			catch (EtlTransformationException e) {}
+			FieldTransformingInfo transformingInfo = map.getTransformerInstance().transform(processor, srcObject,
+			    transformedRecord, additionalSrcObjects, map, srcConn, dstConn);
 			
 			if (transformingInfo != null && transformingInfo.getTransformedValue() != null) {
 				return transformingInfo;

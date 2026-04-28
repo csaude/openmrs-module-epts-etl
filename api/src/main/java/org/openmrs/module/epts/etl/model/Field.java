@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
@@ -23,15 +21,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * @author JP. Boane
  * @version 1.0 29/10/2012
  */
-public class Field extends AbstractEtlDataConfiguration implements Serializable {
+public class Field implements Serializable {
 	
 	public static final Integer DEFAULT_INT_VALUE = -1;
 	
 	public static final Date DEFAULT_DATE_VALUE = DateAndTimeUtilities.createDate("1975-01-01");
 	
 	public static final String DEFAULT_STRING_VALUE = "UNDEFINED";
-	
-	private static final Boolean DEFAULT_BOOLEAN_VALUE = false;
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -45,15 +41,15 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 	
 	private AttDefinedElements attDefinedElements;
 	
-	private Boolean allowNull;
+	private boolean allowNull;
 	
-	private Boolean timeStamp;
+	private boolean timeStamp;
 	
 	private TypePrecision precision;
 	
 	private Class<?> typeClass;
 	
-	private Boolean autoIncrement;
+	private boolean autoIncrement;
 	
 	private FieldTransformingInfo transformingInfo;
 	
@@ -86,16 +82,16 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 	}
 	
 	@JsonIgnore
-	public Boolean allowNull() {
-		return isAllowNull();
+	public boolean allowNull() {
+		return this.allowNull;
 	}
 	
 	@JsonIgnore
-	public Boolean isAllowNull() {
-		return this.allowNull != null && allowNull;
+	public boolean isAllowNull() {
+		return allowNull;
 	}
 	
-	public void setAllowNull(Boolean allowNull) {
+	public void setAllowNull(boolean allowNull) {
 		this.allowNull = allowNull;
 	}
 	
@@ -162,7 +158,7 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 	}
 	
 	@JsonIgnore
-	public Boolean hasDataType() {
+	public boolean hasDataType() {
 		return getDataType() != null;
 	}
 	
@@ -321,37 +317,32 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 	}
 	
 	@JsonIgnore
-	public Boolean isDateField() {
+	public boolean isDateField() {
 		return AttDefinedElements.isDateType(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public Boolean isNumericColumnType() {
+	public boolean isNumericColumnType() {
 		return AttDefinedElements.isNumeric(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public Boolean isBooleanColumnType() {
-		return AttDefinedElements.isBooleanType(this.getDataType());
-	}
-	
-	@JsonIgnore
-	public Boolean isIntegerField() {
+	public boolean isIntegerField() {
 		return AttDefinedElements.isInteger(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public Boolean isLongField() {
+	public boolean isLongField() {
 		return AttDefinedElements.isLong(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public Boolean isString() {
+	public boolean isString() {
 		return AttDefinedElements.isString(this.getDataType());
 	}
 	
 	@JsonIgnore
-	public Boolean isSmallIntType() {
+	public boolean isSmallIntType() {
 		return AttDefinedElements.isSmallInt(this.getDataType());
 	}
 	
@@ -422,7 +413,7 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 	}
 	
 	@JsonIgnore
-	public Boolean hasValue() {
+	public boolean hasValue() {
 		return getValue() != null;
 	}
 	
@@ -431,8 +422,6 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 			setValue(DEFAULT_DATE_VALUE);
 		} else if (isNumericColumnType()) {
 			setValue(DEFAULT_INT_VALUE);
-		} else if (isBooleanColumnType()) {
-			setValue(DEFAULT_BOOLEAN_VALUE);
 		} else {
 			setValue(DEFAULT_STRING_VALUE);
 		}
@@ -479,12 +468,12 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 	}
 	
 	@JsonIgnore
-	public Boolean isTimeStamp() {
-		return timeStamp != null && timeStamp;
+	public boolean isTimeStamp() {
+		return timeStamp;
 	}
 	
 	@JsonIgnore
-	public void setTimeStamp(Boolean timeStamp) {
+	public void setTimeStamp(boolean timeStamp) {
 		this.timeStamp = timeStamp;
 	}
 	
@@ -532,11 +521,7 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 				if (this.getPrecision() == null) {
 					this.setPrecision(TypePrecision.init(250, null));
 				}
-			} else if (this.isBooleanColumnType()) {
-				this.setTypeClass(Boolean.class);
-			}
-			
-			else {
+			} else {
 				this.setTypeClass(Object.class);
 			}
 		} else {
@@ -544,23 +529,23 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 		}
 	}
 	
-	public void setAutoIncrement(Boolean autoIncrement) {
+	public void setAutoIncrement(boolean autoIncrement) {
 		this.autoIncrement = autoIncrement;
 	}
 	
-	public Boolean isAutoIncrement() {
-		return autoIncrement != null && autoIncrement;
+	public boolean isAutoIncrement() {
+		return autoIncrement;
 	}
 	
-	public Boolean isTextField() {
+	public boolean isTextField() {
 		return utilities.isStringIn(this.getDataType(), "TEXT");
 	}
 	
-	public Boolean isClob() {
+	public boolean isClob() {
 		return AttDefinedElements.isClob(this.getDataType());
 	}
 	
-	public Boolean isDecimalField() {
+	public boolean isDecimalField() {
 		return AttDefinedElements.isDecimal(this.getDataType());
 	}
 	
@@ -600,12 +585,6 @@ public class Field extends AbstractEtlDataConfiguration implements Serializable 
 				f.tryToReplacePlaceholders(schemaInfoSrc);
 			}
 		}
-	}
-	
-	@Override
-	public EtlDataConfiguration getParentConf() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 	
 }

@@ -47,7 +47,7 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 * @return the related {@link EtlDatabaseObject} instance
 	 * @throws DBException if a database error occurs during execution
 	 */
-	EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject dstObject,
+	EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
 	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException;
 	
 	/**
@@ -58,7 +58,7 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 *
 	 * @return {@code true} if the data source is required; {@code false} otherwise
 	 */
-	Boolean isRequired();
+	boolean isRequired();
 	
 	/**
 	 * Indicates whether multiple source objects can be used when loading related data.
@@ -68,5 +68,6 @@ public interface EtlAdditionalDataSource extends EtlDataSource {
 	 *
 	 * @return {@code true} if multiple source objects are allowed; {@code false} otherwise
 	 */
-	Boolean allowMultipleSrcObjectsForLoading();
+	boolean allowMultipleSrcObjectsForLoading();
+	
 }

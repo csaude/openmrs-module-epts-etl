@@ -5,18 +5,16 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlField;
 import org.openmrs.module.epts.etl.conf.datasource.PreparedQuery;
-import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
-import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlDatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
-public interface EtlDataSource extends EtlDatabaseObjectConfiguration {
+public interface EtlDataSource extends DatabaseObjectConfiguration {
 	
-	static final Object LOCK = new Object();
+	static final Object lock = new Object();
 	
 	String getName();
 	
@@ -24,7 +22,7 @@ public interface EtlDataSource extends EtlDatabaseObjectConfiguration {
 	
 	void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery);
 	
-	default Boolean isPrepared() {
+	default boolean isPrepared() {
 		return this.getDefaultPreparedQuery() != null;
 	}
 	
@@ -33,7 +31,7 @@ public interface EtlDataSource extends EtlDatabaseObjectConfiguration {
 			return;
 		}
 		
-		synchronized (LOCK) {
+		synchronized (lock) {
 			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf(),
 			    DbmsType.determineFromConnection(conn));
 			
@@ -42,8 +40,7 @@ public interface EtlDataSource extends EtlDatabaseObjectConfiguration {
 	}
 	
 	default List<EtlDatabaseObject> searchRecords(Engine<? extends EtlDatabaseObject> engine,
-	        EtlDatabaseObject parentSrcObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn)
-	        throws DBException {
+	        EtlDatabaseObject parentSrcObject, Connection srcConn) throws DBException {
 		
 		List<EtlDatabaseObject> avaliableSrcObjects = parentSrcObject != null ? utilities.parseToList(parentSrcObject)
 		        : null;
@@ -52,12 +49,10 @@ public interface EtlDataSource extends EtlDatabaseObjectConfiguration {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		return this.getDefaultPreparedQuery()
-		        .cloneAndLoadValues(null, parentSrcObject, parentSrcObject, avaliableSrcObjects, srcConn)
-		        .query(engine, srcConn);
+		return this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects).query(engine, srcConn);
 	}
 	
-	default void loadOwnFieldsToEtlFields(List<EtlField> etlFields, Boolean presereOriginalNames) {
+	default void loadOwnFieldsToEtlFields(List<EtlField> etlFields, boolean presereOriginalNames) {
 		if (etlFields == null)
 			throw new ForbiddenOperationException("The 'etlFields' is null");
 		
@@ -101,30 +96,4 @@ public interface EtlDataSource extends EtlDatabaseObjectConfiguration {
 			throw new RuntimeException(e);
 		}
 	}
-	
-	default void init(EtlDataConfiguration relatedParent, EtlDatabaseObject etlSchemaObject, Connection srcConn,
-	        Connection dstConn) throws DBException {
-		
-		if (relatedParent == null)
-			throw new EtlExceptionImpl("RelatedParent cannot be null!");
-		
-		this.setParentConf(relatedParent);
-		this.tryToLoadFromTemplate();
-		
-		Connection conn = null;
-		
-		if (this instanceof EtlSrcConf) {
-			conn = srcConn;
-		} else if (this instanceof EtlDstConf) {
-			conn = dstConn;
-		} else
-			throw new EtlExceptionImpl("An EtlDatasource must be either a EtlSrcConf or EtlDstConf!!!!");
-		
-		this.tryToLoadSchemaInfo(etlSchemaObject, conn);
-	}
-	
-	void setParentConf(EtlDataConfiguration relatedParent);
-	
-	void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
-	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists;
 }

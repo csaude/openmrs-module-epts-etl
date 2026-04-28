@@ -54,7 +54,7 @@ public class ForbiddenOperationException extends RuntimeException implements Etl
 	
 	@Override
 	public ActionOnEtlException getAction() {
-		return ActionOnEtlException.ABORT_PROCESS;
+		return ActionOnEtlException.ABORT;
 	}
 	
 	@Override

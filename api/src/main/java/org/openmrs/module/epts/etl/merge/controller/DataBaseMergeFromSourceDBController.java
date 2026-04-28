@@ -53,7 +53,7 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 		Integer id = Integer.valueOf(0);
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			EtlStageRecordVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(engine.getSrcConf(), conn);
 			
@@ -67,7 +67,8 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -78,7 +79,7 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 		Integer id = Integer.valueOf(0);
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			EtlStageRecordVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(engine.getSrcConf(), conn);
 			
@@ -92,7 +93,8 @@ public class DataBaseMergeFromSourceDBController extends EtlController {
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	

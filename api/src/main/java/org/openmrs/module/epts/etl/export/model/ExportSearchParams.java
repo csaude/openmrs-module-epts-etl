@@ -1,11 +1,8 @@
 package org.openmrs.module.epts.etl.export.model;
 
 import java.sql.Connection;
-import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.types.DbmsType;
-import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -15,26 +12,18 @@ import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
 	private boolean selectAllRecords;
 	
-	private Engine<EtlDatabaseObject> relatedEngine;
-	
 	public ExportSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
-		super(engine.getSrcConf(), limits);
-		
-		this.relatedEngine = engine;
-	}
-	
-	public Engine<EtlDatabaseObject> getRelatedEngine() {
-		return relatedEngine;
+		super(engine, limits);
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits,
-	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
@@ -43,13 +32,12 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 		searchClauses.addColumnToSelect(tableInfo.generateFullAliasedSelectColumns());
 		searchClauses.addToClauseFrom(tableInfo.generateSelectFromClauseContent());
 		
-		searchClauses.addToClauseFrom("inner join " + tableInfo.generateFullSrcStageTableName() + " on record_origin_id  = "
-		        + tableInfo.getPrimaryKey());
+		searchClauses.addToClauseFrom(
+		    "inner join " + tableInfo.generateFullStageTableName() + " on record_origin_id  = " + tableInfo.getPrimaryKey());
 		
 		if (!this.selectAllRecords) {
 			tryToAddLimits(limits, searchClauses);
-			tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
-			    DbmsType.determineFromConnection(srcConn));
+			tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
 		}
 		
 		searchClauses.addToClauses("consistent = 1");
@@ -58,7 +46,7 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 	}
 	
 	@Override
-	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
+	public int countAllRecords(Connection conn) throws DBException {
 		ExportSearchParams auxSearchParams = new ExportSearchParams(getRelatedEngine(),
 		        this.getThreadRecordIntervalsManager());
 		
@@ -68,8 +56,7 @@ public class ExportSearchParams extends AbstractEtlSearchParams<EtlDatabaseObjec
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
-	        throws DBException {
+	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		ThreadRecordIntervalsManager<EtlDatabaseObject> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.removeLimits();

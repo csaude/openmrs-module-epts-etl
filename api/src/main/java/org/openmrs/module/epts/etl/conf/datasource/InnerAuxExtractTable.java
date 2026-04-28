@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -21,7 +20,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents an inner auxiliary table for data extraction. A {@link InnerAuxExtractTable} is used
  * as an auxiliary extraction table for an {@link AuxExtractTable}
  */
-public class InnerAuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, EtlDataSource, EtlSrcConf {
+public class InnerAuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, EtlDataSource {
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -37,7 +36,7 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	
 	private AuxExtractTable mainExtractTable;
 	
-	private Boolean doNotUseAsDatasource;
+	private boolean doNotUseAsDatasource;
 	
 	public InnerAuxExtractTable() {
 		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
@@ -53,22 +52,22 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 		this.joinExtraConditionScope = joinExtraConditionScope;
 	}
 	
-	public Boolean isDoNotUseAsDatasource() {
-		return isTrue(doNotUseAsDatasource);
+	public boolean isDoNotUseAsDatasource() {
+		return doNotUseAsDatasource;
 	}
 	
 	@Override
-	public Boolean doNotUseAsDatasource() {
+	public boolean doNotUseAsDatasource() {
 		return isDoNotUseAsDatasource();
 	}
 	
-	public void setDoNotUseAsDatasource(Boolean doNotUseAsDatasource) {
+	public void setDoNotUseAsDatasource(boolean doNotUseAsDatasource) {
 		this.doNotUseAsDatasource = doNotUseAsDatasource;
 	}
 	
 	@Override
-	public Boolean isGeneric() {
-		return false_();
+	public boolean isGeneric() {
+		return false;
 	}
 	
 	@Override
@@ -125,8 +124,8 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	}
 	
 	@Override
-	public Boolean isMainJoiningEntity() {
-		return false_();
+	public boolean isMainJoiningEntity() {
+		return false;
 	}
 	
 	@Override
@@ -141,7 +140,7 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	
 	public void clone(InnerAuxExtractTable toCloneFrom, AuxExtractTable relatedMainExtractTable,
 	        EtlDatabaseObject schemaInfoSrc, Connection conn) throws DBException {
-		super.clone(toCloneFrom, relatedMainExtractTable, schemaInfoSrc, conn);
+		super.clone(toCloneFrom, schemaInfoSrc, conn);
 		
 		this.setJoinFields(toCloneFrom.getJoinFields());
 		this.setJoinExtraCondition(toCloneFrom.getJoinExtraCondition());
@@ -164,7 +163,6 @@ public class InnerAuxExtractTable extends AbstractTableConfiguration implements 
 	@Override
 	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
 		FieldsMapping.tryToReplacePlaceholders(getJoinFields(), schemaInfoSrc);
-		
 		setJoinExtraCondition(utilities.tryToReplacePlaceholders(getJoinExtraCondition(), schemaInfoSrc));
 	}
 	

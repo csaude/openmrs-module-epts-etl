@@ -4,12 +4,10 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.pojogeneration.processor.PojoGenerationProcessor;
@@ -21,7 +19,7 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	
 	public PojoGenerationSearchParams(Engine<PojoGenerationRecord> engine,
 	    ThreadRecordIntervalsManager<PojoGenerationRecord> limits) {
-		super(engine.getSrcConf(), limits);
+		super(engine, limits);
 		
 	}
 	
@@ -30,8 +28,8 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	}
 	
 	@Override
-	public List<PojoGenerationRecord> search(IntervalExtremeRecord intervalExtremeRecord, PojoGenerationRecord parentObject,
-	        List<PojoGenerationRecord> auxDataSourceObjects, Connection srcConn, Connection dstCOnn) throws DBException {
+	public List<PojoGenerationRecord> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
+	        Connection dstCOnn) throws DBException {
 		
 		if (processor.isPojoGenerated())
 			return null;
@@ -44,21 +42,19 @@ public class PojoGenerationSearchParams extends AbstractEtlSearchParams<PojoGene
 	}
 	
 	@Override
-	public SearchClauses<PojoGenerationRecord> generateSearchClauses(IntervalExtremeRecord recordLimits,
-	        PojoGenerationRecord parentObject, List<PojoGenerationRecord> auxDataSourceObjects, Connection srcConn,
+	public SearchClauses<PojoGenerationRecord> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
 	        Connection dstConn) throws DBException {
-		
+		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public int countAllRecords(OperationController<PojoGenerationRecord> controller, Connection conn) throws DBException {
+	public int countAllRecords(Connection conn) throws DBException {
 		return 1;
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(OperationController<PojoGenerationRecord> controller, Connection conn)
-	        throws DBException {
+	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		return processor.isPojoGenerated() ? 0 : 1;
 	}
 	

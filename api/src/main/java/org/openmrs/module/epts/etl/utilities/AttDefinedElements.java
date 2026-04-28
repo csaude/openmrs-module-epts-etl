@@ -7,7 +7,7 @@ import java.util.List;
 import org.openmrs.module.epts.etl.conf.Key;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlDatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 
 /**
  * Utilities class which help to define att elements for class like Att definition, getter and
@@ -51,13 +51,13 @@ public class AttDefinedElements {
 	
 	private boolean isLast;
 	
-	private EtlDatabaseObjectConfiguration pojoble;
+	private DatabaseObjectConfiguration pojoble;
 	
 	public static String aspasAbrir = "\"";
 	
 	public static String aspasFechar = "\"";
 	
-	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, EtlDatabaseObjectConfiguration pojoble) {
+	private AttDefinedElements(String dbAttName, String dbAttType, boolean isLast, DatabaseObjectConfiguration pojoble) {
 		this.dbAttName = dbAttName;
 		this.dbAttType = dbAttType;
 		this.isLast = isLast;
@@ -343,7 +343,7 @@ public class AttDefinedElements {
 	
 	public static boolean isNumeric(String attType) {
 		return utilities.isStringIn(attType.toLowerCase(), "int", "integer", "long", "byte", "short", "double", "float",
-		    "tinyint", "bigint", "bigint unsigned");
+		    "bit", "tinyint", "bigint", "bigint unsigned");
 	}
 	
 	public static boolean isString(String attType) {
@@ -352,7 +352,7 @@ public class AttDefinedElements {
 	}
 	
 	public static AttDefinedElements define(String dbAttName, String dbAttType, boolean isLast,
-	        EtlDatabaseObjectConfiguration pojoble) {
+	        DatabaseObjectConfiguration pojoble) {
 		AttDefinedElements elements = new AttDefinedElements(dbAttName, dbAttType, isLast, pojoble);
 		elements.generateElemets();
 		
@@ -405,10 +405,8 @@ public class AttDefinedElements {
 		  are forcing INT8 to be Integer*/
 		if (utilities.isStringIn(databaseType, "INT", "MEDIUMINT", "INT8", "BIGINT", "SERIAL", "SERIAL4"))
 			return "Integer";
-		if (utilities.isStringIn(databaseType, "TINYINT"))
+		if (utilities.isStringIn(databaseType, "TINYINT", "BIT"))
 			return "Byte";
-		if (utilities.isStringIn(databaseType, "BIT"))
-			return "Boolean";		
 		if (utilities.isStringIn(databaseType, "YEAR", "SMALLINT"))
 			return "Short";
 		if (utilities.isStringIn(databaseType, "BIGINT", "INT8", "SERIAL", "BIGINT UNSIGNED"))
@@ -438,10 +436,6 @@ public class AttDefinedElements {
 		return isDatabaseDateType || isJavaDateType;
 	}
 	
-	public static boolean isBooleanType(String type) {
-		return utilities.isStringIn(type.toLowerCase(), "boolean", "java.lang.Boolean", "bit");
-	}
-	
 	public static String[] convertTableAttNameToClassAttName(String[] dbAtts) {
 		List<String> atts = new ArrayList<String>();
 		
@@ -457,7 +451,7 @@ public class AttDefinedElements {
 	}
 	
 	public static boolean isSmallInt(String type) {
-		return utilities.isStringIn(type.toLowerCase(), "tinyint");
+		return utilities.isStringIn(type.toLowerCase(), "tinyint", "bit");
 	}
 	
 	public static boolean isInteger(String type) {

@@ -18,12 +18,16 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public class EtlConfigurationSrcConf extends SrcConf {
 	
 	@Override
-	public Boolean isGeneric() {
-		return false_();
+	public boolean isGeneric() {
+		return false;
 	}
 	
 	@Override
 	public void setParentConf(EtlDataConfiguration parent) {
+		/*if (!(parent instanceof EtlConfiguration))
+			throw new ForbiddenOperationException(
+			        "Only 'EtlConfiguration' is allowed to be a parent of an EtlConfigurationSrcConf");*/
+		
 		super.setParentConf(parent);
 	}
 	
@@ -51,13 +55,13 @@ public class EtlConfigurationSrcConf extends SrcConf {
 	}
 	
 	@Override
-	public Boolean isJoinable() {
-		return false_();
+	public boolean isJoinable() {
+		return false;
 	}
 	
 	@Override
-	public Boolean doNotUseAsDatasource() {
-		return false_();
+	public boolean doNotUseAsDatasource() {
+		return false;
 	}
 	
 	@Override

@@ -18,7 +18,6 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObjectUniqueKeyInfo;
-import org.openmrs.module.epts.etl.model.EtlInfo;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -169,6 +168,12 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 	public String getInsertSQLQuestionMarksWithoutObjectId() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	@Override
+	public boolean hasIgnoredParent() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 	
 	@Override
@@ -372,6 +377,18 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 	}
 	
 	@Override
+	public EtlDatabaseObject getSrcRelatedObject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
 	public List<Field> getFields() {
 		// TODO Auto-generated method stub
 		return null;
@@ -384,20 +401,21 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> getDestinationObjects() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	public void setDestinationObjects(List<EtlDatabaseObject> destinationObjects) {
+	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> getAuxLoadObject() {
+	public ConflictResolutionType getConflictResolutionType() {
+		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	@Override
+	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	@Override
@@ -408,21 +426,9 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public EtlInfo getEtlInfo() {
+	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-	
-	@Override
-	public void setEtlInfo(EtlInfo info) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	@Override
@@ -430,9 +436,15 @@ public class PojoGenerationRecord implements EtlDatabaseObject {
 		// TODO Auto-generated method stub
 		
 	}
-	
+
 	@Override
-	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
+	public List<EtlDatabaseObject> getTransformationSrcObject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects) {
 		// TODO Auto-generated method stub
 		
 	}

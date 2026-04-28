@@ -158,17 +158,4 @@ public class Oid extends PrimaryKey {
 	public void setTabConf(TableConfiguration tabConf) {
 		super.setTabConf(tabConf, false);
 	}
-	
-	public boolean hasFildsFilled() {
-		if (this.hasFields()) {
-			for (Key f : this.getFields()) {
-				if (!f.hasValue())
-					return false;
-			}
-			return true;
-		} else {
-			return false;
-		}
-		
-	}
 }

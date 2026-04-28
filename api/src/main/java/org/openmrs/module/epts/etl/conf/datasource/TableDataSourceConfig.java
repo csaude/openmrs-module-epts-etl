@@ -6,10 +6,7 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -17,6 +14,7 @@ import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -26,11 +24,13 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents a source table configuration. A {@link TableDataSourceConfig} is used as an auxiliary
  * extraction table as well as an extra data source
  */
-public class TableDataSourceConfig extends AbstractTableConfiguration implements EtlAdditionalDataSource, JoinableEntity, MainJoiningEntity, EtlSrcConf {
+public class TableDataSourceConfig extends AbstractTableConfiguration implements EtlAdditionalDataSource, JoinableEntity, MainJoiningEntity {
 	
 	private List<FieldsMapping> joinFields;
 	
 	private String joinExtraCondition;
+	
+	private SrcConf relatedSrcConf;
 	
 	private List<AuxExtractTable> auxExtractTable;
 	
@@ -49,18 +49,6 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public void init(EtlDataConfiguration relatedParent, EtlDatabaseObject etlSchemaObject, Connection srcConn,
-	        Connection dstConn) throws DBException {
-		super.init(relatedParent, etlSchemaObject, srcConn, dstConn);
-		
-		if (this.auxExtractTable != null) {
-			for (AuxExtractTable aux : this.auxExtractTable) {
-				aux.init(this, etlSchemaObject, srcConn, dstConn);
-			}
-		}
-	}
-	
-	@Override
 	public ConditionClauseScope getJoinExtraConditionScope() {
 		return this.joinExtraConditionScope;
 	}
@@ -71,8 +59,8 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public Boolean doNotUseAsDatasource() {
-		return Boolean.FALSE;
+	public boolean doNotUseAsDatasource() {
+		return false;
 	}
 	
 	@Override
@@ -103,7 +91,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public Boolean isRequired() {
+	public boolean isRequired() {
 		return this.joinType.isInnerJoin();
 	}
 	
@@ -136,11 +124,13 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public SrcConf getRelatedSrcConf() {
-		return (SrcConf) this.getParentConf();
+		return relatedSrcConf;
 	}
 	
 	@Override
 	public void setRelatedSrcConf(SrcConf relatedSrcConf) {
+		this.relatedSrcConf = relatedSrcConf;
+		
 		setParentConf(relatedSrcConf);
 	}
 	
@@ -152,33 +142,30 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
+	public SrcConf getParentConf() {
+		return this.relatedSrcConf;
+	}
+	
+	@Override
 	public EtlConfiguration getRelatedEtlConf() {
-		try {
-			return this.getParentConf().getRelatedEtlConf();
-		}
-		catch (Exception e) {
-			throw e;
-		}
+		return getParentConf().getRelatedEtlConf();
 	}
 	
 	@Override
 	public void setExtraConditionForExtract(String extraConditionForExtract) {
-		if (extraConditionForExtract != null)
-			throw new ForbiddenOperationException(
-			        "Forbiden method for auxExtractTable(" + this + ") please use joinExtraCondition parameter!!!");
+		throw new ForbiddenOperationException(
+		        "Forbiden method for auxExtractTable(" + this + ") please use joinExtraCondition parameter!!!");
 	}
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
-	        throws DBException {
+	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
 		
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery()
-		        .cloneAndLoadValues(processor, srcObject, dstObject, avaliableSrcObjects, srcConn)
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects)
 		        .query(processor.getEngine(), srcConn);
 		
 		if (utilities.listHasNoElement(list)) {
@@ -193,12 +180,12 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public Boolean allowMultipleSrcObjectsForLoading() {
-		return Boolean.FALSE;
+	public boolean allowMultipleSrcObjectsForLoading() {
+		return false;
 	}
 	
 	public String generateJoinCondition() {
-		return super.generateJoinCondition(this.getRelatedSrcConf(), this.joinFields, this.joinExtraCondition);
+		return super.generateJoinCondition(this.relatedSrcConf, this.joinFields, this.joinExtraCondition);
 	}
 	
 	@Override
@@ -208,12 +195,12 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public DBConnectionInfo getRelatedConnInfo() {
-		return this.getRelatedSrcConf().getRelatedConnInfo();
+		return this.relatedSrcConf.getRelatedConnInfo();
 	}
 	
 	@Override
-	public Boolean isGeneric() {
-		return Boolean.FALSE;
+	public boolean isGeneric() {
+		return false;
 	}
 	
 	@Override
@@ -231,22 +218,22 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	@Override
 	public void setMainExtractTable(MainJoiningEntity mainJoiningTable) {
-		this.setParentConf(mainJoiningTable);
+		this.relatedSrcConf = (SrcConf) mainJoiningTable;
 	}
 	
 	@Override
 	public MainJoiningEntity getMainExtractTable() {
-		return this.getRelatedSrcConf();
+		return this.relatedSrcConf;
 	}
 	
 	@Override
-	public Boolean isJoinable() {
-		return Boolean.TRUE;
+	public boolean isJoinable() {
+		return true;
 	}
 	
 	@Override
-	public Boolean isMainJoiningEntity() {
-		return Boolean.TRUE;
+	public boolean isMainJoiningEntity() {
+		return true;
 	}
 	
 	@Override
@@ -280,7 +267,7 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	
 	public void clone(TableDataSourceConfig toCloneFrom, SrcConf relatedSrcConf, EtlDatabaseObject schemaInfoSrc,
 	        Connection conn) throws DBException {
-		super.clone(toCloneFrom, relatedSrcConf, schemaInfoSrc, conn);
+		super.clone(toCloneFrom, schemaInfoSrc, conn);
 		
 		this.setJoinFields(toCloneFrom.getJoinFields());
 		this.setJoinExtraCondition(this.getJoinExtraCondition());
@@ -295,13 +282,13 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	}
 	
 	@Override
-	public void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
-	        throws ForbiddenOperationException, DBException {
-		super.tryToLoadSchemaInfo(schemaInfoSrc, conn);
+	public void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
+		super.loadSchemaInfo(schemaInfoSrc, conn);
 		
 		if (this.hasAuxExtractTable()) {
 			for (AuxExtractTable tab : this.getAuxExtractTable()) {
-				tab.tryToLoadSchemaInfo(schemaInfoSrc, conn);
+				tab.loadSchemaInfo(schemaInfoSrc, conn);
 			}
 		}
 	}
@@ -318,20 +305,9 @@ public class TableDataSourceConfig extends AbstractTableConfiguration implements
 	@Override
 	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
 		FieldsMapping.tryToReplacePlaceholders(getJoinFields(), schemaInfoSrc);
-		
 		setJoinExtraCondition(utilities.tryToReplacePlaceholders(getJoinExtraCondition(), schemaInfoSrc));
 		
 		AuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);
 		
-	}
-	
-	@Override
-	public SrcConf getParentConf() {
-		return (SrcConf) super.getParentConf();
-	}
-	
-	@Override
-	public EtlTemplateInfo retrieveNearestTemplate() {
-		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
 	}
 }

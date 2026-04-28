@@ -4,14 +4,12 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
 import org.openmrs.module.epts.etl.conf.IdGeneratorManager;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -32,7 +30,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * 
  * @author jpboane
  */
-public abstract class TaskProcessor<T extends EtlDatabaseObject> extends AbstractEtlDataConfiguration {
+public abstract class TaskProcessor<T extends EtlDatabaseObject> {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -153,8 +151,7 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> extends Abstrac
 	@SuppressWarnings("unchecked")
 	public void performe(boolean useMultiThreadSearch, Connection srcConn, Connection dstConn) throws DBException {
 		
-		if (getRelatedEtlOperationConfig().isDisableMultithreadingSearch()
-		        || getRelatedEtlOperationConfig().getThreadingMode().isMultiThread()) {
+		if (getRelatedEtlOperationConfig().isDisableMultithreadingSearch()) {
 			useMultiThreadSearch = false;
 		}
 		
@@ -169,9 +166,9 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> extends Abstrac
 		List<T> records = null;
 		
 		if (useMultiThreadSearch) {
-			records = getSearchParams().searchNextRecordsInMultiThreads(getLimits(), null, null, srcConn, dstConn);
+			records = getSearchParams().searchNextRecordsInMultiThreads(getLimits(), srcConn, dstConn);
 		} else {
-			records = getSearchParams().search(getLimits(), null, null, srcConn, dstConn);
+			records = getSearchParams().search(getLimits(), srcConn, dstConn);
 		}
 		
 		logDebug("SERCH NEXT MIGRATION RECORDS FOR ETL '" + this.getEtlItemConfiguration().getConfigCode() + "' ON TABLE '"
@@ -281,15 +278,6 @@ public abstract class TaskProcessor<T extends EtlDatabaseObject> extends Abstrac
 		TaskProcessor<T> e = (TaskProcessor<T>) obj;
 		
 		return this.getProcessorId().equals(e.getProcessorId());
-	}
-	
-	@Override
-	public EtlDataConfiguration getParentConf() {
-		return null;
-	}
-	
-	@Override
-	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
 	}
 	
 	public abstract void performeEtl(List<T> records, Connection srcConn, Connection dstConn) throws DBException;

@@ -11,7 +11,7 @@ public class EtlExceptionImpl extends RuntimeException implements EtlException {
 	private ActionOnEtlException action;
 	
 	public EtlExceptionImpl() {
-		this.action = ActionOnEtlException.ABORT_PROCESS;
+		this.action = ActionOnEtlException.ABORT;
 	}
 	
 	public EtlExceptionImpl(String msg) {
@@ -26,13 +26,13 @@ public class EtlExceptionImpl extends RuntimeException implements EtlException {
 	}
 	
 	public EtlExceptionImpl(String msg, Exception e) {
-		super(msg, e);
+		super(e.getLocalizedMessage(), e);
 		
-		this.action = ActionOnEtlException.ABORT_PROCESS;
+		this.action = ActionOnEtlException.ABORT;
 	}
 	
 	public EtlExceptionImpl(String msg, Exception e, EtlObject etlObject, ActionOnEtlException action) {
-		super(msg, e);
+		super(e.getLocalizedMessage(), e);
 		
 		this.action = action;
 		this.etlObject = etlObject;
@@ -41,7 +41,7 @@ public class EtlExceptionImpl extends RuntimeException implements EtlException {
 	public EtlExceptionImpl(Exception e) {
 		this(e.getLocalizedMessage());
 		
-		this.action = ActionOnEtlException.ABORT_PROCESS;
+		this.action = ActionOnEtlException.ABORT;
 		
 	}
 	

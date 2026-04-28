@@ -20,7 +20,7 @@ public abstract class AbstractProcessFinalizer implements ProcessFinalizer {
 	}
 	
 	public EtlConfiguration getConfiguration() {
-		return getRelatedProcessController().getEtlConf();
+		return getRelatedProcessController().getConfiguration();
 	}
 	
 	boolean hasRelatedController() {
@@ -29,6 +29,6 @@ public abstract class AbstractProcessFinalizer implements ProcessFinalizer {
 	
 	@Override
 	public ProcessFinalizerConf getRelatedFinalizerConf() {
-		return this.hasRelatedController() ? this.getRelatedProcessController().getEtlConf().getFinalizer() : null;
+		return this.hasRelatedController() ? this.getRelatedProcessController().getConfiguration().getFinalizer() : null;
 	}
 }

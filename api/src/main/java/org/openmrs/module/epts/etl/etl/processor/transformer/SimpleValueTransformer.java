@@ -2,10 +2,7 @@ package org.openmrs.module.epts.etl.etl.processor.transformer;
 
 import java.sql.Connection;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -36,21 +33,15 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * </pre> If {@code patient_uuid = "1234-5678"}, the transformer will assign {@code "1234-5678"}
  * directly to the destination field.
  */
-public class SimpleValueTransformer extends AbstractEtlFieldTransformer {
+public class SimpleValueTransformer implements EtlFieldTransformer {
 	
-	protected static final Map<String, SimpleValueTransformer> INSTANCES = new ConcurrentHashMap<>();
+	public static final SimpleValueTransformer INSTANCE = new SimpleValueTransformer();
 	
-	private SimpleValueTransformer(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
-	    TransformableField field) {
-		super(parameters, relatedEtlTransformTarget, field);
+	private SimpleValueTransformer() {
 	}
 	
-	public static SimpleValueTransformer getInstance(List<Object> parameters, EtlTranformTarget relatedEtlTransformTarget,
-	        TransformableField field, Connection conn) {
-		
-		String key = buildCacheKey(relatedEtlTransformTarget, field, parameters);
-		
-		return INSTANCES.computeIfAbsent(key, k -> new SimpleValueTransformer(parameters, relatedEtlTransformTarget, field));
+	public static SimpleValueTransformer getInstance() {
+		return INSTANCE;
 	}
 	
 	@Override
@@ -60,7 +51,7 @@ public class SimpleValueTransformer extends AbstractEtlFieldTransformer {
 		
 		if (additionalSrcObjects == null || additionalSrcObjects.isEmpty()) {
 			throw new EtlTransformationException("SimpleValueTransformer requires at least one source object.", srcObject,
-			        ActionOnEtlException.ABORT_PROCESS);
+			        ActionOnEtlException.ABORT);
 		}
 		
 		Object result = EtlFieldTransformer.tryToReplaceParametersOnSrcValue(additionalSrcObjects,

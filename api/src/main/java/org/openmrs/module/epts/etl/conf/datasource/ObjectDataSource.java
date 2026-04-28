@@ -5,27 +5,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.Extension;
 import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.JavaObjectFieldsValuesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ObjectLanguageType;
-import org.openmrs.module.epts.etl.conf.types.OnMultipleDataSourceFoundBehavior;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
-import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -35,7 +27,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
-public class ObjectDataSource extends AbstractEtlDataConfiguration implements EtlAdditionalDataSource, EtlSrcConf, EtlTranformTarget {
+public class ObjectDataSource implements EtlAdditionalDataSource {
 	
 	private String name;
 	
@@ -43,52 +35,15 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	
 	private List<DataSourceField> objectFields;
 	
-	private Boolean fullLoaded;
+	private boolean fullLoaded;
 	
 	private SrcConf relatedSrcConf;
 	
-	private Boolean required;
+	private boolean required;
 	
 	private String fieldsValuesGenerator;
 	
 	private JavaObjectFieldsValuesGenerator fieldsValuesGeneratorInstance;
-	
-	private EtlTemplateInfo template;
-	
-	private List<String> dynamicElements;
-	
-	private List<String> prefferredDataSource;
-	
-	private List<EtlDataSource> allAvaliableDataSource;
-	
-	private List<EtlDataSource> allNotPrefferredDataSource;
-	
-	private List<EtlDataSource> allPrefferredDataSource;
-	
-	private List<FieldsMapping> allMapping;
-	
-	private Boolean ignoreUnmappedFields;
-	
-	private OnMultipleDataSourceFoundBehavior onMultipleDataSourceForSameMapping;
-	
-	@Override
-	public List<String> getDynamicElements() {
-		return dynamicElements;
-	}
-	
-	public void setDynamicElements(List<String> dynamicElements) {
-		this.dynamicElements = dynamicElements;
-	}
-	
-	@Override
-	public EtlTemplateInfo getTemplate() {
-		return template;
-	}
-	
-	@Override
-	public void setTemplate(EtlTemplateInfo template) {
-		this.template = template;
-	}
 	
 	@Override
 	public EtlConfiguration getRelatedEtlConf() {
@@ -123,7 +78,7 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 		this.name = name;
 	}
 	
-	public void setRequired(Boolean required) {
+	public void setRequired(boolean required) {
 		this.required = required;
 	}
 	
@@ -133,30 +88,30 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public Boolean isFullLoaded() {
-		return isTrue(this.fullLoaded);
+	public boolean isFullLoaded() {
+		return this.fullLoaded;
 	}
 	
 	@Override
 	public synchronized void fullLoad() throws DBException {
-		OpenConnection mainConn = getRelatedEtlConf().getSrcConnInfo().openConnection(this);
+		OpenConnection mainConn = getRelatedEtlConf().getSrcConnInfo().openConnection();
+		
+		OpenConnection dstConn = null;
 		
 		try {
 			fullLoad(mainConn);
 		}
 		finally {
-			mainConn.finalizeConnection(this);
+			mainConn.finalizeConnection();
+			
+			if (dstConn != null) {
+				dstConn.finalizeConnection();
+			}
 		}
 	}
 	
-	public Boolean hasObjectFields() {
+	public boolean hasObjectFields() {
 		return utilities.listHasElement(this.getObjectFields());
-	}
-	
-	private void addAllAvaliableDataSources() {
-		this.addToAvaliableDataSource(this);
-		this.addToAvaliableDataSource(this.getSrcConf());
-		this.addAllToAvaliableDataSource(this.getSrcConf().getAvaliableExtraDataSource());
 	}
 	
 	@Override
@@ -165,27 +120,13 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 			return;
 		}
 		
-		addAllAvaliableDataSources();
-		
 		this.tryToLoadFieldValueGenerator();
 		
 		if (hasObjectFields()) {
-			for (DataSourceField field : this.getObjectFields()) {
-				field.setParent(this);
-				
-				field.loadType(this, this, conn);
-				
-				FieldsMapping auxFieldMapping = FieldsMapping.fastCreate(field, conn);
-				
-				if (auxFieldMapping.hasDataSourceName()) {
-					field.setValue(null);
-					field.setSrcField(null);
-					
-					field.setAuxFieldMapping(auxFieldMapping);
-				}
-				
-				field.tryToLoadTransformer(null, conn);
-				field.loadType(null, this, conn);
+			for (DataSourceField f : this.getObjectFields()) {
+				f.setDataSource(this);
+				f.tryToLoadTransformer(null);
+				f.loadType(null, this);
 			}
 		} else {
 			throw new ForbiddenOperationException(
@@ -233,18 +174,18 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public Boolean hasPK() {
-		return false_();
+	public boolean hasPK() {
+		return false;
 	}
 	
 	@Override
-	public Boolean hasPK(Connection conn) throws DBException {
-		return false_();
+	public boolean hasPK(Connection conn) throws DBException {
+		return false;
 	}
 	
 	@Override
-	public Boolean isMetadata() {
-		return false_();
+	public boolean isMetadata() {
+		return false;
 	}
 	
 	@Override
@@ -258,12 +199,12 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public Boolean isDestinationInstallationType() {
-		return false_();
+	public boolean isDestinationInstallationType() {
+		return false;
 	}
 	
 	@Override
-	public void generateRecordClass(DBConnectionInfo connInfo, Boolean fullClass) {
+	public void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass) {
 	}
 	
 	@Override
@@ -282,8 +223,8 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public Boolean isMustLoadChildrenInfo() {
-		return false_();
+	public boolean isMustLoadChildrenInfo() {
+		return false;
 	}
 	
 	@Override
@@ -321,19 +262,19 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException {
+	        List<EtlDatabaseObject> avaliableSrcObjects, Connection conn) throws DBException {
 		
 		Map<String, FieldTransformingInfo> values = this.getFieldsValuesGeneratorInstance().generateObjectFields(processor,
-		    srcObject, dstObject, this, avaliableSrcObjects, conn, conn);
+		    srcObject, this, avaliableSrcObjects, conn, conn);
 		
 		EtlDatabaseObject obj = this.newInstance();
 		
-		for (DataSourceField field : this.getObjectFields()) {
-			FieldTransformingInfo valueInfo = values.get(field.getName());
+		for (DataSourceField f : this.getObjectFields()) {
+			FieldTransformingInfo valueInfo = values.get(f.getName());
 			
-			obj.setFieldValue(field.getName(), valueInfo.getTransformedValue());
+			obj.setFieldValue(f.getName(), valueInfo.getTransformedValue());
 			
-			obj.getField(field.getName()).setTransformingInfo(valueInfo);
+			obj.getField(f.getName()).setTransformingInfo(valueInfo);
 			valueInfo.setTransformationDatasource(this);
 		}
 		
@@ -346,21 +287,22 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	}
 	
 	@Override
-	public Boolean isRequired() {
-		return isTrue(required);
+	public boolean isRequired() {
+		return required;
 	}
 	
 	@Override
-	public Boolean allowMultipleSrcObjectsForLoading() {
-		return true_();
+	public boolean allowMultipleSrcObjectsForLoading() {
+		return true;
 	}
 	
 	@Override
 	public String getQuery() {
+		// TODO Auto-generated method stub
 		return null;
 	}
 	
-	public Boolean hasFieldsValuesGenerator() {
+	public boolean hasFieldsValuesGenerator() {
 		return utilities.stringHasValue(fieldsValuesGenerator);
 	}
 	
@@ -454,131 +396,4 @@ public class ObjectDataSource extends AbstractEtlDataConfiguration implements Et
 	public void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery) {
 		throw new ForbiddenOperationException("Forbiden Method");
 	}
-	
-	@Override
-	public String toString() {
-		String fields = this.objectFields != null ? this.objectFields.toString() : "";
-		
-		fields = utilities.stringHasValue(fields) ? "(" + fields + ")" : "";
-		
-		return this.getName() + fields;
-	}
-	
-	@Override
-	public void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
-	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
-	}
-	
-	@Override
-	public void setParentConf(EtlDataConfiguration relatedParent) {
-		this.relatedSrcConf = (SrcConf) relatedParent;
-	}
-	
-	@Override
-	public Boolean isIgnoreUnmappedFields() {
-		return ignoreUnmappedFields;
-	}
-	
-	@Override
-	public SrcConf getSrcConf() {
-		return this.relatedSrcConf;
-	}
-	
-	public Boolean getFullLoaded() {
-		return fullLoaded;
-	}
-	
-	public void setFullLoaded(Boolean fullLoaded) {
-		this.fullLoaded = fullLoaded;
-	}
-	
-	public List<String> getPrefferredDataSource() {
-		return prefferredDataSource;
-	}
-	
-	public void setPrefferredDataSource(List<String> prefferredDataSource) {
-		this.prefferredDataSource = prefferredDataSource;
-	}
-	
-	@Override
-	public List<EtlDataSource> getAllAvaliableDataSource() {
-		return allAvaliableDataSource;
-	}
-	
-	@Override
-	public void setAllAvaliableDataSource(List<EtlDataSource> allAvaliableDataSource) {
-		this.allAvaliableDataSource = allAvaliableDataSource;
-	}
-	
-	@Override
-	public List<EtlDataSource> getAllNotPrefferredDataSource() {
-		return allNotPrefferredDataSource;
-	}
-	
-	@Override
-	public void setAllNotPrefferredDataSource(List<EtlDataSource> allNotPrefferredDataSource) {
-		this.allNotPrefferredDataSource = allNotPrefferredDataSource;
-	}
-	
-	@Override
-	public List<EtlDataSource> getAllPrefferredDataSource() {
-		return allPrefferredDataSource;
-	}
-	
-	@Override
-	public void setAllPrefferredDataSource(List<EtlDataSource> allPrefferredDataSource) {
-		this.allPrefferredDataSource = allPrefferredDataSource;
-	}
-	
-	@Override
-	public List<FieldsMapping> getAllMapping() {
-		return allMapping;
-	}
-	
-	@Override
-	public void setAllMapping(List<FieldsMapping> allMapping) {
-		this.allMapping = allMapping;
-	}
-	
-	public Boolean getIgnoreUnmappedFields() {
-		return ignoreUnmappedFields;
-	}
-	
-	public void setIgnoreUnmappedFields(Boolean ignoreUnmappedFields) {
-		this.ignoreUnmappedFields = ignoreUnmappedFields;
-	}
-	
-	public OnMultipleDataSourceFoundBehavior getOnMultipleDataSourceForSameMapping() {
-		return onMultipleDataSourceForSameMapping;
-	}
-	
-	public void setOnMultipleDataSourceForSameMapping(OnMultipleDataSourceFoundBehavior onMultipleDataSourceForSameMapping) {
-		this.onMultipleDataSourceForSameMapping = onMultipleDataSourceForSameMapping;
-	}
-	
-	public Boolean getRequired() {
-		return required;
-	}
-	
-	@Override
-	public void loadDataSourceInfo(Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public Boolean isLoadedDataSourceInfo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	public OnMultipleDataSourceFoundBehavior onMultipleDataSourceForSameMapping() {
-		return this.onMultipleDataSourceForSameMapping;
-	}
-	
-	@Override
-	public void setMapping(List<FieldsMapping> mapping) {
-	}
-	
 }

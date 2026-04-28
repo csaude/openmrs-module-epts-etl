@@ -55,7 +55,7 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Etl
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(
 			        (Engine<EtlStageRecordVO>) engine, null);
@@ -74,7 +74,8 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Etl
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -84,7 +85,7 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Etl
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			DataBaseMergeFromJSONSearchParams searchParams = new DataBaseMergeFromJSONSearchParams(
 			        (Engine<EtlStageRecordVO>) engine, null);
@@ -103,7 +104,8 @@ public class DatabaseMergeFromJSONController extends SiteOperationController<Etl
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.openmrs.module.epts.etl.conf.interfaces.EtlTranformTarget;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
@@ -46,23 +45,29 @@ import net.objecthunter.exp4j.ExpressionBuilder;
  * 22.857142857142858
  * </pre> which will be assigned to the destination field.
  */
-public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
+public class ArithmeticFieldTransformer implements EtlFieldTransformer {
 	
-	private static final Map<String, ArithmeticFieldTransformer> INSTANCES = new ConcurrentHashMap<>();
+	public static ArithmeticFieldTransformer defaultTransformer;
+	
+	private static final Object LOCK = new Object();
 	
 	private static final Map<String, Expression> CACHE = new ConcurrentHashMap<>();
 	
-	public ArithmeticFieldTransformer(List<Object> parameters, EtlTranformTarget relatedEtlTargedConf,
-	    TransformableField field) {
-		super(parameters, relatedEtlTargedConf, field);
+	private ArithmeticFieldTransformer() {
 	}
 	
-	public static ArithmeticFieldTransformer getInstance(List<Object> parameters, EtlTranformTarget relatedEtlTargedConf,
-	        TransformableField field, Connection conn) {
+	public static ArithmeticFieldTransformer getInstance() {
+		if (defaultTransformer != null)
+			return defaultTransformer;
 		
-		String key = buildCacheKey(relatedEtlTargedConf, field, parameters);
-		
-		return INSTANCES.computeIfAbsent(key, k -> new ArithmeticFieldTransformer(parameters, relatedEtlTargedConf, field));
+		synchronized (LOCK) {
+			if (defaultTransformer != null)
+				return defaultTransformer;
+			
+			defaultTransformer = new ArithmeticFieldTransformer();
+			
+			return defaultTransformer;
+		}
 	}
 	
 	@Override
@@ -75,7 +80,7 @@ public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
 		}
 		if (field.getValueToTransform() == null) {
 			throw new EtlTransformationException("Source value must be provided for arithmetic transformation.", srcObject,
-			        ActionOnEtlException.ABORT_PROCESS);
+			        ActionOnEtlException.ABORT);
 		}
 		
 		String srcValueWithParamsReplaced = EtlFieldTransformer
@@ -95,7 +100,7 @@ public class ArithmeticFieldTransformer extends AbstractEtlFieldTransformer {
 		catch (Exception e) {
 			
 			throw new EtlTransformationException("Failed to evaluate arithmetic expression: " + field.getValueToTransform(),
-			        e, srcObject, ActionOnEtlException.ABORT_PROCESS);
+			        e, srcObject, ActionOnEtlException.ABORT);
 		}
 	}
 	

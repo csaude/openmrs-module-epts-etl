@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
-import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.consolitation.model.DatabaseIntegrityConsolidationSearchParams;
 import org.openmrs.module.epts.etl.consolitation.processor.DatabaseIntegrityConsolidationProcessor;
 import org.openmrs.module.epts.etl.controller.OperationController;
@@ -43,7 +42,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			return DatabaseObjectDAO.getFirstRecord(engine.getSrcConf(), conn);
 		}
@@ -53,7 +52,8 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn, this);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -62,7 +62,7 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			return DatabaseObjectDAO.getLastRecord(engine.getSrcConf(), conn);
 		}
@@ -72,7 +72,8 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn, this);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -81,8 +82,8 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 		return false;
 	}
 	
-	public OpenConnection openSrcConnection(BaseConfiguration opendFrom) throws DBException {
-		OpenConnection conn = openDefaultConn(opendFrom);
+	public OpenConnection openSrcConnection() throws DBException {
+		OpenConnection conn = getDefaultConnInfo().openConnection();
 		
 		try {
 			DBUtilities.disableForegnKeyChecks(conn);
@@ -117,12 +118,6 @@ public class DatabaseIntegrityConsolidationController extends OperationControlle
 	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		
-	}
-	
-	@Override
-	public boolean isDisabled() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 	
 }

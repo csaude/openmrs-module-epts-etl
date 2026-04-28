@@ -38,7 +38,7 @@ public class ImportMozatDBs {
 			System.exit(1);
 		}
 		
-		String dbConnInfoFile = args != null ? args[0] : "";
+		String dbConnInfoFile = args[0];
 		
 		if (!new File(dbConnInfoFile).exists()) {
 			System.err.println("The path [" + dbConnInfoFile + "] for Sites file does not correspond existing file!");
@@ -52,15 +52,15 @@ public class ImportMozatDBs {
 		OpenConnection conn = null;
 		
 		try {
-			conn = dbService.openConnection(dbConnInfo);
+			conn = dbService.openConnection();
 		}
 		finally {
 			if (conn != null) {
-				conn.finalizeConnection(dbConnInfo);
+				conn.finalizeConnection();
 			}
 		}
 		
-		String dbExportRootDirectoryPath = args != null ? args[1] : "";
+		String dbExportRootDirectoryPath = args[1];
 		
 		if (!new File(dbExportRootDirectoryPath).exists()) {
 			System.err.println(
@@ -122,7 +122,8 @@ public class ImportMozatDBs {
 		while (exportRunning) {
 			TimeCountDown.sleep(20);
 			
-			conn = dbService.openConnection(dbConnInfo);
+			conn = dbService.openConnection();
+			
 			
 			for (Map<String, Object> db : dataBaseNames) {
 				exportRunning = exportIsRunningOnDb(db, conn);
@@ -134,7 +135,7 @@ public class ImportMozatDBs {
 				}
 			}
 			
-			conn.finalizeConnection(dbConnInfo);
+			conn.finalizeConnection();
 			
 			System.err.println("The aplication is still working... Last Checked" + checkedDB);
 		}

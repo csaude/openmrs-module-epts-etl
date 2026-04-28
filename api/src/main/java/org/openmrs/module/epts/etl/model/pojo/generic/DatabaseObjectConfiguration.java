@@ -21,11 +21,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Represents a data base which can be represented by a Pojo. The
- * {@link EtlDatabaseObjectConfiguration} can be a database table or a query result
+ * {@link DatabaseObjectConfiguration} can be a database table or a query result
  */
-public interface EtlDatabaseObjectConfiguration extends EtlDataConfiguration {
+public interface DatabaseObjectConfiguration extends EtlDataConfiguration {
 	
-	Boolean isFullLoaded();
+	boolean isFullLoaded();
 	
 	void fullLoad() throws DBException;
 	
@@ -96,11 +96,11 @@ public interface EtlDatabaseObjectConfiguration extends EtlDataConfiguration {
 	
 	String getSharePkWith();
 	
-	Boolean hasPK();
+	boolean hasPK();
 	
-	Boolean hasPK(Connection conn) throws DBException;
+	boolean hasPK(Connection conn) throws DBException;
 	
-	Boolean isMetadata();
+	boolean isMetadata();
 	
 	DBConnectionInfo getRelatedConnInfo();
 	
@@ -110,7 +110,7 @@ public interface EtlDatabaseObjectConfiguration extends EtlDataConfiguration {
 		return this.getParentConf().getRelatedEtlConf();
 	}
 	
-	default Boolean hasDateFields() {
+	default boolean hasDateFields() {
 		for (Field t : this.getFields()) {
 			if (t.isDateField()) {
 				return true;
@@ -137,9 +137,9 @@ public interface EtlDatabaseObjectConfiguration extends EtlDataConfiguration {
 		return getSyncRecordClass();
 	}
 	
-	Boolean isDestinationInstallationType();
+	boolean isDestinationInstallationType();
 	
-	void generateRecordClass(DBConnectionInfo connInfo, Boolean fullClass);
+	void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass);
 	
 	List<ParentTable> getParentRefInfo();
 	
@@ -159,17 +159,17 @@ public interface EtlDatabaseObjectConfiguration extends EtlDataConfiguration {
 		return parents;
 	}
 	
-	default Boolean hasParentRefInfo() {
+	default boolean hasParentRefInfo() {
 		return utilities.listHasElement(this.getParentRefInfo());
 	}
 	
-	default Boolean hasChildRefInfo() {
+	default boolean hasChildRefInfo() {
 		return isMustLoadChildrenInfo() && utilities.listHasElement(this.getChildRefInfo());
 	}
 	
-	Boolean isMustLoadChildrenInfo();
+	boolean isMustLoadChildrenInfo();
 	
-	default Boolean containsField(String fieldName) {
+	default boolean containsField(String fieldName) {
 		for (Field f : this.getFields()) {
 			if (f.getName().equals(fieldName)) {
 				return true;
@@ -215,11 +215,11 @@ public interface EtlDatabaseObjectConfiguration extends EtlDataConfiguration {
 		return clonedFields;
 	}
 	
-	default Boolean hasFields() {
+	default boolean hasFields() {
 		return utilities.listHasElement(this.getFields());
 	}
 	
-	default Boolean hasCompositeKey() {
+	default boolean hasCompositeKey() {
 		return this.getPrimaryKey() != null && this.getPrimaryKey().isCompositeKey();
 	}
 	

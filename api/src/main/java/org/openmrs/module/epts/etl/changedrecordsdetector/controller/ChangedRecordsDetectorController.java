@@ -58,7 +58,7 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			if (operationConfig.isChangedRecordsDetector()) {
 				return DetectedRecordInfoDAO.getFirstChangedRecord(engine.getSrcConf(), getEtlConfiguration().getStartDate(),
@@ -77,7 +77,7 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 		}
 		finally {
 			if (conn != null)
-				conn.finalizeConnection(this);
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -86,7 +86,7 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			if (operationConfig.isChangedRecordsDetector()) {
 				return DetectedRecordInfoDAO.getLastChangedRecord(engine.getSrcConf(), getEtlConfiguration().getStartDate(),
@@ -104,7 +104,8 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn, this);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -114,7 +115,7 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 	}
 	
 	public boolean existDetectedRecordInfoTable() throws DBException {
-		OpenConnection conn = openSrcConnection(this);
+		OpenConnection conn = openSrcConnection();
 		
 		try {
 			String schema = conn.getCatalog();
@@ -130,7 +131,7 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 		}
 		finally {
 			conn.markAsSuccessifullyTerminated();
-			conn.finalizeConnection(this);
+			conn.finalizeConnection();
 		}
 	}
 	
@@ -155,7 +156,7 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 		
 		try {
 			
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
@@ -178,7 +179,7 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 		finally {
 			if (conn != null) {
 				conn.markAsSuccessifullyTerminated();
-				conn.finalizeConnection(this);
+				conn.finalizeConnection();
 			}
 		}
 	}
@@ -203,12 +204,6 @@ public class ChangedRecordsDetectorController extends OperationController<EtlDat
 		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
 		
 		return searchParams;
-	}
-	
-	@Override
-	public boolean isDisabled() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 	
 }

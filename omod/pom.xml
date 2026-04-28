@@ -4,14 +4,14 @@
 
 	<parent>
 		<groupId>org.openmrs.module</groupId>
-		<artifactId>sisrme-etl</artifactId>
+		<artifactId>epts-etl</artifactId>
 		<version>1.0</version>
 	</parent>
 
-	<artifactId>sisrme-etl-omod</artifactId>
+	<artifactId>epts-etl-omod</artifactId>
 	<packaging>jar</packaging>
 	<name>Epts Etl Module OMOD</name>
-	<description>OMOD project for sisrme-etl</description>
+	<description>OMOD project for Epts-Etl</description>
 
 	<dependencies>
 		<!-- Begin OpenMRS modules -->

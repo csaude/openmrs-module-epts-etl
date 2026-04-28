@@ -13,21 +13,15 @@ import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TableAliasesGenerator;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.conf.types.DbmsType;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.engine.Engine;
-import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
-import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
-import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
-import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
-import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.MissingParameterException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectDAO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 /**
  * Represents an prepared query ready to be executed. It alwas has a ready query and its parameters
@@ -38,7 +32,7 @@ public class PreparedQuery {
 	
 	private String query;
 	
-	private List<EtlDatabaseObject> srcObjects;
+	private List<EtlDatabaseObject> srcObject;
 	
 	private EtlConfiguration etlConfig;
 	
@@ -58,10 +52,6 @@ public class PreparedQuery {
 	
 	private DbmsType dbmsType;
 	
-	private boolean original;
-	
-	private boolean ensuredDynamicElementsLoaded;
-	
 	PreparedQuery() {
 	}
 	
@@ -76,16 +66,11 @@ public class PreparedQuery {
 		
 		this.logTrace("Starting Query preparation... " + dataSource.getName());
 		
-		this.original = true;
-		
 		this.setQuery(dataSource.getQuery());
 		this.setEtlConfig(configuration);
 		this.setSrcObject(srcObject);
 		this.tryToLoadSQLFunctionInfo();
-		
 		logTrace("Loading Query Parameters..");
-		
-		ensureDynamicElementsLoadedAsParameteres();
 		
 		this.setQueryParams(extractParamOnQuery(this.getQuery()));
 		
@@ -107,22 +92,7 @@ public class PreparedQuery {
 			}
 			
 		}
-	}
-	
-	private void ensureDynamicElementsLoadedAsParameteres() {
-		if (hasDynamicElements()) {
-			for (String element : this.getDataSource().getDynamicElements()) {
-				setQuery(getQuery().replaceAll(element, "@(" + element + ")"));
-			}
-		}
-	}
-	
-	public boolean isEnsuredDynamicElementsLoaded() {
-		return ensuredDynamicElementsLoaded;
-	}
-	
-	public boolean isOriginal() {
-		return original;
+		
 	}
 	
 	PreparedQuery(EtlAdditionalDataSource queryDs, EtlConfiguration config, boolean ignoreMissingParameters,
@@ -134,10 +104,6 @@ public class PreparedQuery {
 		List<String> missingParameters = new ArrayList<>();
 		
 		for (QueryParameter field : this.getQueryParams()) {
-			
-			if (field.isDynamicElement(this.getDataSource())) {
-				continue;
-			}
 			
 			try {
 				field.setValue(getParamValueFromEtlConfig(field.getName()));
@@ -188,7 +154,7 @@ public class PreparedQuery {
 			throw new MissingParameterException(missingParameters);
 		}
 		
-		return param != null ? param.getValue() : null;
+		return param.getValue();
 		
 	}
 	
@@ -209,7 +175,7 @@ public class PreparedQuery {
 		
 		logTrace("Discovering subqueries on quey");
 		
-		this.setSubqueries(SQLUtilities.findSubqueries(this.getQuery()));
+		this.setSubqueries(DBUtilities.findSubqueries(this.getQuery()));
 		
 		if (hasSubQueries()) {
 			logTrace("Found Subqueries \n" + this.getSubqueries());
@@ -256,8 +222,8 @@ public class PreparedQuery {
 		this.subqueries = subqueries;
 	}
 	
-	private List<EtlDatabaseObject> getSrcObjects() {
-		return srcObjects;
+	private List<EtlDatabaseObject> getSrcObject() {
+		return srcObject;
 	}
 	
 	private List<QueryParameter> getQueryParams() {
@@ -289,7 +255,7 @@ public class PreparedQuery {
 	}
 	
 	private void setSrcObject(List<EtlDatabaseObject> srcObject) {
-		this.srcObjects = srcObject;
+		this.srcObject = srcObject;
 	}
 	
 	public String generatePreparedQuery() {
@@ -334,12 +300,6 @@ public class PreparedQuery {
 			}
 		}
 		
-		if (hasDynamicElements() && !isEnsuredDynamicElementsLoaded()) {
-			for (String element : this.getDataSource().getDynamicElements()) {
-				pQuery = pQuery.replaceAll(element, "null");
-			}
-		}
-		
 		return pQuery;
 		
 	}
@@ -353,9 +313,6 @@ public class PreparedQuery {
 				if (param.getContextType().compareClause() || param.getContextType().selectField()) {
 					queryParams.add(param.getValue());
 				} else if (param.getContextType().inClause()) {
-					
-					if (param.getValue() == null)
-						throw new EtlExceptionImpl("No value was provided to parameter " + param.getName());
 					
 					String parts[] = param.getValue().toString().split(",");
 					
@@ -378,20 +335,17 @@ public class PreparedQuery {
 	}
 	
 	public static PreparedQuery prepare(EtlAdditionalDataSource queryDs, EtlConfiguration etlConfig,
-	        List<EtlDatabaseObject> auxLoadObjects, boolean ignoreMissingParameters, DbmsType dbmsType)
-	        throws ForbiddenOperationException {
-		return new PreparedQuery(queryDs, auxLoadObjects, etlConfig, ignoreMissingParameters, dbmsType);
+	        boolean ignoreMissingParameters, DbmsType dbmsType) throws ForbiddenOperationException {
+		return new PreparedQuery(queryDs, etlConfig, ignoreMissingParameters, dbmsType);
 	}
 	
-	public PreparedQuery cloneAndLoadValues(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject dstObject,
-	        List<EtlDatabaseObject> srcObjects, Connection srcConn) throws EtlTransformationException, DBException {
-		
+	public PreparedQuery cloneAndLoadValues(List<EtlDatabaseObject> srcObject) {
 		PreparedQuery cloned = new PreparedQuery();
 		cloned.setSqlFunctionLoaded(this.isSqlFunctionLoaded());
 		cloned.setDataSource(this.getDataSource());
 		cloned.setQuery(this.getQuery());
 		cloned.setEtlConfig(this.getEtlConfig());
-		cloned.setSrcObject(srcObjects);
+		cloned.setSrcObject(srcObject);
 		cloned.setCountFunctionInfo(this.getCountFunctionInfo());
 		
 		if (this.hasQueryParams()) {
@@ -400,71 +354,7 @@ public class PreparedQuery {
 			cloned.loadQueryParamValues();
 		}
 		
-		if (hasDynamicElements()) {
-			cloned.ensureDynamicElementsLoaded(processor, srcObject, dstObject, srcObjects, srcConn);
-		}
-		
 		return cloned;
-	}
-	
-	private void ensureDynamicElementsLoaded(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> srcObjects, Connection srcConn)
-	        throws EtlTransformationException, DBException {
-		
-		if (!this.hasDynamicElements()) {
-			return;
-		}
-		
-		if (isOriginal()) {
-			throw new EtlExceptionImpl("Only cloned query can be loaded with dynamic elements");
-		}
-		
-		for (String element : this.getDataSource().getDynamicElements()) {
-			FieldsMapping map = FieldsMapping.fastCreate(element, srcConn);
-			
-			FieldTransformingInfo f = map.getTransformerInstance().transform(processor, srcObject, dstObject, srcObjects,
-			    map, srcConn, srcConn);
-			
-			if (f != null && f.getTransformedValue() != null) {
-				try {
-					for (QueryParameter p : this.getQueryParam(parseToDynamicParameter(element))) {
-						p.setValue(f.getTransformedValue());
-					}
-				}
-				catch (MissingParameterException e) {}
-			} else {
-				throw new EtlTransformationException(
-				        "The transformation of dynamic element '" + element + "' resulted on an empty value!!!", srcObject,
-				        ActionOnEtlException.ABORT_PROCESS);
-			}
-		}
-		
-		this.ensuredDynamicElementsLoaded = true;
-	}
-	
-	private String parseToDynamicParameter(String element) {
-		return "(" + element + ")";
-	}
-	
-	private List<QueryParameter> getQueryParam(String name) {
-		if (hasQueryParams()) {
-			
-			List<QueryParameter> list = new ArrayList<>();
-			
-			for (QueryParameter p : this.getQueryParams()) {
-				if (p.getName().equals(name)) {
-					list.add(p);
-				}
-			}
-			
-			return list;
-		}
-		
-		throw new MissingParameterException("Query parameter '" + name + "' not found!");
-	}
-	
-	private boolean hasDynamicElements() {
-		return this.getDataSource().hasDynamicElements();
 	}
 	
 	private void setCountFunctionInfo(SqlFunctionInfo countFunctionInfo) {
@@ -487,14 +377,14 @@ public class PreparedQuery {
 		
 		if (!isSqlFunctionLoaded()) {
 			
-			List<SqlFunctionInfo> avaliableFunction = SQLUtilities.extractSqlFunctionsInSelect(getMainQuery());
+			List<SqlFunctionInfo> avaliableFunction = DBUtilities.extractSqlFunctionsInSelect(getMainQuery());
 			
-			if (utilities.listHasExactlyOneElement(this.getDataSource().getFields())
-			        && utilities.listHasExactlyOneElement(avaliableFunction)) {
+			if (utilities.arrayHasExactlyOneElement(this.getDataSource().getFields())
+			        && utilities.arrayHasExactlyOneElement(avaliableFunction)) {
 				if (avaliableFunction.get(0).isCountFunction()) {
 					this.setCountFunctionInfo(avaliableFunction.get(0));
 					
-					String mainTableName = SQLUtilities.extractFirstTableFromSelectQuery(this.getMainQuery());
+					String mainTableName = DBUtilities.extractFirstTableFromSelectQuery(this.getMainQuery());
 					
 					if (mainTableName.startsWith("@")) {
 						mainTableName = retrieveParamValue(utilities.removeFirsChar(mainTableName)).toString();
@@ -531,14 +421,14 @@ public class PreparedQuery {
 	}
 	
 	Object getParamValueFromSourceMainObject(String paramName) throws ForbiddenOperationException {
-		if (this.getSrcObjects() == null)
+		if (this.getSrcObject() == null)
 			throw new ForbiddenOperationException("The main object is not defined");
 		
 		Object paramValue = null;
 		
 		boolean paramExists = false;
 		
-		for (EtlDatabaseObject obj : this.getSrcObjects()) {
+		for (EtlDatabaseObject obj : this.getSrcObject()) {
 			try {
 				paramValue = obj.getFieldValue(paramName);
 				
@@ -574,7 +464,7 @@ public class PreparedQuery {
 		
 		List<QueryParameter> parameters = new ArrayList<>();
 		
-		List<String> avaliableSubQueries = SQLUtilities.tryToSplitQueryByUnions(sqlQuery);
+		List<String> avaliableSubQueries = DBUtilities.tryToSplitQueryByUnions(sqlQuery);
 		
 		for (String subQuery : avaliableSubQueries) {
 			List<QueryParameter> parametersInSubQuery = extractQueryParametersInSubQuery(subQuery);
@@ -588,45 +478,25 @@ public class PreparedQuery {
 	}
 	
 	private List<QueryParameter> extractQueryParametersInSubQuery(String subQuery) {
-		
 		List<QueryParameter> parameters = new ArrayList<>();
 		
-		Pattern pattern = Pattern.compile("@\\s*(\\w+)|@\\s*\\(");
+		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
+		String parameterRegex = "@\\s*(\\w+)";
+		Pattern pattern = Pattern.compile(parameterRegex);
 		Matcher matcher = pattern.matcher(subQuery);
 		
 		int minAllowedParamStart = 0;
 		
 		while (matcher.find()) {
+			String paramName = matcher.group(1);
+			
+			logTrace("Found parameter: " + paramName);
 			
 			int paramStart = matcher.start();
+			int paramEnd = matcher.end();
 			
 			if (paramStart < minAllowedParamStart) {
 				continue;
-			}
-			
-			String paramName;
-			int paramEnd;
-			
-			// 🔥 CASO 1: parâmetro composto @(....)
-			if (matcher.group().contains("(")) {
-				
-				int openParenIndex = subQuery.indexOf("(", matcher.start());
-				
-				String fullParam = extractCompositeParameter(subQuery, openParenIndex);
-				
-				paramName = fullParam; // mantém expressão inteira
-				paramEnd = openParenIndex + fullParam.length();
-				
-				logTrace("Found COMPOSITE parameter: " + paramName);
-				
-			}
-			// 🔥 CASO 2: parâmetro simples
-			else {
-				
-				paramName = matcher.group(1);
-				paramEnd = matcher.end();
-				
-				logTrace("Found parameter: " + paramName);
 			}
 			
 			QueryParameter params = new QueryParameter(paramName);
@@ -638,29 +508,35 @@ public class PreparedQuery {
 			
 			if (utilities.stringHasValue(containgSubquery)) {
 				
-				logTrace("Found subquery within the parameter " + params.getName());
+				logTrace("Found subquer within the paratameter " + params.getName());
+				
+				//Assuming that this is the first parameter on the sub query
+				//Try to determine its position
 				
 				int paramStartInSubQuery = determineFirstParameterPositionInQuery(containgSubquery);
 				
-				int subQueryStart = paramStart - paramStartInSubQuery;
+				//The position where the sub query starts in the main query
+				int subSueryStart = paramStart - paramStartInSubQuery;
 				
-				minAllowedParamStart = subQueryStart + containgSubquery.length();
+				//We want to exclude all parameters within the sub query in the main parameters extraction
+				minAllowedParamStart = subSueryStart + containgSubquery.length();
 				
-				List<QueryParameter> subqueryParams = extractParamOnQuery(containgSubquery);
+				List<QueryParameter> subqueyParams = extractParamOnQuery(containgSubquery);
 				
-				if (utilities.listHasElement(subqueryParams)) {
-					parameters.addAll(subqueryParams);
+				if (utilities.listHasElement(subqueyParams)) {
+					parameters.addAll(subqueyParams);
 				}
 				
 			} else {
-				
 				logTrace("No subquery found within the parameter on the current query");
 				
 				minAllowedParamStart = paramStart;
 				
+				logTrace("Determining Parameter context for parameter " + paramName);
+				
 				params.determineParameterContext(subQuery, paramStart, paramEnd, this.dbmsType);
 				
-				logTrace("Context for " + paramName + " is " + params.getContextType());
+				logTrace("Context for " + paramName + " is " + params.getContextType().toString());
 				
 				parameters.add(params);
 			}
@@ -669,37 +545,18 @@ public class PreparedQuery {
 		return parameters;
 	}
 	
-	private String extractCompositeParameter(String query, int startIndex) {
-		
-		int open = 0;
-		int i = startIndex;
-		
-		for (; i < query.length(); i++) {
-			char c = query.charAt(i);
-			
-			if (c == '(')
-				open++;
-			else if (c == ')')
-				open--;
-			
-			if (open == 0) {
-				return query.substring(startIndex, i + 1);
-			}
-		}
-		
-		throw new EtlExceptionImpl("Unclosed composite parameter starting at position " + startIndex);
-	}
-	
 	private int determineFirstParameterPositionInQuery(String sqlQuery) {
-		
-		Pattern pattern = Pattern.compile("@\\s*(\\w+)|@\\s*\\(");
+		// Regular expression to match parameters starting with @ followed by optional spaces and then the parameter name
+		String parameterRegex = "@\\s*(\\w+)";
+		Pattern pattern = Pattern.compile(parameterRegex);
 		Matcher matcher = pattern.matcher(sqlQuery);
 		
-		if (matcher.find()) {
+		while (matcher.find()) {
 			return matcher.start();
 		}
 		
-		throw new ForbiddenOperationException("The query does not contain parameters");
+		throw new ForbiddenOperationException("The query does not contains parameter");
+		
 	}
 	
 	private static String tryToExtractParameterContaingSubQuery(String sqlQuery, int paramStart, DbmsType dbmsType) {
@@ -759,7 +616,7 @@ public class PreparedQuery {
 			}
 			
 			if (foundPossibleSubQueryFinishing) {
-				if (SQLUtilities.isValidSelectSqlQuery(subQuery, dbmsType)) {
+				if (DBUtilities.isValidSelectSqlQuery(subQuery, dbmsType)) {
 					return subQuery;
 				}
 			}
@@ -769,71 +626,27 @@ public class PreparedQuery {
 		
 	}
 	
+	/**
+	 * Replaces all dump parameters with a question mark. It assumes that the parameters will have
+	 * format '@paramName'
+	 * 
+	 * @param sqlQuery
+	 * @return
+	 */
 	public static String replaceSqlParametersWithQuestionMarks(String sqlQuery) {
+		// Regular expression to match parameters starting with @, considering optional spaces or newlines
+		String parameterRegex = "@\\s*\\w+";
+		Pattern pattern = Pattern.compile(parameterRegex);
+		Matcher matcher = pattern.matcher(sqlQuery);
 		
-		if (sqlQuery == null || sqlQuery.isBlank()) {
-			return sqlQuery;
+		// Replace each parameter with a question mark
+		StringBuffer replacedQuery = new StringBuffer();
+		while (matcher.find()) {
+			matcher.appendReplacement(replacedQuery, "?");
 		}
+		matcher.appendTail(replacedQuery);
 		
-		StringBuilder result = new StringBuilder();
-		
-		int i = 0;
-		int length = sqlQuery.length();
-		
-		while (i < length) {
-			
-			char c = sqlQuery.charAt(i);
-			
-			// 🔹 detectar início de parâmetro
-			if (c == '@') {
-				
-				//int start = i;
-				
-				i++; // skip '@'
-				
-				// 🔥 ignorar espaços
-				while (i < length && Character.isWhitespace(sqlQuery.charAt(i))) {
-					i++;
-				}
-				
-				// 🔥 CASO 1: parâmetro composto @(....)
-				if (i < length && sqlQuery.charAt(i) == '(') {
-					
-					int open = 0;
-					
-					do {
-						char ch = sqlQuery.charAt(i);
-						
-						if (ch == '(')
-							open++;
-						else if (ch == ')')
-							open--;
-						
-						i++;
-						
-					} while (i < length && open > 0);
-					
-					// substituir tudo por ?
-					result.append("?");
-					
-				}
-				// 🔥 CASO 2: parâmetro simples
-				else {
-					
-					while (i < length && (Character.isLetterOrDigit(sqlQuery.charAt(i)) || sqlQuery.charAt(i) == '_')) {
-						i++;
-					}
-					
-					result.append("?");
-				}
-				
-			} else {
-				result.append(c);
-				i++;
-			}
-		}
-		
-		return result.toString();
+		return replacedQuery.toString();
 	}
 	
 	public boolean isCountQuery() {
@@ -875,11 +688,6 @@ public class PreparedQuery {
 		    this.getDataSource().getSyncRecordClass(), this.generatePreparedQuery(), params, conn);
 	}
 	
-	@Override
-	public String toString() {
-		return this.mainQuery;
-	}
-	
 }
 
 class MaintableAliasGenerator implements TableAliasesGenerator {
@@ -895,7 +703,7 @@ class MaintableAliasGenerator implements TableAliasesGenerator {
 	
 	@Override
 	public void generateAliasForTable(TableConfiguration tabConfig) {
-		String alias = SQLUtilities.extractFirstTableAliasOnSqlQuery(this.pq.getQuery());
+		String alias = DBUtilities.extractFirstTableAliasOnSqlQuery(this.pq.getQuery());
 		
 		if (alias != null) {
 			tabConfig.setTableAlias(alias);
@@ -903,4 +711,5 @@ class MaintableAliasGenerator implements TableAliasesGenerator {
 			tabConfig.setTableAlias(mainTableName);
 		}
 	}
+	
 }

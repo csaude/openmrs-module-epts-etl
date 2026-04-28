@@ -1,11 +1,8 @@
 package org.openmrs.module.epts.etl.detectgapes.model;
 
 import java.sql.Connection;
-import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.types.DbmsType;
-import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.detectgapes.controller.DetectGapesController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -15,29 +12,25 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	
 	private int savedCount;
 	
-	private Engine<EtlDatabaseObject> engine;
-	
 	public DetectGapesSearchParams(Engine<EtlDatabaseObject> engine,
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
-		super(engine.getSrcConf(), limits);
-		
-		this.engine = engine;
+		super(engine, limits);
 		
 		setOrderByFields(getSrcConf().getPrimaryKey().parseFieldNamesToArray());
 	}
 	
 	public DetectGapesController getRelatedController() {
-		return (DetectGapesController) engine.getController();
+		return (DetectGapesController) super.getRelatedController();
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits,
-	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
 	        Connection dstCOnn) throws DBException {
 		AbstractTableConfiguration tableInfo = getSrcConf();
 		
@@ -48,8 +41,7 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 		
 		tryToAddLimits(limits, searchClauses);
 		
-		tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
-		    DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());
@@ -60,7 +52,7 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	}
 	
 	@Override
-	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
+	public int countAllRecords(Connection conn) throws DBException {
 		if (this.savedCount > 0)
 			return this.savedCount;
 		
@@ -78,8 +70,7 @@ public class DetectGapesSearchParams extends EtlDatabaseObjectSearchParams {
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
-	        throws DBException {
-		return countAllRecords(controller, conn);
+	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
+		return countAllRecords(conn);
 	}
 }

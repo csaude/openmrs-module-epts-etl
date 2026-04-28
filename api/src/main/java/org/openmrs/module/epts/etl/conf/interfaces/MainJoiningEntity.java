@@ -25,9 +25,9 @@ public interface MainJoiningEntity extends TableConfiguration {
 	 * 
 	 * @return
 	 */
-	Boolean isJoinable();
+	boolean isJoinable();
 	
-	Boolean doNotUseAsDatasource();
+	boolean doNotUseAsDatasource();
 	
 	/**
 	 * @return return this main joining entity as {@link JoinableEntity}
@@ -35,14 +35,14 @@ public interface MainJoiningEntity extends TableConfiguration {
 	 */
 	JoinableEntity parseToJoinable() throws ForbiddenOperationException;
 	
-	default Boolean hasAuxExtractTable() {
+	default boolean hasAuxExtractTable() {
 		return utils.listHasElement(this.getJoiningTable());
 	}
 	
 	default void tryToLoadAuxExtraJoinTable(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
 		if (hasAuxExtractTable()) {
 			for (JoinableEntity t : this.getJoiningTable()) {
-				t.tryToLoadSchemaInfo(schemaInfo, conn);
+				t.loadSchemaInfo(schemaInfo, conn);
 				
 				t.setParentConf(this);
 				t.tryToGenerateTableAlias(getRelatedEtlConf());
@@ -52,11 +52,11 @@ public interface MainJoiningEntity extends TableConfiguration {
 				TableConfiguration fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName(),
 				    new ArrayList<>());
 				
-				OpenConnection srcConn = this.getRelatedConnInfo().openConnection(this);
+				OpenConnection srcConn = this.getRelatedConnInfo().openConnection();
 				
 				try {
 					if (fullLoadedTab != null) {
-						t.clone(fullLoadedTab, this, null, conn);
+						t.clone(fullLoadedTab, null, conn);
 					} else {
 						t.fullLoad(srcConn);
 					}
@@ -67,7 +67,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 						fullLoadedTab = findFullConfiguredConfInAllRelatedTable(t.getFullTableName(), new ArrayList<>());
 						
 						if (fullLoadedTab != null) {
-							t.getSharedKeyRefInfo(conn).clone(fullLoadedTab, this, null, srcConn);
+							t.getSharedKeyRefInfo(conn).clone(fullLoadedTab, null, srcConn);
 						} else {
 							t.getSharedKeyRefInfo(conn).fullLoad(srcConn);
 						}
@@ -82,7 +82,7 @@ public interface MainJoiningEntity extends TableConfiguration {
 					t.loadJoinElements(schemaInfo, conn);
 				}
 				finally {
-					srcConn.finalizeConnection(this);
+					srcConn.finalizeConnection();
 				}
 				
 			}

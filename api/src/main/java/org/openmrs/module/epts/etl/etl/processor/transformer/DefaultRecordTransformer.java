@@ -15,11 +15,9 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
-import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.MissingRequiredTransformationObject;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
-import org.openmrs.module.epts.etl.model.EtlInfo;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -42,49 +40,39 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	        EtlDatabaseObject migratedDstParent, TransformationType transformationType, Connection srcConn,
 	        Connection dstConn) throws DBException, EtlTransformationException {
 		
-		if (dstConf.isDisabled()) {
-			throw new EtlExceptionImpl("Attempt to tranform to disabled dstConf");
-		}
-		
 		if (srcObject == null) {
-			throw new EtlTransformationException("SrcObject cannot be null", null, ActionOnEtlException.ABORT_PROCESS);
+			throw new EtlTransformationException("SrcObject cannot be null", null, ActionOnEtlException.ABORT);
 		}
 		
 		processor.logTrace("Transforming dstRecord " + srcObject);
 		
+		List<EtlDatabaseObject> srcObjects = collectSourceObjects(processor, srcObject, migratedDstParent, dstConf,
+		    transformationType, srcConn);
+		
+		if (srcObjects.isEmpty()) {
+			return null;
+		}
+		
 		EtlDatabaseObject transformedRec = dstConf.createRecordInstance();
-		
-		transformedRec.setEtlInfo(EtlInfo.initEtlRecord(processor, srcObject, transformedRec));
-		
-		List<EtlDatabaseObject> srcObjects = collectSourceObjects(processor, srcObject, transformedRec, migratedDstParent,
-		    dstConf, transformationType, srcConn);
-		
-		try {
-			if (srcObjects.isEmpty()) {
-				return null;
-			}
-		}
-		catch (Exception e) {
-			throw e;
-		}
+		transformedRec.setSrcRelatedObject(srcObject);
 		
 		applyFieldTransformations(processor, transformedRec, srcObjects, srcConn, dstConn);
 		
-		resolvePrimaryKeyAndParent(processor, srcObject, transformedRec, migratedDstParent, srcConn, dstConn);
+		resolvePrimaryKeyAndParent(processor, transformedRec, migratedDstParent, srcConn, dstConn);
 		
 		if (transformationType.onDemand()) {
 			transformedRec.setUuid(UUID.randomUUID().toString());
 		}
 		
-		transformedRec.getEtlInfo().setTransformationSrcObject(srcObjects);
+		transformedRec.setTransformationSrcObject(srcObjects);
 		
 		processor.logTrace("Record " + srcObject + " transformed to " + transformedRec);
 		
 		return transformedRec;
 	}
 	
-	private void resolvePrimaryKeyAndParent(EtlProcessor processor, EtlDatabaseObject srcRecord,
-	        EtlDatabaseObject transformedRec, EtlDatabaseObject migratedDstParent, Connection srcConn, Connection dstConn)
+	private void resolvePrimaryKeyAndParent(EtlProcessor processor, EtlDatabaseObject transformedRec,
+	        EtlDatabaseObject migratedDstParent, Connection srcConn, Connection dstConn)
 	        throws EtlTransformationException, DBException {
 		
 		DstConf dstConf = (DstConf) transformedRec.getRelatedConfiguration();
@@ -96,20 +84,6 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			if (dstConf.useManualGeneratedObjectId() && !dstConf.getRelatedEtlConf().isDoNotTransformsPrimaryKeys()) {
 				transformedRec.getObjectId().asSimpleKey().setValue(dstConf.retriveNextRecordId(processor));
 			}
-		} else {
-			
-			if (migratedDstParent == null) {
-				srcRecord.loadObjectIdData();
-				
-				Field pk = transformedRec.getField(transformedRec.getObjectId().asSimpleKey().getName());
-				
-				pk.setValue(srcRecord.getObjectId().asSimpleKey().getValue());
-				
-				FieldTransformingInfo fi = new FieldTransformingInfo(dstConf.getMappingUsingDstField(pk.getName()),
-				        pk.getValue(), (EtlDataSource) srcRecord.getRelatedConfiguration());
-				
-				pk.setTransformingInfo(fi);
-			}
 		}
 		
 		//Force the related child field to be mapped to the dstPK
@@ -117,15 +91,9 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			for (ParentTable refInfo : dstConf.getParentRefInfo()) {
 				if (refInfo.getTableName().equals(migratedDstParent.getRelatedConfiguration().getObjectName())) {
 					Field fk = transformedRec.getField(refInfo);
-					
-					FieldsMapping f = ((DstConf) transformedRec.getRelatedConfiguration())
-					        .getMappingUsingDstField(fk.getName());
-					
-					fk.setTransformingInfo(
-					    new FieldTransformingInfo(f, migratedDstParent.getObjectId().asSimpleNumericValue(),
-					            (EtlDataSource) migratedDstParent.getRelatedConfiguration()));
-					
-					transformedRec.setFieldValue(fk.getName(), fk.getTransformingInfo().getTransformedValue());
+					fk.getTransformingInfo()
+					        .setTransformationDatasource((EtlDataSource) migratedDstParent.getRelatedConfiguration());
+					fk.setValue(migratedDstParent.getObjectId().asSimpleNumericValue());
 					
 					break;
 				}
@@ -134,19 +102,18 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 	}
 	
 	private List<EtlDatabaseObject> collectSourceObjects(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject dstObject, EtlDatabaseObject migratedDstParent, DstConf dstConf,
-	        TransformationType transformationType, Connection srcConn) throws DBException {
+	        EtlDatabaseObject migratedDstParent, DstConf dstConf, TransformationType transformationType, Connection srcConn)
+	        throws DBException {
 		
 		try {
 			Set<EtlDatabaseObject> result = new LinkedHashSet<>();
 			
 			result.add(srcObject);
 			
-			addDstObject(result, dstObject);
 			addSharedObjects(result, srcObject);
 			addParentObjects(result, srcObject, migratedDstParent);
 			addAuxObjects(result, srcObject);
-			addExtraDataSources(processor, result, srcObject, dstObject, transformationType, srcConn);
+			addExtraDataSources(processor, result, srcObject, transformationType, srcConn);
 			
 			return new ArrayList<>(result);
 		}
@@ -161,10 +128,8 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		DstConf dstConf = (DstConf) transformedRec.getRelatedConfiguration();
 		
 		for (FieldsMapping fieldsMapping : dstConf.getAllMapping()) {
-			if (!fieldsMapping.getName().equals(dstConf.getPrimaryKey().asSimpleKey().getName())) {
-				fieldsMapping.getTransformerInstance().performFieldTransformation(processor, srcObjects.get(0),
-				    transformedRec, srcObjects, fieldsMapping, srcConn, dstConn);
-			}
+			fieldsMapping.getTransformerInstance().performFieldTransformation(processor, srcObjects.get(0), transformedRec,
+			    srcObjects, fieldsMapping, srcConn, dstConn);
 		}
 	}
 	
@@ -196,12 +161,6 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 		}
 	}
 	
-	private void addDstObject(Set<EtlDatabaseObject> srcObjects, EtlDatabaseObject dstObject) {
-		if (((DstConf) dstObject.getRelatedConfiguration()).useAsDataSource()) {
-			srcObjects.add(dstObject);
-		}
-	}
-	
 	private void addParentObjects(Set<EtlDatabaseObject> srcObjects, EtlDatabaseObject srcObject,
 	        EtlDatabaseObject migratedDstParent) {
 		
@@ -209,47 +168,42 @@ public class DefaultRecordTransformer implements EtlRecordTransformer {
 			srcObjects.add(migratedDstParent);
 		}
 		
-		if (srcObject.isInEtlProcess()) {
-			srcObjects.addAll(srcObject.getEtlInfo().getTransformationSrcObject());
+		if (utilities.listHasElement(srcObject.getTransformationSrcObject())) {
+			srcObjects.addAll(srcObject.getTransformationSrcObject());
 		}
 		
-		if (migratedDstParent != null) {
-			srcObjects.addAll(migratedDstParent.getEtlInfo().getTransformationSrcObject());
+		if (migratedDstParent != null && utilities.listHasElement(migratedDstParent.getTransformationSrcObject())) {
+			srcObjects.addAll(migratedDstParent.getTransformationSrcObject());
 		}
 	}
 	
 	private void addExtraDataSources(EtlProcessor processor, Set<EtlDatabaseObject> srcObjects, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject dstObject, TransformationType transformationType, Connection srcConn) throws DBException {
+	        TransformationType transformationType, Connection srcConn) throws DBException {
+		SrcConf srcConf = (SrcConf) srcObject.getRelatedConfiguration();
 		
-		if (srcObject.getRelatedConfiguration() instanceof SrcConf) {
-			SrcConf srcConf = (SrcConf) srcObject.getRelatedConfiguration();
+		for (EtlAdditionalDataSource mappingInfo : srcConf.getAvaliableExtraDataSource()) {
 			
-			for (EtlAdditionalDataSource mappingInfo : srcConf.getAvaliableExtraDataSource()) {
+			List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjectsForLoading()
+			        ? srcObjects.stream().toList()
+			        : utilities.parseToList(srcObject);
+			
+			EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(processor, srcObject, avaliableObjects,
+			    srcConn);
+			
+			if (relatedSrcObject == null) {
 				
-				List<EtlDatabaseObject> avaliableObjects = mappingInfo.allowMultipleSrcObjectsForLoading()
-				        ? srcObjects.stream().toList()
-				        : utilities.parseToList(srcObject);
-				
-				EtlDatabaseObject relatedSrcObject = mappingInfo.loadRelatedSrcObject(processor, srcObject, dstObject,
-				    avaliableObjects, srcConn);
-				
-				if (relatedSrcObject == null) {
-					
-					/*
-					 * If the transformation is not principal, then mean the record is being transformed as parent of other record. So we force the tranformation
-					 */
-					if (mappingInfo.isRequired() && transformationType.isPrincipal()) {
-						throw new MissingRequiredTransformationObject();
-					} else if (!transformationType.isPrincipal()) {
-						relatedSrcObject = mappingInfo.newInstance();
-						relatedSrcObject.setRelatedConfiguration(mappingInfo);
-					}
-				}
-				
-				if (relatedSrcObject != null) {
-					srcObjects.add(relatedSrcObject);
+				/*
+				 * If the transformation is not principal, then mean the record is being transformed as parent of other record. So we force the tranformation
+				 */
+				if (mappingInfo.isRequired() && transformationType.isPrincipal()) {
+					throw new MissingRequiredTransformationObject();
+				} else if (!transformationType.isPrincipal()) {
+					relatedSrcObject = mappingInfo.newInstance();
+					relatedSrcObject.setRelatedConfiguration(mappingInfo);
 				}
 			}
+			
+			srcObjects.add(relatedSrcObject);
 		}
 	}
 	

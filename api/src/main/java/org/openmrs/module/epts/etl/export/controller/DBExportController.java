@@ -42,8 +42,8 @@ public class DBExportController extends OperationController<EtlDatabaseObject> {
 	}
 	
 	@Override
-	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
-	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
+	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt,
+	        Engine<EtlDatabaseObject> engine) {
 		
 		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new ExportSearchParams(engine, intervalsMgt);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
@@ -62,7 +62,7 @@ public class DBExportController extends OperationController<EtlDatabaseObject> {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			EtlDatabaseObject obj = DatabaseObjectDAO.getFirstConsistentRecordInOrigin(engine.getSrcConf(), conn);
 			
@@ -77,7 +77,8 @@ public class DBExportController extends OperationController<EtlDatabaseObject> {
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -90,7 +91,7 @@ public class DBExportController extends OperationController<EtlDatabaseObject> {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			EtlDatabaseObject obj = DatabaseObjectDAO.getLastConsistentRecordOnOrigin(engine.getSrcConf(), conn);
 			
@@ -105,7 +106,8 @@ public class DBExportController extends OperationController<EtlDatabaseObject> {
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	

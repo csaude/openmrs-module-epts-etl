@@ -4,7 +4,7 @@
 
 	<parent>
 		<groupId>org.openmrs.module</groupId>
-		<artifactId>sisrme-etl</artifactId>
+		<artifactId>epts-etl</artifactId>
 		<version>1.0</version>
 	</parent>
 	
@@ -14,10 +14,10 @@
 	    <maven.compiler.source>1.8</maven.compiler.source>
 	</properties>
 
-	<artifactId>sisrme-etl-api</artifactId>
+	<artifactId>epts-etl-api</artifactId>
 	<packaging>jar</packaging>
 	<name>Epts ETL Module API</name>
-	<description>API project for SISRME-Etl</description>
+	<description>API project for Epts-Etl</description>
 		
 	<dependencies>
 

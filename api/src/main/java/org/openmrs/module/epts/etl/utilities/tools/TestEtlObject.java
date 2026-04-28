@@ -13,7 +13,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public class TestEtlObject extends AbstractDatabaseObject {
 	
 	@Override
-	public List<EtlDatabaseObject> getAuxLoadObject() {
+	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -150,12 +150,6 @@ public class TestEtlObject extends AbstractDatabaseObject {
 	
 	@Override
 	public void tryToReplaceFieldWithKey(Key k) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
 		// TODO Auto-generated method stub
 		
 	}

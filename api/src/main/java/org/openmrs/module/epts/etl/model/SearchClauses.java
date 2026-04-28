@@ -9,7 +9,7 @@ import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.FuncoesGenericas;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilitie;
 
 /**
  * Classe auxiliar para representar as clausulas de uma pesquisa. Uma clausula de pesquisa e
@@ -272,7 +272,7 @@ public class SearchClauses<T extends VO> {
 		if (this.searchParameters.isPhaseSelected() && !utilities.stringHasValue(groupingFields)) {
 			
 			if (conn != null)
-				sql = SQLUtilities.createPhasedSelect(sql, this.searchParameters.getStartAt(),
+				sql = SQLUtilitie.createPhasedSelect(sql, this.searchParameters.getStartAt(),
 				    this.searchParameters.getQtdRecordPerSelected(), conn);
 		}
 		

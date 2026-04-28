@@ -45,7 +45,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += "INSERT INTO \n";
-		sql += "	" + tableInfo.generateFullSrcStageTableName() + "(	record_origin_id,\n";
+		sql += "	" + tableInfo.generateFullStageTableName() + "(	record_origin_id,\n";
 		sql += "											 		json,\n";
 		sql += "											 		record_date_created,\n";
 		sql += "											 		record_date_changed,\n";
@@ -171,7 +171,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " UPDATE " + tableInfo.generateFullSrcStageTableName();
+		sql += " UPDATE " + tableInfo.generateFullStageTableName();
 		sql += " SET json = ?, ";
 		sql += "	 last_sync_date = null, ";
 		sql += "	 last_sync_try_err = null  ";
@@ -190,7 +190,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 			String sql = "";
 			
 			sql += "INSERT INTO \n";
-			sql += "	" + tableInfo.generateFullSrcStageTableName() + "( json,\n";
+			sql += "	" + tableInfo.generateFullStageTableName() + "( json,\n";
 			sql += "											 		migration_status,\n";
 			sql += "											 		last_sync_try_err,\n";
 			sql += "													record_origin_location_code,\n";
@@ -231,7 +231,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " UPDATE " + tableInfo.generateFullSrcStageTableName() + "\n";
+		sql += " UPDATE " + tableInfo.generateFullStageTableName() + "\n";
 		sql += " SET	json = ?,\n";
 		sql += "		migration_status = ?,\n";
 		sql += "		last_sync_try_err = ?\n";
@@ -248,7 +248,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + tableConfiguration.generateFullSrcStageTableName() + "\n";
+		sql += " FROM  	" + tableConfiguration.generateFullStageTableName() + "\n";
 		sql += " WHERE 	record_origin_id = ? \n";
 		sql += " 		AND record_origin_location_code = ? \n";
 		
@@ -262,7 +262,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + tableConfiguration.generateFullSrcStageTableName() + "\n";
+		sql += " FROM  	" + tableConfiguration.generateFullStageTableName() + "\n";
 		sql += " WHERE 	record_uuid = ? \n";
 		sql += " 		AND record_origin_location_code = ? \n";
 		
@@ -280,7 +280,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + tableConfiguration.generateFullSrcStageTableName() + "\n";
+		sql += " FROM  	" + tableConfiguration.generateFullStageTableName() + "\n";
 		sql += " WHERE 	record_uuid = ? \n";
 		sql += " 		AND consistent = ? \n";
 		
@@ -294,7 +294,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + tableConfiguration.generateFullSrcStageTableName() + "\n";
+		sql += " FROM  	" + tableConfiguration.generateFullStageTableName() + "\n";
 		sql += " WHERE 	record_uuid = ? \n";
 		
 		return search(EtlStageRecordVO.class, sql, params, conn);
@@ -316,10 +316,10 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += " SELECT * \n";
-		sql += " FROM  	" + searchParams.getConfig().getSrcConf().generateFullSrcStageTableName() + "\n";
+		sql += " FROM  	" + searchParams.getConfig().getSrcConf().generateFullStageTableName() + "\n";
 		sql += " WHERE 	id = \n";
 		sql += " 			 (	SELECT " + function + "(id)\n";
-		sql += "				FROM   " + searchParams.getConfig().getSrcConf().generateFullSrcStageTableName();
+		sql += "				FROM   " + searchParams.getConfig().getSrcConf().generateFullStageTableName();
 		sql += "				WHERE " + extraCondition + ")";
 		
 		return find(EtlStageRecordVO.class, sql, params, conn);
@@ -352,7 +352,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullSrcStageTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
 		
 		String tablesToSelect = stageTable + " src LEFT JOIN " + table + " dest_ on dest_.uuid = src.record_uuid";
 		
@@ -389,7 +389,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullSrcStageTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
 		
 		String tablesToSelect = stageTable + " src INNER JOIN " + table + " dest_ on dest_.uuid = src.record_uuid";
 		
@@ -433,7 +433,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String sql = "";
 		sql += " SELECT * \n";
-		sql += " FROM 	" + tableInfo.generateFullSrcStageTableName() + "\n";
+		sql += " FROM 	" + tableInfo.generateFullStageTableName() + "\n";
 		sql += " WHERE record_uuid = ? ";
 		sql += "  	   AND record_origin_location_code = ? ";
 		
@@ -456,7 +456,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += "UPDATE 	" + tableInfo.generateFullSrcStageTableName() + "\n";
+		sql += "UPDATE 	" + tableInfo.generateFullStageTableName() + "\n";
 		sql += "SET	   	migration_status = ?, \n";
 		sql += "	   	last_sync_try_err = ?, \n";
 		sql += "	   	last_sync_date = ? \n";
@@ -472,7 +472,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " UPDATE " + tableInfo.generateFullSrcStageTableName();
+		sql += " UPDATE " + tableInfo.generateFullStageTableName();
 		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  id between ? and ? ";
 		
@@ -486,7 +486,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " UPDATE " + tableInfo.generateFullSrcStageTableName();
+		sql += " UPDATE " + tableInfo.generateFullStageTableName();
 		sql += " SET    migration_status = ?, ";
 		sql += "		last_sync_date = ? ";
 		sql += " WHERE  id between ? and ? ";
@@ -500,7 +500,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " UPDATE " + tableInfo.generateFullSrcStageTableName();
+		sql += " UPDATE " + tableInfo.generateFullStageTableName();
 		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  id = ? ";
 		
@@ -521,7 +521,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 	        Connection conn) throws DBException {
 		Object[] params = { consistent, syncRecord.getId() };
 		
-		String sql = " UPDATE " + tableInfo.generateFullSrcStageTableName() + " SET    consistent = ? " + " WHERE  id =  ? ";
+		String sql = " UPDATE " + tableInfo.generateFullStageTableName() + " SET    consistent = ? " + " WHERE  id =  ? ";
 		
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
@@ -544,7 +544,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		String sql = "";
 		
 		sql += "DELETE 	\n";
-		sql += "FROM	" + tableInfo.generateFullSrcStageTableName() + "\n";
+		sql += "FROM	" + tableInfo.generateFullStageTableName() + "\n";
 		sql += "WHERE 	id = ?";
 		
 		executeQueryWithRetryOnError(sql, params, conn);
@@ -563,7 +563,7 @@ public class SyncImportInfoDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += "UPDATE 	" + tableInfo.generateFullSrcStageTableName() + "\n";
+		sql += "UPDATE 	" + tableInfo.generateFullStageTableName() + "\n";
 		sql += "SET	   	migration_status = ?, \n";
 		sql += "	   	last_sync_try_err = ?, \n";
 		sql += "	   	last_sync_date = ? \n";

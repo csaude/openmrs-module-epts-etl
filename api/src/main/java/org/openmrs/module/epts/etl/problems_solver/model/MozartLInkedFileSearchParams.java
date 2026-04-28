@@ -3,7 +3,6 @@ package org.openmrs.module.epts.etl.problems_solver.model;
 import java.sql.Connection;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -16,33 +15,25 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 public class MozartLInkedFileSearchParams extends EtlDatabaseObjectSearchParams {
 	
-	Engine<EtlDatabaseObject> relatedEngine;
-	
 	public MozartLInkedFileSearchParams(Engine<EtlDatabaseObject> engine,
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
-		super(engine.getSrcConf(), limits);
-		
-		this.relatedEngine = engine;
+		super(engine, limits);
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> searchNextRecordsInMultiThreads(IntervalExtremeRecord interval,
-	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	public List<EtlDatabaseObject> searchNextRecordsInMultiThreads(IntervalExtremeRecord interval, Connection srcConn,
 	        Connection dstConn) throws DBException {
-		return search(interval, parentObject, auxDataSourceObjects, srcConn, dstConn);
+		return search(interval, srcConn, dstConn);
 	}
 	
-	public Engine<EtlDatabaseObject> getRelatedEngine() {
-		return relatedEngine;
-	}
-	
+	@Override
 	public GenericOperationController getRelatedController() {
 		return (GenericOperationController) getRelatedEngine().getRelatedOperationController();
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, EtlDatabaseObject parentObject,
-	        List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn, Connection dstCOnn) throws DBException {
+	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
+	        Connection dstCOnn) throws DBException {
 		
 		if (getRelatedController().isDone()) {
 			return null;
@@ -52,20 +43,18 @@ public class MozartLInkedFileSearchParams extends EtlDatabaseObjectSearchParams 
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits,
-	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		return null;
 	}
 	
 	@Override
-	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
+	public int countAllRecords(Connection conn) throws DBException {
 		return 1;
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
-	        throws DBException {
+	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
 		return getRelatedController().isDone() ? 0 : 1;
 	}
 	

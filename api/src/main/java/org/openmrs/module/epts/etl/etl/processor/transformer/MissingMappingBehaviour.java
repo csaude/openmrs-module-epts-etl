@@ -4,12 +4,7 @@ public enum MissingMappingBehaviour {
 	
 	COMPLAIN,
 	IGNORE,
-	USE_INPUT,
 	USE_DEFAULT;
-	
-	public boolean useInputOnMissingMapping() {
-		return this.equals(USE_INPUT);
-	}
 	
 	public boolean complainOnMissingMapping() {
 		return this.equals(COMPLAIN);

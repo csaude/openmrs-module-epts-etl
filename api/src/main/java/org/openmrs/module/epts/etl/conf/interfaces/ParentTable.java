@@ -31,8 +31,8 @@ public interface ParentTable extends RelatedTable {
 	
 	public void setConditionalFields(List<Field> conditionalFields);
 	
-	default Boolean isGeneric() {
-		return Boolean.FALSE;
+	default boolean isGeneric() {
+		return false;
 	}
 	
 	default DBConnectionInfo getRelatedConnInfo() {
@@ -66,7 +66,7 @@ public interface ParentTable extends RelatedTable {
 		return conditionFields;
 	}
 	
-	default Boolean hasConditionalFields() {
+	default boolean hasConditionalFields() {
 		return utilities.listHasElement(this.getConditionalFields());
 	}
 	
@@ -138,15 +138,15 @@ public interface ParentTable extends RelatedTable {
 	
 	void setDefaultValueDueInconsistency(Object defaultValueDueInconsistency);
 	
-	Boolean isSetNullDueInconsistency();
+	boolean isSetNullDueInconsistency();
 	
-	void setSetNullDueInconsistency(Boolean setNullDueInconsistency);
+	void setSetNullDueInconsistency(boolean setNullDueInconsistency);
 	
-	default Boolean hasDefaultValueDueInconsistency() {
+	default boolean hasDefaultValueDueInconsistency() {
 		return getDefaultValueDueInconsistency() != null;
 	}
 	
-	default Boolean hasMoreThanOneConditionalFields() {
+	default boolean hasMoreThanOneConditionalFields() {
 		if (hasConditionalFields()) {
 			return utilities.arrayHasMoreThanOneElements(getConditionalFields());
 		}

@@ -9,7 +9,6 @@ import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -20,8 +19,6 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 	
 	private EtlDatabaseObject dstRelatedObject;
 	
-	private EtlDatabaseObject srcRelatedObject;
-	
 	private EtlDatabaseObject parentRecordInOrigin;
 	
 	private ParentTable parentRefInfo;
@@ -29,7 +26,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 	public static RecordWithDefaultParentInfo init(EtlDatabaseObject srcObject, EtlDatabaseObject dstObject,
 	        EtlDatabaseObject parentInOrigin, ParentTable parentRefInfo, Connection conn) throws DBException {
 		
-		EtlDatabaseObjectConfiguration recursiveRecordTableInfo = parentRefInfo.getRelatedEtlConf()
+		DatabaseObjectConfiguration recursiveRecordTableInfo = parentRefInfo.getRelatedEtlConf()
 		        .getRecordWithDefaultParentsInfoTabConf();
 		
 		if (!recursiveRecordTableInfo.isFullLoaded()) {
@@ -46,6 +43,10 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 			throw new ForbiddenOperationException("parentInOrigin cannot be null");
 		}
 		
+		if (srcObject.getParentValue(parentRefInfo) == null) {
+			throw new ForbiddenOperationException("The src_parent_id cannot be empty");
+		}
+		
 		rec.setFieldValue("record_origin_location_code", parentRefInfo.getRelatedEtlConf().getOriginAppLocationCode());
 		rec.setFieldValue("src_table_name", srcObject.generateTableName());
 		rec.setFieldValue("dst_table_name", dstObject.generateTableName());
@@ -53,19 +54,11 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		rec.setFieldValue("dst_rec_id", dstObject.getObjectId().asSimpleValue());
 		rec.setFieldValue("parent_table", parentRefInfo.getTableName());
 		rec.setFieldValue("parent_field", parentRefInfo.getChildColumnOnSimpleMapping());
-		rec.setFieldValue("src_parent_id", parentInOrigin.getObjectId().asSimpleNumericValue());
+		rec.setFieldValue("src_parent_id", srcObject.getParentValue(parentRefInfo));
 		rec.setFieldValue("inconsistent_parent", -1);
 		
 		return rec;
 		
-	}
-	
-	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
-		this.srcRelatedObject = srcRelatedObject;
-	}
-	
-	public EtlDatabaseObject getSrcRelatedObject() {
-		return srcRelatedObject;
 	}
 	
 	public String getRecordOriginLocationCode() {
@@ -109,7 +102,7 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 			throw new ForbiddenOperationException("The relatedItemConf must be full loaded!!!");
 		}
 		
-		DstConf dstConf = relatedItemConf.findDstTable_(null, this.getDstTableName());
+		DstConf dstConf = relatedItemConf.findDstTable(null, this.getDstTableName());
 		
 		this.parentRefInfo = relatedSrcConf.getFieldIsRelatedParent(Field.fastCreateField(this.getParentField()));
 		
@@ -122,14 +115,6 @@ public class RecordWithDefaultParentInfo extends GenericDatabaseObject {
 		if (this.getDstRelatedObject() == null) {
 			this.setDstRelatedObject(DatabaseObjectDAO.getByOid(dstConf,
 			    Oid.fastCreate(dstConf.getPrimaryKey().asSimpleKey().getName(), this.getDstRecId()), dstConn));
-		}
-		
-		if (this.srcRelatedObject == null) {
-			throw new EtlExceptionImpl("The SrcRelatedObject is not anymore on database: " + this);
-		}
-		
-		if (this.dstRelatedObject == null) {
-			throw new EtlExceptionImpl("The DstRelatedObject is not anymore on database: " + this);
 		}
 		
 		this.parentRecordInOrigin = DatabaseObjectDAO.getByOid(this.parentRefInfo,

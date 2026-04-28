@@ -18,7 +18,6 @@ import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 public class DatabaseObjectDAO extends BaseDAO {
 	
@@ -32,7 +31,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " UPDATE " + tableConfiguration.generateFullSrcStageTableName();
+		sql += " UPDATE " + tableConfiguration.generateFullStageTableName();
 		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  record_origin_location_code = ? ";
 		sql += "		AND " + originDestin + " = ? ";
@@ -60,7 +59,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = "";
 		
-		sql += " UPDATE " + tableConfiguration.generateFullSrcStageTableName();
+		sql += " UPDATE " + tableConfiguration.generateFullStageTableName();
 		sql += " SET    last_sync_date = ? ";
 		sql += " WHERE  record_origin_location_code = ? ";
 		sql += "		AND " + originDestin + " between ? and ? ";
@@ -82,7 +81,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		Object[] params = record.getUpdateParams();
 		String sql = record.getUpdateSQL();
 		
-		sql = SQLUtilities.tryToPutSchemaOnUpdateScript(sql, conn);
+		sql = DBUtilities.tryToPutSchemaOnUpdateScript(sql, conn);
 		
 		executeQueryWithRetryOnError(sql, params, conn);
 	}
@@ -115,8 +114,8 @@ public class DatabaseObjectDAO extends BaseDAO {
 			String sql = "";
 			
 			sql += " SELECT " + columnsToSelect + "\n";
-			sql += " FROM  	" + clauseFromStarting + " INNER JOIN "
-			        + parentTableConfiguration.generateFullSrcStageTableName() + " ON record_uuid = uuid\n";
+			sql += " FROM  	" + clauseFromStarting + " INNER JOIN " + parentTableConfiguration.generateFullStageTableName()
+			        + " ON record_uuid = uuid\n";
 			sql += " WHERE 	record_origin_id = ? and record_origin_location_code = ? ";
 			
 			return find(parentTableConfiguration.getLoadHealper(),
@@ -345,7 +344,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullSrcStageTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
 		
 		String tablesToSelect = stageTable + " stage_ INNER JOIN " + table + " src_ on src_.uuid = stage_.record_uuid";
 		
@@ -385,7 +384,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		sql += "													FROM   " + tabConf.getTableName() + " \n";
 		sql += "													WHERE  NOT EXISTS ( SELECT * \n";
 		sql += "																		FROM "
-		        + tabConf.generateFullSrcStageTableName() + "\n";
+		        + tabConf.generateFullStageTableName() + "\n";
 		sql += "																		WHERE record_origin_id = "
 		        + tabConf.getPrimaryKey() + "\n)";
 		sql += "												   )";
@@ -418,7 +417,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = " SELECT count(*) value";
 		sql += " FROM  	" + tableConfiguration.getTableName() + " INNER JOIN "
-		        + tableConfiguration.generateFullSrcStageTableName() + " ON record_destination_id = "
+		        + tableConfiguration.generateFullStageTableName() + " ON record_destination_id = "
 		        + tableConfiguration.getPrimaryKey() + "\n";
 		sql += " WHERE 	" + parentField + " = ? ";
 		sql += "			AND record_origin_location_code = ? ";
@@ -448,7 +447,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		
 		String sql = " SELECT * ";
 		sql += " FROM  	" + tableConfiguration.getTableName() + " INNER JOIN "
-		        + tableConfiguration.generateFullSrcStageTableName() + " ON record_uuid = uuid\n";
+		        + tableConfiguration.generateFullStageTableName() + " ON record_uuid = uuid\n";
 		sql += " WHERE 	" + parentField + " = ? ";
 		sql += "			AND record_origin_location_code = ? ";
 		
@@ -528,7 +527,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		}
 		
 		if (tabConf.useMysqlInsertIgnore()) {
-			sql = SQLUtilities.addInsertIgnoreOnInsertScript(sql, conn);
+			sql = DBUtilities.addInsertIgnoreOnInsertScript(sql, conn);
 		}
 		
 		sql += " VALUES";
@@ -540,9 +539,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String values = "";
 		
 		for (int i = 0; i < objects.size(); i++) {
-			EtlDatabaseObject obj = objects.get(i);
-			
-			if (obj.isExcluded() || obj.isInEtlProcess() && obj.getEtlInfo().hasExceptionOnEtl())
+			if (objects.get(i).isExcluded())
 				continue;
 			
 			objects.get(i).loadObjectIdData(tabConf);
@@ -604,44 +601,23 @@ public class DatabaseObjectDAO extends BaseDAO {
 							record.save(tabConf, conn);
 							
 							if (generateOperationResult) {
-								result.addToRecordsWithNoError(record.getEtlInfo().getRelatedSrcObject());
+								result.addToRecordsWithNoError(record.getSrcRelatedObject());
 							}
 						}
 						catch (DBException e1) {
-							
-							if (!e1.isDuplicatePrimaryOrUniqueKeyException()) {
-								record.save(tabConf, conn);
-							}
-							
 							if (tabConf.getRelatedEtlConf().getGeneralBehaviourOnEtlException().log()
 							        && generateOperationResult) {
-								
-								record.getEtlInfo().setExceptionOnEtl(e);
-								
-								result.addToRecordsWithUnresolvedErrors(record.getEtlInfo().getRelatedSrcObject(), e1);
-							} else {
-								tryToLoadObjToException(e, objects.get(0));
-								
+								result.addToRecordsWithUnresolvedErrors(record.getSrcRelatedObject(), e1);
+							} else
 								throw e;
-							}
 						}
 					}
-				} else {
-					if (objects.size() == 1) {
-						tryToLoadObjToException(e, objects.get(0));
-					}
+				} else
 					throw e;
-				}
 			}
 		}
 		
 		return result;
-	}
-	
-	static void tryToLoadObjToException(DBException e, EtlDatabaseObject obj) {
-		obj = obj.isInEtlProcess() ? obj.getEtlInfo().getRelatedSrcObject() : obj;
-		
-		e.setEtlObject(obj);
 	}
 	
 	public static Integer getAvaliableObjectId(TableConfiguration tabConf, Integer maxAcceptableId, Connection conn)
@@ -722,7 +698,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 	public static Integer getSpecificRecord(EtlDatabaseObjectSearchParams searchParams, String function, Connection conn)
 	        throws DBException, ForbiddenOperationException {
 		
-		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(null, null, null, conn, null);
+		SearchClauses<EtlDatabaseObject> searchClauses = searchParams.generateSearchClauses(null, conn, null);
 		
 		searchClauses.setColumnsToSelect(function + "(" + searchParams.getConfig().getSrcConf().getPrimaryKey() + ") value");
 		
@@ -750,7 +726,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullSrcStageTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
 		
 		String tablesToSelect = stageTable + " src_ INNER JOIN " + tableConfiguration.generateTableNameWithAlias() + "  ON "
 		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
@@ -807,7 +783,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullSrcStageTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
 		
 		String tablesToSelect = stageTable + " src_ RIGHT JOIN " + tableConfiguration.generateTableNameWithAlias() + "  on "
 		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
@@ -846,7 +822,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		String sql = "";
 		
 		String table = tableConfiguration.getTableName();
-		String stageTable = tableConfiguration.generateFullSrcStageTableName();
+		String stageTable = tableConfiguration.generateFullStageTableName();
 		
 		String tablesToSelect = stageTable + " src_ INNER JOIN " + tableConfiguration.generateTableNameWithAlias() + "  on "
 		        + tableConfiguration.getTableAlias() + ".uuid = src_.record_uuid";
@@ -891,7 +867,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		for (EtlDatabaseObject record : objects) {
 			record.update(config, conn);
 			
-			result.addToRecordsWithNoError(record.getEtlInfo().getRelatedSrcObject());
+			result.addToRecordsWithNoError(record.getSrcRelatedObject());
 		}
 		
 		return result;
@@ -905,7 +881,7 @@ public class DatabaseObjectDAO extends BaseDAO {
 		for (EtlDatabaseObject record : objects) {
 			record.delete(conn);
 			
-			result.addToRecordsWithNoError(record.getEtlInfo().getRelatedSrcObject());
+			result.addToRecordsWithNoError(record.getSrcRelatedObject());
 		}
 		
 		return result;

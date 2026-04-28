@@ -6,16 +6,15 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
-import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.base.VO;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.DateAndTimeUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
-public abstract class AbstractSearchParams<T extends VO> extends AbstractBaseConfiguration {
+public abstract class AbstractSearchParams<T extends VO> {
 	
 	public static final int STATUS_NO = -1;
 	
@@ -185,13 +184,12 @@ public abstract class AbstractSearchParams<T extends VO> extends AbstractBaseCon
 		return param.toString();
 	}
 	
-	public abstract SearchClauses<T> generateSearchClauses(IntervalExtremeRecord recordLimits, T parentObject,
-	        List<T> auxDataSourceObjects, Connection srcConn, Connection dstConn) throws DBException;
+	public abstract SearchClauses<T> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	        Connection dstConn) throws DBException;
 	
-	public String generateFulfilledQuery(IntervalExtremeRecord recordLimits, T parentObject, List<T> auxDataSourceObjects,
-	        Connection srcConn, Connection dstConn) throws DBException {
-		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, parentObject, auxDataSourceObjects, srcConn,
-		    dstConn);
+	public String generateFulfilledQuery(IntervalExtremeRecord recordLimits, Connection srcConn, Connection dstConn)
+	        throws DBException {
+		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, srcConn, dstConn);
 		
 		String fulfiledQuery = "";
 		
@@ -201,10 +199,7 @@ public abstract class AbstractSearchParams<T extends VO> extends AbstractBaseCon
 		
 		for (int i = 0; i < query.length(); i++) {
 			if (query.charAt(i) == '?') {
-				Object[] params = searchClauses.getParameters();
-				
-				fulfiledQuery += parseParamToString(params[currParam], srcConn);
-				
+				fulfiledQuery += parseParamToString(searchClauses.getParameters()[currParam], srcConn);
 				currParam++;
 			} else
 				fulfiledQuery += query.charAt(i);
@@ -213,11 +208,9 @@ public abstract class AbstractSearchParams<T extends VO> extends AbstractBaseCon
 		return fulfiledQuery;
 	}
 	
-	public String generateFulfilledQueryClause(IntervalExtremeRecord recordLimits, T parentObject,
-	        List<T> auxDataSourceObjects, Connection srcConn, Connection dstConn) throws DBException {
-		
-		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, parentObject, auxDataSourceObjects, srcConn,
-		    dstConn);
+	public String generateFulfilledQueryClause(IntervalExtremeRecord recordLimits, Connection srcConn, Connection dstConn)
+	        throws DBException {
+		SearchClauses<T> searchClauses = generateSearchClauses(recordLimits, srcConn, dstConn);
 		
 		String fulfiledQuery = "";
 		String clauses = searchClauses.getClauses();
@@ -287,19 +280,5 @@ public abstract class AbstractSearchParams<T extends VO> extends AbstractBaseCon
 	
 	public String[] getOrderByFields() {
 		return orderByFields;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public List<T> collectDataSourceObjects(T parent, List<T> auxDataSourceObjects) {
-		List<T> ds = parent != null ? utilities.parseToList(parent) : null;
-		
-		if (utilities.listHasElement(auxDataSourceObjects)) {
-			if (ds == null)
-				ds = new ArrayList<>();
-			
-			ds.addAll(auxDataSourceObjects);
-		}
-		
-		return ds;
 	}
 }

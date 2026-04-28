@@ -58,7 +58,7 @@ public class ResolveConflictsInStageAreaController extends OperationController<E
 		        (Engine<EtlStageRecordVO>) engine, null);
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			EtlStageRecordVO rec = SyncImportInfoDAO.getFirstRecord(searchParams, conn);
 			
@@ -71,7 +71,8 @@ public class ResolveConflictsInStageAreaController extends OperationController<E
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -84,7 +85,7 @@ public class ResolveConflictsInStageAreaController extends OperationController<E
 		        (Engine<EtlStageRecordVO>) engine, null);
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			EtlStageRecordVO rec = SyncImportInfoDAO.getLastRecord(searchParams, conn);
 			
@@ -97,7 +98,8 @@ public class ResolveConflictsInStageAreaController extends OperationController<E
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	

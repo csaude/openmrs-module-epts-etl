@@ -3,28 +3,28 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.openmrs.module</groupId>
-	<artifactId>sisrme-etl</artifactId>
+	<artifactId>epts-etl</artifactId>
 	<version>1.0</version>
 	<packaging>pom</packaging>
 	<name>Epts ETL Module</name>
 	<description>An ETL tool with multiple capabilities</description>
-	<url>https://wiki.openmrs.org/display/docs/Sisrme+ETL+Module</url>
+	<url>https://wiki.openmrs.org/display/docs/Epts+ETL+Module</url>
 	
 	<developers>
 		<developer>
-			<name>MISAU</name>
+			<name>CSaude</name>
 		</developer>
 	</developers>
 	
 	<organization>
-		<name>Misau</name>
-		<url>https://misau.gov.mz</url>
+		<name>CSaude</name>
+		<url>http://csaude.org.mz</url>
 	</organization>
 
 	<scm>
-		<connection>scm:svn:https://svn.openmrs.org/openmrs-modules/sisrme-etl/trunk/</connection>
-		<developerConnection>scm:svn:https://svn.openmrs.org/openmrs-modules/sisrme-etl/trunk/</developerConnection>
-		<url>https://svn.openmrs.org/openmrs-modules/sisrme-etl/trunk/</url>
+		<connection>scm:svn:https://svn.openmrs.org/openmrs-modules/epts-etl/trunk/</connection>
+		<developerConnection>scm:svn:https://svn.openmrs.org/openmrs-modules/epts-etl/trunk/</developerConnection>
+		<url>https://svn.openmrs.org/openmrs-modules/epts-etl/trunk/</url>
 	</scm>
 
 	<modules>

@@ -14,7 +14,6 @@ import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObjectUniqueKeyInfo;
-import org.openmrs.module.epts.etl.model.EtlInfo;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -215,6 +214,11 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
+	public boolean hasIgnoredParent() {
+		return false;
+	}
+	
+	@Override
 	public boolean hasParents() {
 		return false;
 	}
@@ -376,7 +380,25 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
+	public EtlDatabaseObject getSrcRelatedObject() {
+		return null;
+	}
+	
+	@Override
+	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
+	}
+	
+	@Override
 	public void setSharedPkObj(EtlDatabaseObject sharedPkObj) {
+	}
+	
+	@Override
+	public ConflictResolutionType getConflictResolutionType() {
+		return null;
+	}
+	
+	@Override
+	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
 	}
 	
 	@Override
@@ -394,40 +416,22 @@ public class DetectedRecordInfo extends BaseVO implements ChangedRecord {
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> getAuxLoadObject() {
+	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
 		return null;
 	}
 	
 	@Override
 	public void tryToReplaceFieldWithKey(Key k) {
 	}
-	
+
 	@Override
-	public List<EtlDatabaseObject> getDestinationObjects() {
+	public List<EtlDatabaseObject> getTransformationSrcObject() {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	@Override
-	public void setDestinationObjects(List<EtlDatabaseObject> destinationObjects) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public EtlInfo getEtlInfo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	public void setEtlInfo(EtlInfo info) {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
+	public void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects) {
 		// TODO Auto-generated method stub
 		
 	}

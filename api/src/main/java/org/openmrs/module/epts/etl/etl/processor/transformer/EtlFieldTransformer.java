@@ -6,7 +6,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
@@ -14,14 +13,33 @@ import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
 import org.openmrs.module.epts.etl.exceptions.EtlTransformationException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
+import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
 /**
  * Allow the custom field transformation.
  */
-public interface EtlFieldTransformer extends EtlDataConfiguration {
+public interface EtlFieldTransformer {
+	
+	public static final CommonUtilities utilities = CommonUtilities.getInstance();
 	
 	static final Pattern PARAM_PATTERN = Pattern.compile("@(\\w+)");
+	
+	static final String DEFAULT_TRANSFORMER = DefaultFieldTransformer.class.getCanonicalName();
+	
+	static final String ARITHMETIC_TRANSFORMER = ArithmeticFieldTransformer.class.getCanonicalName();
+	
+	static final String STRING_TRANSFORMER = StringTranformer.class.getCanonicalName();
+	
+	static final String SRC_VALUE_TRANSFORMER = SimpleValueTransformer.class.getCanonicalName();
+	
+	static final String MAPPING_TRANSFORMER = MappingFieldTransformer.class.getCanonicalName();
+	
+	static final String FAST_SQL_TRANSFORMER = FastSqlFieldTransformer.class.getCanonicalName();
+	
+	static final String COALESCE_TRANSFORMER = CoalesceFieldTransformer.class.getCanonicalName();
+	
+	static final String PARENT_ON_DEMAND_TRANSFORMER = ParentOnDemandLoadTransformer.class.getCanonicalName();
 	
 	FieldTransformingInfo transform(EtlProcessor processor, EtlDatabaseObject srcObject, EtlDatabaseObject transformedRecord,
 	        List<EtlDatabaseObject> additionalSrcObjects, TransformableField field, Connection srcConn, Connection dstConn)
@@ -31,10 +49,7 @@ public interface EtlFieldTransformer extends EtlDataConfiguration {
 	        EtlDatabaseObject transformedRecord, List<EtlDatabaseObject> additionalSrcObjects, FieldsMapping field,
 	        Connection srcConn, Connection dstConn) throws DBException, EtlTransformationException {
 		
-		EtlTransformationException transformationException = null;
-		
-		FieldTransformingInfo fieldTransformingInfo = null;
-		Object dstValue = null;
+		FieldTransformingInfo fieldTransformingInfo;
 		
 		if (field.isMapToNullValue()) {
 			fieldTransformingInfo = new FieldTransformingInfo(field, null, null);
@@ -44,19 +59,14 @@ public interface EtlFieldTransformer extends EtlDataConfiguration {
 				field.setSrcValue("@" + field.getSrcField());
 			}
 			
-			try {
-				fieldTransformingInfo = this.transform(processor, srcObject, transformedRecord, additionalSrcObjects, field,
-				    srcConn, dstConn);
-			}
-			catch (EtlTransformationException e) {
-				transformationException = e;
-			}
+			fieldTransformingInfo = this.transform(processor, srcObject, transformedRecord, additionalSrcObjects, field,
+			    srcConn, dstConn);
 			
 			if (fieldTransformingInfo == null) {
 				fieldTransformingInfo = new FieldTransformingInfo(field, null, null);
 			}
 			
-			dstValue = fieldTransformingInfo != null ? fieldTransformingInfo.getTransformedValue() : null;
+			Object dstValue = fieldTransformingInfo != null ? fieldTransformingInfo.getTransformedValue() : null;
 			
 			//Override the value if it should be override
 			if (dstValue != null && field.shouldOverrideValue(dstValue)) {
@@ -71,16 +81,18 @@ public interface EtlFieldTransformer extends EtlDataConfiguration {
 				}
 			}
 			
+			if (dstValue != null && utilities.isNumericType(transformedRecord.getFieldType(field.getDstField()))) {
+				dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
+			} else if (dstValue != null && utilities.isBooleanType(transformedRecord.getFieldType(field.getDstField()))) {
+				dstValue = utilities.parseValue(dstValue.toString(), transformedRecord.getFieldType(field.getDstField()));
+			}
+			
 			fieldTransformingInfo.setTransformedValue(dstValue);
 		}
 		
 		transformedRecord.setFieldValue(field.getDstField(), fieldTransformingInfo.getTransformedValue());
 		
 		transformedRecord.getField(field.getDstField()).setTransformingInfo(fieldTransformingInfo);
-		
-		if (dstValue == null && transformationException != null) {
-			throw transformationException;
-		}
 		
 	}
 	
@@ -94,19 +106,18 @@ public interface EtlFieldTransformer extends EtlDataConfiguration {
 		
 	}
 	
-	public static Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final Object srcValue)
+	public static Object tryToReplaceParametersOnSrcValue(final List<EtlDatabaseObject> srcObjects, final String srcValue)
 	        throws EtlTransformationException {
 		
-		if (!(srcValue instanceof String) || srcValue == null || srcValue.toString().isBlank())
-			return srcValue;
-		
-		String srcValueAsString = srcValue.toString();
-		
-		if (!srcValueAsString.contains("@")) {
-			return srcValueAsString;
+		if (srcValue == null || srcValue.isEmpty()) {
+			throw new EtlTransformationException("The srcValue is empty", srcObjects.get(0), ActionOnEtlException.ABORT);
 		}
 		
-		String expression = srcValueAsString;
+		if (!srcValue.contains("@")) {
+			return srcValue;
+		}
+		
+		String expression = srcValue;
 		
 		Matcher matcher = PARAM_PATTERN.matcher(expression);
 		
@@ -119,24 +130,17 @@ public interface EtlFieldTransformer extends EtlDataConfiguration {
 			
 			boolean found = false;
 			
-			EtlConfiguration tc = srcObjects.get(0).getRelatedConfiguration().getRelatedEtlConf();
-			
-			paramValue = tc.getParamValue(paramName);
-			
-			if (paramValue != null) {
-				found = true;
-			} else
-				for (EtlDatabaseObject srcObject : srcObjects) {
-					
-					try {
-						paramValue = srcObject.getFieldValue(paramName);
-						found = true;
-						break;
-					}
-					catch (ForbiddenOperationException e) {
-						// continue
-					}
+			for (EtlDatabaseObject srcObject : srcObjects) {
+				
+				try {
+					paramValue = srcObject.getFieldValue(paramName);
+					found = true;
+					break;
 				}
+				catch (ForbiddenOperationException e) {
+					// continue
+				}
+			}
 			
 			if (!found) {
 				
@@ -151,46 +155,19 @@ public interface EtlFieldTransformer extends EtlDataConfiguration {
 			
 			if (!found) {
 				throw new EtlTransformationException("Parameter '" + paramName + "' not found in source objects.",
-				        srcObjects.get(0), ActionOnEtlException.ABORT_PROCESS);
+				        srcObjects.get(0), ActionOnEtlException.ABORT);
 			}
 			
-			if (srcValueAsString.equals("@" + paramName)) {
+			if (srcValue.equals("@" + paramName)) {
 				return paramValue;
 			}
 			
-			if (paramValue != null) {
-				matcher.appendReplacement(buffer, Matcher.quoteReplacement(paramValue.toString()));
-			}
+			matcher.appendReplacement(buffer, Matcher.quoteReplacement(paramValue.toString()));
 		}
 		
 		matcher.appendTail(buffer);
 		
 		return buffer.toString();
-	}
-	
-	Connection getOverrideConnection();
-	
-	void setOverrideConnection(Connection overrideConnection);
-	
-	default boolean hasOverrideConnection() {
-		return this.getOverrideConnection() != null;
-	}
-	
-	default FieldTransformerType determineTransformerType() {
-		
-		Class<?> clazz = this.getClass();
-		
-		for (FieldTransformerType type : FieldTransformerType.values()) {
-			if (type.getClassName() != null && type.getClassName().equals(clazz.getCanonicalName())) {
-				return type;
-			}
-		}
-		
-		return FieldTransformerType.CUSTOM_TRANSFORMER;
-	}
-	
-	default void init(Connection srcConn, Connection dstConn) throws DBException {
-		
 	}
 	
 }

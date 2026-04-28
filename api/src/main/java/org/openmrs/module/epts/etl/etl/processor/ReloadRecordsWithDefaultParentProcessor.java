@@ -15,6 +15,7 @@ import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtre
 import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.etl.model.EtlLoadHelper;
+import org.openmrs.module.epts.etl.etl.model.LoadRecord;
 import org.openmrs.module.epts.etl.etl.processor.transformer.TransformationType;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
@@ -80,9 +81,14 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 			}
 			
 			for (EtlDatabaseObject etlObj : etlObjects) {
-				EtlDatabaseObject dstObject = reloadDefaultsParents(mainSrc, etlObj, srcConn, dstConn);
-				
-				dstObject.update((TableConfiguration) dstObject.getRelatedConfiguration(), dstConn);
+				try {
+					EtlDatabaseObject dstObject = reloadDefaultsParents(mainSrc, etlObj, srcConn, dstConn);
+					
+					dstObject.update((TableConfiguration) dstObject.getRelatedConfiguration(), dstConn);
+				}
+				catch (NullPointerException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		catch (Exception e) {
@@ -127,28 +133,27 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 			}
 			
 			EtlDatabaseObject dstParent = null;
-			EtlDatabaseObject parentAsSrc = null;
+			EtlDatabaseObject recordAsSrc = null;
 			
 			for (SrcConf src : avaliableSrcForCurrParent) {
-				DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable_(getRelatedEtlOperationConfig(),
+				DstConf dst = ((EtlItemConfiguration) src.getParentConf()).findDstTable(getRelatedEtlOperationConfig(),
 				    parentRefInfo.getTableName());
 				
-				parentAsSrc = src.createRecordInstance();
-				parentAsSrc.setRelatedConfiguration(src);
+				recordAsSrc = src.createRecordInstance();
+				recordAsSrc.setRelatedConfiguration(src);
 				
-				parentAsSrc.copyFrom(recWithDefaultParentInfo.getParentRecordInOrigin());
+				recordAsSrc.copyFrom(recWithDefaultParentInfo.getParentRecordInOrigin());
 				
-				dstParent = dst.getTransformerInstance().transform(this, parentAsSrc, dst, null, TransformationType.INNER,
+				dstParent = dst.getTransformerInstance().transform(this, recordAsSrc, dst, null, TransformationType.INNER,
 				    srcConn, dstConn);
 				
 				if (dstParent != null) {
+					LoadRecord parentData = new LoadRecord(recordAsSrc, dstParent, src, dst, this.getRelatedEtlProcessor());
+					
 					DBException exception = null;
-					parentAsSrc.addDestinationRecord(dstParent);
 					
 					try {
-						EtlLoadHelper.performeParentLoading(parentAsSrc, srcConn, dstConn);
-						
-						dstParent = parentAsSrc.getDestinationObjects().get(0);
+						EtlLoadHelper.performeParentLoading(parentData, srcConn, dstConn);
 						
 						dstObject.changeParentValue(recWithDefaultParentInfo.getParentRefInfo(), dstParent);
 					}
@@ -157,8 +162,8 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 					}
 					finally {
 						
-						if (dstParent.getEtlInfo().hasParentsWithDefaultValues()
-						        || (exception != null && exception.isIntegrityConstraintViolationException())) {
+						if (parentData.getResultItem().hasInconsistences()
+						        || exception != null && exception.isIntegrityConstraintViolationException()) {
 							
 							String msg = "The parent for default for parent ["
 							        + recWithDefaultParentInfo.getParentRecordInOrigin()
@@ -166,7 +171,10 @@ public class ReloadRecordsWithDefaultParentProcessor extends EtlProcessor {
 							
 							logDebug(msg);
 							
-							InconsistenceInfo incInfo = InconsistenceInfo.generate(dstObject, parentRefInfo,
+							InconsistenceInfo incInfo = InconsistenceInfo.generate(
+							    recWithDefaultParentInfo.getDstRelatedObject().generateTableName(),
+							    recWithDefaultParentInfo.getDstRelatedObject().getObjectId(), parentRefInfo.getTableName(),
+							    recWithDefaultParentInfo.getParentRecordInOrigin().getObjectId().getSimpleValueAsInt(), null,
 							    mainSrc.getOriginAppLocationCode());
 							
 							incInfo.save(mainSrc, srcConn);

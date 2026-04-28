@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.exceptions.EtlConfException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
@@ -17,7 +16,6 @@ import org.openmrs.module.epts.etl.utilities.AttDefinedElements;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -32,11 +30,11 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	
 	private List<Key> fields;
 	
-	private Boolean fieldValuesLoaded;
+	private boolean fieldValuesLoaded;
 	
 	private TableConfiguration tabConf;
 	
-	private Boolean manualConfigured;
+	private boolean manualConfigured;
 	
 	public UniqueKeyInfo() {
 	}
@@ -53,25 +51,25 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	@JsonIgnore
-	public Boolean isManualConfigured() {
-		return manualConfigured != null && manualConfigured;
+	public boolean isManualConfigured() {
+		return manualConfigured;
 	}
 	
-	public void setManualConfigured(Boolean manualConfigured) {
+	public void setManualConfigured(boolean manualConfigured) {
 		this.manualConfigured = manualConfigured;
 	}
 	
 	@JsonIgnore
-	public Boolean isFieldValuesLoaded() {
-		return fieldValuesLoaded != null && fieldValuesLoaded;
+	public boolean isFieldValuesLoaded() {
+		return fieldValuesLoaded;
 	}
 	
-	public void setFieldValuesLoaded(Boolean fieldValuesLoaded) {
+	public void setFieldValuesLoaded(boolean fieldValuesLoaded) {
 		this.fieldValuesLoaded = fieldValuesLoaded;
 	}
 	
 	@JsonIgnore
-	public Boolean isCompositeKey() {
+	public boolean isCompositeKey() {
 		return utilities.arrayHasMoreThanOneElements(this.fields);
 	}
 	
@@ -165,7 +163,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		
 		try {
 			
-			String tableName = SQLUtilities.extractTableNameFromFullTableName(tabConf.getTableName());
+			String tableName = DBUtilities.extractTableNameFromFullTableName(tabConf.getTableName());
 			
 			String catalog = conn.getCatalog();
 			
@@ -194,11 +192,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 				if (!tabConf.isIgnorableField(Field.fastCreateField(rs.getString("COLUMN_NAME")))) {
 					Field f = tabConf.getField(rs.getString("COLUMN_NAME"));
 					
-					if (keyElements != null) {
-						keyElements.add(Key.fastCreateTyped(f.getName(), f.getDataType()));
-					} else {
-						throw new EtlConfException("keyElements cannot be null!");
-					}
+					keyElements.add(Key.fastCreateTyped(f.getName(), f.getDataType()));
 				}
 			}
 			
@@ -233,7 +227,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		
 	}
 	
-	private static Boolean addUniqueKey(String keyName, List<Key> keyElements, List<UniqueKeyInfo> uniqueKeys,
+	private static boolean addUniqueKey(String keyName, List<Key> keyElements, List<UniqueKeyInfo> uniqueKeys,
 	        TableConfiguration config, Connection conn) {
 		
 		if (keyElements == null || keyElements.isEmpty())
@@ -258,7 +252,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		}
 	}
 	
-	public Boolean isContained(List<UniqueKeyInfo> uniqueKeys) {
+	public boolean isContained(List<UniqueKeyInfo> uniqueKeys) {
 		if (!utilities.listHasElement(uniqueKeys)) {
 			return false;
 		}
@@ -293,7 +287,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		return false;
 	}
 	
-	public Boolean hasSameValues(UniqueKeyInfo otherUniqueKey) {
+	public boolean hasSameValues(UniqueKeyInfo otherUniqueKey) {
 		
 		if (!this.hasSameFields(otherUniqueKey)) {
 			throw new ForbiddenOperationException("The unique keys has diffents keys");
@@ -316,7 +310,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		
 	}
 	
-	public Boolean hasSameFields(UniqueKeyInfo other) {
+	public boolean hasSameFields(UniqueKeyInfo other) {
 		
 		if (!this.hasFields() || !other.hasFields()) {
 			return false;
@@ -336,7 +330,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	@JsonIgnore
-	public Boolean hasName() {
+	public boolean hasName() {
 		return utilities.stringHasValue(getKeyName());
 	}
 	
@@ -430,7 +424,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 	}
 	
 	public static List<UniqueKeyInfo> cloneAllAndLoadValues(List<UniqueKeyInfo> uniqueKeysInfo, EtlDatabaseObject obj,
-	        Boolean keepUkName) {
+	        boolean keepUkName) {
 		List<UniqueKeyInfo> uks = cloneAll_(uniqueKeysInfo);
 		
 		if (utilities.listHasElement(uks)) {
@@ -682,7 +676,7 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		setTabConf(tabConf, true);
 	}
 	
-	public void setTabConf(TableConfiguration tabConf, Boolean checkFields) {
+	public void setTabConf(TableConfiguration tabConf, boolean checkFields) {
 		if (!checkFields) {
 			this.tabConf = tabConf;
 		} else {
@@ -775,17 +769,17 @@ public class UniqueKeyInfo implements Comparable<UniqueKeyInfo> {
 		return null;
 	}
 	
-	public Boolean containsKey(Key key) {
+	public boolean containsKey(Key key) {
 		return getKey(key.getName()) != null;
 	}
 	
 	@JsonIgnore
-	public Boolean hasFields() {
+	public boolean hasFields() {
 		return utilities.listHasElement(this.fields);
 	}
 	
 	@JsonIgnore
-	public Boolean hasNullFields() {
+	public boolean hasNullFields() {
 		if (!isFieldValuesLoaded())
 			throw new ForbiddenOperationException(
 			        "The values for the fields was not loaded. Please call loadValuesToFields(EtlDatabaseObject object) before you try to call this method");

@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
-import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
+import org.openmrs.module.epts.etl.model.base.BaseDAO;
 import org.openmrs.module.epts.etl.utilities.EptsEtlLogger;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
 
@@ -17,17 +17,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class DBConnectionService {
 	
-	private static final EptsEtlLogger logger = EptsEtlLogger.getLogger(DBConnectionService.class);
+	static int openConnections;
 	
-	private static final Object LOCK = new Object();
+	static int closedConnections;
+	
+	private static final EptsEtlLogger logger = EptsEtlLogger.getLogger(DBConnectionService.class);
 	
 	private static List<DBConnectionService> services = new ArrayList<DBConnectionService>();
 	
 	private DBConnectionInfo dbConnInfo;
 	
 	private DataSource dataSource;
-	
-	private List<OpenConnection> openConnections;
 	
 	private DBConnectionService(DBConnectionInfo dbConnInfo) {
 		this.dbConnInfo = dbConnInfo;
@@ -47,8 +47,6 @@ public class DBConnectionService {
 		this.dataSource.setMinEvictableIdleTimeMillis(15 * 60000);
 		this.dataSource.getPoolProperties().getDbProperties().setProperty("connectRetryCount", "" + 255);
 		this.dataSource.getPoolProperties().getDbProperties().setProperty("connectRetryInterval", "" + 15);
-		
-		this.openConnections = new ArrayList<>();
 	}
 	
 	public void finalize() {
@@ -120,36 +118,52 @@ public class DBConnectionService {
 		return service;
 	}
 	
+	/*public static DBConnectionService getInstance() {
+		if (service == null)
+			throw new ForbiddenOperationException(
+					"The service is not initialized. Initialize it using DBConnectionService.init (...) method ");
+	
+		return service;
+	}*/
+	
 	@JsonIgnore
-	public synchronized OpenConnection openConnection(BaseConfiguration openedFrom) throws DBException {
-		OpenConnection conn = new OpenConnection(openConnection(50, null), openedFrom, this);
-		addOpenConnection(conn);
+	public OpenConnection openConnection() throws DBException {
+		OpenConnection conn = new OpenConnection(openConnection(50, null), this);
+		
+		/*
+		try {
+			conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+		}
+		catch (SQLException e) {
+			throw new DBException(e);
+		}*/
 		
 		return conn;
 	}
 	
-	private void addOpenConnection(OpenConnection conn) {
-		synchronized (LOCK) {
-			this.openConnections.add(conn);
-		}
+	/*
+	public synchronized static void incriseOpenConnections() {
+		openConnections++;
+		
+		logger.info("TOTAL Open Connections [" + openConnections + "] Closed [" + closedConnections + "] active [" + (openConnections - closedConnections) + "]");
 	}
 	
-	void removeOpenConnection(OpenConnection conn) {
-		synchronized (LOCK) {
-			this.openConnections.remove(conn);
-		}
+	public synchronized static void increseClosedConnections() {
+		closedConnections++;
+		
+		logger.info("TOTAL Open Connections [" + openConnections + "] Closed [" + closedConnections + "] active [" + (openConnections - closedConnections) + "]");
 	}
+	*/
 	
-	private synchronized Connection openConnection(int qtyTry, SQLException e) throws DBException {
+	private Connection openConnection(int qtyTry, SQLException e) throws DBException {
 		if (qtyTry <= 0)
 			throw new DBException(e);
 		
 		try {
+			
 			return this.dataSource.getConnection();
 		}
 		catch (SQLException e1) {
-			logger.warn("OpenedConnections: " + OpenConnection.qtyOpenedConnections + ", ClosedConnections: "
-			        + OpenConnection.qtyClosedConnections);
 			
 			if (DBUtilities.determineDataBaseFromException(e1).equals(DBUtilities.MYSQL_DATABASE)) {
 				if (DBException.checkIfExceptionContainsMessage(e1, "Unknown database")) {
@@ -159,11 +173,33 @@ public class DBConnectionService {
 			
 			e1.printStackTrace();
 			
-			logger.warn("Nao foi possivel obter a conexao. Tentando novamente obter a conexao novamente...");
+			logger.warn("Tentando novamente Obter uma conexao");
 			
 			TimeCountDown.sleep(5);
 			
 			return openConnection(--qtyTry, e1);
 		}
 	}
+	
+	public static void main(String[] args) throws DBException {
+		String dataBaseUserName = "root";
+		String dataBaseUserPassword = "#eIPDB123#";
+		String connectionURI = "jdbc:mysql://10.10.2.2:53307/test?autoReconnect=true&useSSL=false";
+		String driveClassName = "com.mysql.jdbc.Driver";
+		
+		DBConnectionInfo dbConnInfo = new DBConnectionInfo(dataBaseUserName, dataBaseUserPassword, connectionURI,
+		        driveClassName);
+		
+		DBConnectionService service = DBConnectionService.init(dbConnInfo);
+		
+		OpenConnection conn = service.openConnection();
+		
+		try {
+			BaseDAO.insert(null, "INSERT INTO item (header_id, date_created) VALUES(1, now()) ", null, conn);
+		}
+		catch (DBException e) {
+			System.out.println(e.getLocalizedMessage());
+		}
+	}
+	
 }

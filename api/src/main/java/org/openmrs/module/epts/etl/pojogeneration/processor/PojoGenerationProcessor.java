@@ -4,13 +4,14 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.common.model.EtlStageRecordVO;
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlDatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.EtlOperationItemResult;
 import org.openmrs.module.epts.etl.pojogeneration.controller.PojoGenerationController;
 import org.openmrs.module.epts.etl.pojogeneration.model.PojoGenerationRecord;
@@ -79,7 +80,7 @@ public class PojoGenerationProcessor extends TaskProcessor<PojoGenerationRecord>
 		
 	}
 	
-	private void generate(DBConnectionInfo app, EtlDatabaseObjectConfiguration tableConfiguration) {
+	private void generate(DBConnectionInfo app, DatabaseObjectConfiguration tableConfiguration) {
 		if (!utilities.stringHasValue(app.getPojoPackageName())) {
 			throw new ForbiddenOperationException("The app " + app + " has no package name!");
 		}
@@ -90,7 +91,7 @@ public class PojoGenerationProcessor extends TaskProcessor<PojoGenerationRecord>
 			OpenConnection appConn = null;
 			
 			try {
-				appConn = app.openConnection(this);
+				appConn = app.openConnection();
 				
 				tableConfiguration.generateRecordClass(app, true);
 				
@@ -100,7 +101,8 @@ public class PojoGenerationProcessor extends TaskProcessor<PojoGenerationRecord>
 				throw new RuntimeException(e);
 			}
 			finally {
-				finalizeConnection(appConn);
+				if (appConn != null)
+					appConn.finalizeConnection();
 			}
 		}
 	}

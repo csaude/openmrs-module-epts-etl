@@ -10,10 +10,10 @@ public enum ThreadingMode {
 	SINGLE_THREAD;
 	
 	public boolean isMultiThread() {
-		return this.equals(MULTI) || this.equals(MULTITHREAD) || this.equals(MULTI_THREAD) ;
+		return this.compareTo(MULTI_THREAD) <= 0;
 	}
 	
 	public boolean isSingleThread() {
-		return this.equals(SINGLE) || this.equals(SINGLETHREAD) || this.equals(SINGLE_THREAD) ;
+		return this.compareTo(SINGLE) >= 0;
 	}
 }

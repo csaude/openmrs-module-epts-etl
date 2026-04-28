@@ -47,7 +47,7 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			return DatabaseObjectDAO.getFirstRecord(engine.getSrcConf(), conn);
 		}
@@ -57,7 +57,8 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -66,7 +67,7 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection(this);
+			conn = openSrcConnection();
 			
 			return DatabaseObjectDAO.getLastRecord(engine.getSrcConf(), conn);
 		}
@@ -76,7 +77,8 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 			throw new RuntimeException(e);
 		}
 		finally {
-			finalizeConnection(conn);
+			if (conn != null)
+				conn.finalizeConnection();
 		}
 	}
 	
@@ -146,12 +148,6 @@ public class DBQuickExportController extends OperationController<EtlDatabaseObje
 	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		
-	}
-	
-	@Override
-	public boolean isDisabled() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 	
 }

@@ -24,12 +24,12 @@ public class RefMapping {
 	
 	private ChildTable childTabConf;
 	
-	private Boolean setNullDueInconsistency;
+	private boolean setNullDueInconsistency;
 	
 	/*
 	 * Indicate if this parent can be ignored if not found in referenced table
 	 */
-	private Boolean ignorable;
+	private boolean ignorable;
 	
 	public ParentTableImpl getParentTabConf() {
 		return parentTabConf;
@@ -72,19 +72,19 @@ public class RefMapping {
 		}
 	}
 	
-	public Boolean isIgnorable() {
-		return ignorable != null && ignorable;
+	public boolean isIgnorable() {
+		return ignorable;
 	}
 	
-	public void setIgnorable(Boolean ignorable) {
+	public void setIgnorable(boolean ignorable) {
 		this.ignorable = ignorable;
 	}
 	
-	public Boolean isSetNullDueInconsistency() {
-		return setNullDueInconsistency != null && setNullDueInconsistency;
+	public boolean isSetNullDueInconsistency() {
+		return setNullDueInconsistency;
 	}
 	
-	public void setSetNullDueInconsistency(Boolean setNullDueInconsistency) {
+	public void setSetNullDueInconsistency(boolean setNullDueInconsistency) {
 		this.setNullDueInconsistency = setNullDueInconsistency;
 	}
 	
@@ -180,12 +180,12 @@ public class RefMapping {
 	}
 	
 	@JsonIgnore
-	public Boolean isNumericRefColumn() {
+	public boolean isNumericRefColumn() {
 		return AttDefinedElements.isNumeric(this.childField.getDataType());
 	}
 	
 	@JsonIgnore
-	public Boolean isPrimitieveRefColumn() {
+	public boolean isPrimitieveRefColumn() {
 		return AttDefinedElements.isPrimitive(this.childField.getDataType());
 	}
 	

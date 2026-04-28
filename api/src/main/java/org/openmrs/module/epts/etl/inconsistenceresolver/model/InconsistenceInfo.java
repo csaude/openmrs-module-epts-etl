@@ -1,12 +1,7 @@
 package org.openmrs.module.epts.etl.inconsistenceresolver.model;
 
 import java.sql.Connection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import org.openmrs.module.epts.etl.conf.ParentTableImpl;
-import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
@@ -17,19 +12,29 @@ public class InconsistenceInfo extends BaseVO {
 	
 	private Integer id;
 	
-	private EtlDatabaseObject obj;
+	private String tableName;
 	
-	private ParentTable refInfo;
+	private Oid recordId;
+	
+	private String parentTableName;
+	
+	private Object parentId;
+	
+	private Object defaultParentId;
 	
 	private String recordOriginLocationCode;
 	
 	public InconsistenceInfo() {
 	}
 	
-	public InconsistenceInfo(EtlDatabaseObject obj, ParentTable refInfo, String recordOriginLocationCode) {
-		this.obj = obj;
-		this.refInfo = refInfo;
+	public InconsistenceInfo(String tableName, Oid recordId, String parentTableName, Object parentId, Object defaultParentId,
+	    String recordOriginLocationCode) {
+		this.tableName = tableName;
+		this.recordId = recordId;
+		this.parentTableName = parentTableName;
 		this.recordOriginLocationCode = recordOriginLocationCode;
+		this.parentId = parentId;
+		this.defaultParentId = defaultParentId;
 	}
 	
 	public boolean isResolved() {
@@ -53,33 +58,58 @@ public class InconsistenceInfo extends BaseVO {
 	}
 	
 	public String getTableName() {
-		return this.obj.getRelatedConfiguration().getObjectName();
+		return tableName;
+	}
+	
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
 	}
 	
 	public Oid getRecordId() {
-		return this.obj.getObjectId();
+		return recordId;
 	}
 	
-	public EtlDatabaseObject getObj() {
-		return obj;
+	public void setRecordId(Oid recordId) {
+		this.recordId = recordId;
 	}
 	
 	public String getParentTableName() {
-		return this.refInfo.getTableName();
+		return parentTableName;
 	}
 	
-	public Integer getParentId() {
-		return refInfo.generateParentOidFromChild(obj).asSimpleNumericValue().intValue();
+	public void setParentTableName(String parentTableName) {
+		this.parentTableName = parentTableName;
+	}
+	
+	public Object getParentId() {
+		return parentId;
+	}
+	
+	public void setParentId(Object parentId) {
+		this.parentId = parentId;
 	}
 	
 	public Object getDefaultParentId() {
-		return refInfo.getDefaultValueDueInconsistency();
-		
+		return defaultParentId;
 	}
 	
-	public static InconsistenceInfo generate(EtlDatabaseObject record,  ParentTable refInfo,
+	public void setDefaultParentId(Object defaultParentId) {
+		this.defaultParentId = defaultParentId;
+	}
+	
+	public static InconsistenceInfo generate(EtlDatabaseObject record, EtlDatabaseObject parent, Object defaultParentId,
 	        String recordOriginLocationCode) {
-		InconsistenceInfo info = new InconsistenceInfo(record, refInfo, recordOriginLocationCode);
+		InconsistenceInfo info = new InconsistenceInfo(record.generateTableName(), record.getObjectId(),
+		        parent.generateTableName(), parent.getObjectId().getSimpleValueAsInt(), defaultParentId,
+		        recordOriginLocationCode);
+		
+		return info;
+	}
+	
+	public static InconsistenceInfo generate(String tableName, Oid recordId, String parentTableName, Object parentId,
+	        Object defaultParentId, String recordOriginLocationCode) {
+		InconsistenceInfo info = new InconsistenceInfo(tableName, recordId, parentTableName, parentId, defaultParentId,
+		        recordOriginLocationCode);
 		
 		return info;
 	}
@@ -94,26 +124,8 @@ public class InconsistenceInfo extends BaseVO {
 	
 	@Override
 	public String toString() {
-		String str = getTableName() + "(" + getRecordId() + "). Parent " + getParentTableName() + "(" + getParentId() + ")";
+		String str = tableName + (recordId) + ". Parent " + parentTableName + "(" + parentId + ")";
 		
 		return str;
-	}
-	
-	public Map<ParentTableImpl, Integer> parseToMissingInfo() {
-		Map<ParentTableImpl, Integer> missingParents = new HashMap<>();
-		
-		missingParents.put((ParentTableImpl) this.refInfo, getParentId());
-		
-		return missingParents;
-	}
-	
-	public static Map<ParentTableImpl, Integer> parseToMissingInfo(List<InconsistenceInfo> inconsistences) {
-		Map<ParentTableImpl, Integer> missingParents = new HashMap<>();
-		
-		for (InconsistenceInfo i : inconsistences) {
-			missingParents.put((ParentTableImpl) i.refInfo, i.getParentId());
-		}
-		
-		return missingParents;
 	}
 }

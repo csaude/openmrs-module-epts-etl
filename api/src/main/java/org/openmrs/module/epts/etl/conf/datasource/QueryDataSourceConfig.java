@@ -9,34 +9,28 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.ChildTable;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
 import org.openmrs.module.epts.etl.conf.PrimaryKey;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
-import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
-import org.openmrs.module.epts.etl.conf.types.DbmsType;
-import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
-import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
-import org.openmrs.module.epts.etl.etl.processor.transformer.FieldTransformingInfo;
 import org.openmrs.module.epts.etl.exceptions.ActionOnEtlException;
-import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
-import org.openmrs.module.epts.etl.model.pojo.generic.EtlDatabaseObjectConfiguration;
+import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectConfiguration;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.DatabaseEntityPOJOGenerator;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
-import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -44,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * Represents a query configuration. A query is used on data mapping between source and destination
  * table
  */
-public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implements EtlDatabaseObjectConfiguration, EtlAdditionalDataSource, EtlSrcConf {
+public class QueryDataSourceConfig extends AbstractBaseConfiguration implements DatabaseObjectConfiguration, EtlAdditionalDataSource {
 	
 	private final String stringLock = new String("LOCK_STRING");
 	
@@ -56,28 +50,20 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	
 	private List<Field> fields;
 	
-	private Boolean fullLoaded;
+	private boolean fullLoaded;
 	
 	private SrcConf relatedSrcConf;
 	
 	private Class<? extends EtlDatabaseObject> syncRecordClass;
 	
-	private Boolean required;
+	private boolean required;
 	
 	private DatabaseObjectLoaderHelper loadHealper;
 	
 	private PreparedQuery defaultPreparedQuery;
 	
-	private EtlTemplateInfo template;
-	
-	private Boolean doNotLoadFields;
-	
-	private RelationshipResolutionStrategy relationshipResolutionStrategy;
-	
 	public QueryDataSourceConfig() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
-		
-		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
 	}
 	
 	public QueryDataSourceConfig(String query, SrcConf relatedSrcVonf) {
@@ -86,36 +72,6 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 		setRelatedSrcConf(relatedSrcVonf);
 		
 		setQuery(query);
-	}
-	
-	public RelationshipResolutionStrategy getRelationshipResolutionStrategy() {
-		return relationshipResolutionStrategy;
-	}
-	
-	public void setRelationshipResolutionStrategy(RelationshipResolutionStrategy relationshipResolutionStrategy) {
-		this.relationshipResolutionStrategy = relationshipResolutionStrategy;
-	}
-	
-	public RelationshipResolutionStrategy relationshipResolutionStrategy() {
-		return this.relationshipResolutionStrategy;
-	}
-	
-	public Boolean isDoNotLoadFields() {
-		return isTrue(doNotLoadFields) || this.hasFields();
-	}
-	
-	public void setDoNotLoadFields(Boolean doNotLoadFields) {
-		this.doNotLoadFields = doNotLoadFields;
-	}
-	
-	@Override
-	public EtlTemplateInfo getTemplate() {
-		return template;
-	}
-	
-	@Override
-	public void setTemplate(EtlTemplateInfo template) {
-		this.template = template;
 	}
 	
 	@Override
@@ -128,11 +84,11 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	@Override
-	public Boolean isRequired() {
-		return isTrue(this.required);
+	public boolean isRequired() {
+		return this.required;
 	}
 	
-	public void setRequired(Boolean required) {
+	public void setRequired(boolean required) {
 		this.required = required;
 	}
 	
@@ -186,16 +142,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 		String pathToScript = getRelatedEtlConf().getSqlScriptsDirectory().getAbsolutePath() + File.separator + this.script;
 		
 		try {
-			
-			String query = new String(Files.readAllBytes(Paths.get(pathToScript)));
-			
-			if (retrieveNearestTemplate() != null) {
-				query = EtlDataConfiguration.resolvePlaceholders(query, null, null, null,
-				    retrieveNearestTemplate().getParameters());
-			}
-			
-			this.setQuery(query);
-			
+			this.setQuery(new String(Files.readAllBytes(Paths.get(pathToScript))));
 		}
 		catch (IOException e) {
 			throw new RuntimeException(e);
@@ -206,19 +153,19 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 		this.query = query;
 	}
 	
-	public Boolean isFullLoaded() {
-		return isTrue(fullLoaded);
+	public boolean isFullLoaded() {
+		return fullLoaded;
 	}
 	
 	@Override
 	public void fullLoad() throws DBException {
-		OpenConnection conn = this.relatedSrcConf.getRelatedConnInfo().openConnection(this);
+		OpenConnection conn = this.relatedSrcConf.getRelatedConnInfo().openConnection();
 		
 		try {
 			fullLoad(conn);
 		}
 		finally {
-			conn.finalizeConnection(this);
+			conn.finalizeConnection();
 		}
 	}
 	
@@ -237,11 +184,11 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 			
 			getRelatedEtlConf().logDebug("Initializing full loading of QueryDataSourceConfig [" + this.getName() + "]");
 			
-			query = PreparedQuery.prepare(this, getRelatedEtlConf(), null, true, DbmsType.determineFromConnection(conn));
+			query = PreparedQuery.prepare(this, getRelatedEtlConf(), true, DbmsType.determineFromConnection(conn));
 			
 			getRelatedEtlConf().logTrace("Determining fields for query...");
 			
-			setFields(SQLUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), null, conn));
+			setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), null, conn));
 			
 			getRelatedEtlConf().logDebug("QueryDataSourceConfig [" + this.getName() + "] full loaded!");
 			
@@ -251,7 +198,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 			//Mean that there are missing parameters. Lets try to load the minimal information of fields
 			//Note that we are not marking the record as fullLoaded as there will be missing information on fields
 			
-			setFields(SQLUtilities.determineFieldsFromQuery(this.getQuery()));
+			setFields(DBUtilities.determineFieldsFromQuery(this.getQuery()));
 		}
 		
 	}
@@ -266,18 +213,15 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 			PreparedQuery query = PreparedQuery.prepare(this, mainObject, getRelatedEtlConf(),
 			    DbmsType.determineFromConnection(conn));
 			
-			if (!isDoNotLoadFields()) {
-				
-				List<Object> paramsAsList = query.generateQueryParameters();
-				
-				Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
-				
-				try {
-					setFields(SQLUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), params, conn));
-				}
-				catch (DBException e) {
-					throw new DBException("Error computing the query " + this.getName(), e);
-				}
+			List<Object> paramsAsList = query.generateQueryParameters();
+			
+			Object[] params = paramsAsList != null ? paramsAsList.toArray() : null;
+			
+			try {
+				setFields(DBUtilities.determineFieldsFromQuery(query.generatePreparedQuery(), params, conn));
+			}
+			catch (DBException e) {
+				throw new DBException("Error computing the query " + this.getName(), e);
 			}
 			
 			this.defaultPreparedQuery = query;
@@ -304,13 +248,13 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	@JsonIgnore
-	public Boolean existsSyncRecordClass(DBConnectionInfo connInfo) {
+	public boolean existsSyncRecordClass(DBConnectionInfo connInfo) {
 		try {
 			return getSyncRecordClass(connInfo) != null;
 		}
 		catch (ForbiddenOperationException e) {
 			
-			return false_();
+			return false;
 		}
 	}
 	
@@ -348,11 +292,11 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	@Override
-	public Boolean allowMultipleSrcObjectsForLoading() {
-		return Boolean.TRUE;
+	public boolean allowMultipleSrcObjectsForLoading() {
+		return true;
 	}
 	
-	public void generateRecordClass(DBConnectionInfo connInfo, Boolean fullClass) {
+	public void generateRecordClass(DBConnectionInfo connInfo, boolean fullClass) {
 		try {
 			if (fullClass) {
 				this.syncRecordClass = DatabaseEntityPOJOGenerator.generate(this, connInfo);
@@ -442,13 +386,13 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	@Override
-	public Boolean hasPK() {
-		return Boolean.FALSE;
+	public boolean hasPK() {
+		return false;
 	}
 	
 	@Override
-	public Boolean isMetadata() {
-		return Boolean.FALSE;
+	public boolean isMetadata() {
+		return false;
 	}
 	
 	@Override
@@ -462,21 +406,19 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	@Override
-	public Boolean isDestinationInstallationType() {
-		return Boolean.FALSE;
+	public boolean isDestinationInstallationType() {
+		return false;
 	}
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
-	        throws DBException {
+	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
 		if (!isPrepared()) {
 			prepare(avaliableSrcObjects, srcConn);
 		}
 		
-		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery()
-		        .cloneAndLoadValues(processor, srcObject, dstObject, avaliableSrcObjects, srcConn)
-		        .query(processor != null ? processor.getEngine() : null, srcConn);
+		List<EtlDatabaseObject> list = this.getDefaultPreparedQuery().cloneAndLoadValues(avaliableSrcObjects)
+		        .query(processor.getEngine(), srcConn);
 		
 		if (utilities.listHasNoElement(list)) {
 			return null;
@@ -485,18 +427,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 			        "The datasource (" + this.getName() + ") returned more than one src objects");
 		}
 		
-		EtlDatabaseObject result = list.get(0);
-		
-		if (relationshipResolutionStrategy.skip()) {
-			for (Field f : result.getFields()) {
-				FieldsMapping tf = FieldsMapping.fastCreate(f.getName(), srcConn);
-				tf.setRelationshipResolutionStrategy(RelationshipResolutionStrategy.SKIP);
-				
-				f.setTransformingInfo(new FieldTransformingInfo(tf, result.getFieldValue(f.getName()), this));
-			}
-		}
-		
-		return result;
+		return list.get(0);
 	}
 	
 	@Override
@@ -510,7 +441,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	@Override
-	public Boolean hasDateFields() {
+	public boolean hasDateFields() {
 		for (Field t : this.fields) {
 			if (t.isDateField()) {
 				return true;
@@ -543,8 +474,8 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	@Override
-	public Boolean hasPK(Connection conn) {
-		return Boolean.FALSE;
+	public boolean hasPK(Connection conn) {
+		return false;
 	}
 	
 	@Override
@@ -558,16 +489,12 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	@Override
-	public Boolean isMustLoadChildrenInfo() {
-		return false_();
+	public boolean isMustLoadChildrenInfo() {
+		return false;
 	}
 	
-	public static QueryDataSourceConfig fastCreate(String query, SrcConf relatedSrcConf) {
-		QueryDataSourceConfig q = new QueryDataSourceConfig(query, relatedSrcConf);
-		
-		q.setDynamicElements(relatedSrcConf.getDynamicElements());
-		
-		return q;
+	public static QueryDataSourceConfig fastCreate(String query, SrcConf relatedSrcVonf) {
+		return new QueryDataSourceConfig(query, relatedSrcVonf);
 	}
 	
 	@Override
@@ -608,7 +535,7 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	}
 	
 	public void tryToFillParams(EtlDatabaseObject schemaInfoSrc) {
-		this.setQuery(SQLUtilities.tryToReplaceParamsInQuery(this.getQuery(), schemaInfoSrc));
+		this.setQuery(DBUtilities.tryToReplaceParamsInQuery(this.getQuery(), schemaInfoSrc));
 	}
 	
 	public static void tryToReplacePlaceholders(List<QueryDataSourceConfig> extraQueryDataSource,
@@ -632,22 +559,6 @@ public class QueryDataSourceConfig extends AbstractEtlDataConfiguration implemen
 	@Override
 	public ActionOnEtlException getGeneralBehaviourOnEtlException() {
 		return relatedSrcConf.getGeneralBehaviourOnEtlException();
-	}
-	
-	@Override
-	public EtlTemplateInfo retrieveNearestTemplate() {
-		return this.getTemplate() != null ? this.getTemplate() : getParentConf().retrieveNearestTemplate();
-	}
-	
-	@Override
-	public void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
-	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
-		// TODO Auto-generated method stub
-	}
-	
-	@Override
-	public void setParentConf(EtlDataConfiguration relatedParent) {
-		this.relatedSrcConf = (SrcConf) relatedParent;
 	}
 	
 }
