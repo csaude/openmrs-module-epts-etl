@@ -40,8 +40,8 @@ public class ChildTable extends AbstractRelatedTable {
 	}
 	
 	@Override
-	public boolean isGeneric() {
-		return false;
+	public Boolean isGeneric() {
+		return false_();
 	}
 	
 	@Override
@@ -49,14 +49,14 @@ public class ChildTable extends AbstractRelatedTable {
 		return this.parentTableConf.getRelatedConnInfo();
 	}
 	
-	public boolean isSharedPk() {
+	public Boolean isSharedPk() {
 		if (this.getSharePkWith() == null) {
-			return false;
+			return false_();
 		} else if (utilities.listHasElement(this.getParentRefInfo())) {
 			
 			for (ParentTable parent : this.getParentRefInfo()) {
 				if (parent.equals(this.parentTableConf.getSharedKeyRefInfo(null))) {
-					return true;
+					return true_();
 				}
 			}
 		}

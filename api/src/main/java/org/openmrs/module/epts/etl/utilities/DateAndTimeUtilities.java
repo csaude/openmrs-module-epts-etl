@@ -765,68 +765,67 @@ public class DateAndTimeUtilities {
 		return createDate(stringDate, dateFormat);
 	}
 	
-	private static String determineDateFormat(String stringDate) {
-		String[] dateElements = stringDate.split("-");
-		char separador = '-';
+	public static String determineDateFormat(String stringDate) {
 		
-		if (dateElements.length == 1) {
-			dateElements = stringDate.split("/");
-			separador = '/';
+		if (stringDate == null || stringDate.isBlank()) {
+			throw new ForbiddenOperationException("Data invalida");
+		}
+		
+		stringDate = stringDate.trim();
+		
+		// 🔹 1. Separar data e hora
+		String datePart;
+		String timePart = null;
+		
+		if (stringDate.contains(" ")) {
+			String[] parts = stringDate.split("\\s+", 2);
+			datePart = parts[0];
+			timePart = parts[1];
+		} else {
+			datePart = stringDate;
+		}
+		
+		// 🔹 2. Detectar separador
+		char separator = '-';
+		String[] dateElements = datePart.split("-");
+		
+		if (dateElements.length != 3) {
+			dateElements = datePart.split("/");
+			separator = '/';
 		}
 		
 		if (dateElements.length != 3) {
-			throw new ForbiddenOperationException("Formato de data nao suportado");
+			throw new ForbiddenOperationException("Formato de data nao suportado: " + stringDate);
 		}
 		
-		int firstElements = Integer.parseInt(dateElements[0]);
-		//int secondElements = Integer.parseInt(dateElements[1]);
-		//int thirdElements = Integer.parseInt(dateElements[2]);
+		// 🔹 3. Detectar formato da data
+		int firstElement = Integer.parseInt(dateElements[0]);
 		
-		//Algoritimo simplificado. Assume-se que o formato ou � "dd-MM-yyyy" ou "yyyy-MM-dd"
-		//Para algoritimo mais complecto, rever o codigo mais abaixo
+		String dateFormat;
 		
-		if (firstElements > 31)
-			return "yyyy" + separador + "MM" + separador + "dd";
-		else
-			return "dd" + separador + "MM" + separador + "yyyy";
-		
-		/*
-		String formatElement01="";
-		String formatElement02="";
-		String formatElement03="";
-		
-		if (firstElements > 31){
-			formatElement01 = "yyyy";
-		}
-		else
-		if (firstElements > 12){
-			formatElement01 = "dd";
+		if (firstElement > 31) {
+			dateFormat = "yyyy" + separator + "MM" + separator + "dd";
+		} else {
+			dateFormat = "dd" + separator + "MM" + separator + "yyyy";
 		}
 		
-		if (secondElements > 31){
-			formatElement02 = "yyyy";
-		}
-		else
-		if (secondElements > 12){
-			formatElement02 = "dd";
-		}
-		
-		if (thirdElements > 31){
-			formatElement03 = "yyyy";
-		}
-		else
-		if (thirdElements > 12){
-			formatElement03 = "dd";
-		}
-		
-		if (formatElement01.isEmpty()){
-			if (firstElements <= 12){
-				
+		// 🔹 4. Detectar formato da hora (se existir)
+		if (timePart != null) {
+			
+			String[] timeElements = timePart.split(":");
+			
+			if (timeElements.length == 2) {
+				// HH:mm
+				dateFormat += " HH:mm";
+			} else if (timeElements.length == 3) {
+				// HH:mm:ss
+				dateFormat += " HH:mm:ss";
+			} else {
+				throw new ForbiddenOperationException("Formato de hora nao suportado: " + stringDate);
 			}
 		}
-		*/
 		
-		//return null;
+		return dateFormat;
 	}
 	
 	public static Date setHour(Date date, int hour) {

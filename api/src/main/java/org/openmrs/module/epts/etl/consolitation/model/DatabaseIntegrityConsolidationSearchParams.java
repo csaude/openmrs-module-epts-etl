@@ -1,7 +1,10 @@
 package org.openmrs.module.epts.etl.consolitation.model;
 
 import java.sql.Connection;
+import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -11,20 +14,24 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.SearchParamsDAO;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjectSearchParams {
 	
 	private boolean selectAllRecords;
 	
+	private Engine<EtlDatabaseObject> relatedEngine;
+	
 	public DatabaseIntegrityConsolidationSearchParams(Engine<EtlDatabaseObject> engine,
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		
-		super(engine, limits);
+		super(engine.getSrcConf(), limits);
+		
+		this.relatedEngine = engine;
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord limits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
@@ -32,7 +39,7 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 		searchClauses.addToClauseFrom(getSrcConf().generateSelectFromClauseContent());
 		
 		searchClauses
-		        .addToClauseFrom("INNER JOIN " + getSrcConf().generateFullStageTableName() + " ON record_uuid = uuid");
+		        .addToClauseFrom("INNER JOIN " + getSrcConf().generateFullSrcStageTableName() + " ON record_uuid = uuid");
 		
 		if (!this.selectAllRecords) {
 			searchClauses.addToClauses("consistent = -1");
@@ -41,14 +48,19 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 			
 			tryToAddLimits(limits, searchClauses);
 			
-			tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
+			tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
+			    DbmsType.determineFromConnection(srcConn));
 		}
 		
 		return searchClauses;
 	}
 	
+	public Engine<EtlDatabaseObject> getRelatedEngine() {
+		return relatedEngine;
+	}
+	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
+	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
 		DatabaseIntegrityConsolidationSearchParams auxSearchParams = new DatabaseIntegrityConsolidationSearchParams(
 		        this.getRelatedEngine(), this.getThreadRecordIntervalsManager());
 		auxSearchParams.selectAllRecords = true;
@@ -57,7 +69,8 @@ public class DatabaseIntegrityConsolidationSearchParams extends EtlDatabaseObjec
 	}
 	
 	@Override
-	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
+	public synchronized int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
 		ThreadRecordIntervalsManager<EtlDatabaseObject> bkpLimits = this.getThreadRecordIntervalsManager();
 		
 		this.setThreadRecordIntervalsManager(null);

@@ -21,13 +21,13 @@ import org.openmrs.module.epts.etl.conf.UniqueKeyInfo;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
-import org.openmrs.module.epts.etl.dbquickmerge.model.ParentInfo;
 import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObjectUniqueKeyInfo;
+import org.openmrs.module.epts.etl.model.EtlInfo;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
@@ -43,50 +43,18 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	
 	protected Oid objectId;
 	
-	/*
-	 * Indicate if there where parents which have been ingored
-	 */
-	protected boolean hasIgnoredParent;
-	
 	protected String uuid;
 	
 	protected EtlStageRecordVO relatedSyncInfo;
 	
 	protected List<EtlDatabaseObjectUniqueKeyInfo> uniqueKeysInfo;
 	
-	protected List<ParentInfo> parentsWithDefaultValues;
+	protected List<EtlDatabaseObject> destinationObjects;
 	
-	protected EtlDatabaseObject srcRelatedObject;
-	
-	protected List<EtlDatabaseObject> avaliableSrcObjects;
-	
-	protected ConflictResolutionType conflictResolutionType;
+	protected EtlInfo etlInfo;
 	
 	public AbstractDatabaseObject() {
 		this.objectId = new Oid();
-		
-		this.conflictResolutionType = ConflictResolutionType.NONE;
-	}
-	
-	@Override
-	public ConflictResolutionType getConflictResolutionType() {
-		return conflictResolutionType;
-	}
-	
-	@Override
-	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
-		this.conflictResolutionType = conflictResolutionType;
-	}
-	
-	@Override
-	@JsonIgnore
-	public EtlDatabaseObject getSrcRelatedObject() {
-		return srcRelatedObject;
-	}
-	
-	@Override
-	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
-		this.srcRelatedObject = srcRelatedObject;
 	}
 	
 	public void load(ResultSet rs) throws SQLException {
@@ -161,7 +129,7 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		}
 		
 		if (ignorable) {
-			this.hasIgnoredParent = true;
+			this.etlInfo.setHasIgnoredParent(true);
 			return null;
 		}
 		
@@ -281,15 +249,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	@Override
 	public String getUuid() {
 		return this.uuid;
-	}
-	
-	@JsonIgnore
-	public boolean hasIgnoredParent() {
-		return hasIgnoredParent;
-	}
-	
-	public void setHasIgnoredParent(boolean hasIgnoredParent) {
-		this.hasIgnoredParent = hasIgnoredParent;
 	}
 	
 	@Override
@@ -522,12 +481,8 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 			        + ") has composite pk. You cannot performe the request action!");
 		}
 		
-		Integer defaultParent = (Integer) inconsistenceInfoSource.getKey().getSimpleRefMapping()
-		        .getDefaultValueDueInconsistency();
-		
-		InconsistenceInfo info = InconsistenceInfo.generate(tableConfiguration.getTableName(), this.getObjectId(),
-		    inconsistenceInfoSource.getKey().getChildTableConf().getTableName(), inconsistenceInfoSource.getValue(),
-		    defaultParent, recordOriginLocationCode);
+		InconsistenceInfo info = InconsistenceInfo.generate(this, inconsistenceInfoSource.getKey(),
+		    recordOriginLocationCode);
 		info.save(tableConfiguration, conn);
 	}
 	
@@ -578,57 +533,16 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	@Override
 	public void consolidateData(TableConfiguration tableConfiguration, Connection conn) throws DBException {
 		utilities.throwReviewMethodException();
-		/*
-		if (!tableConfiguration.isFullLoaded())
-			tableConfiguration.fullLoad();
-		
-		if (tableConfiguration.getPrimaryKey().isCompositeKey()) {
-			throw new ForbiddenOperationException("The related table (" + tableConfiguration.getTableName()
-			        + ") has composite pk. You cannot performe the request action!");
-		}
-		
-		Map<RefInfo, Integer> missingParents = loadMissingParents(tableConfiguration, conn);
-		
-		int qtyInconsistence = missingParents.size();
-		
-		if (!missingParents.isEmpty()) {
-			for (Entry<RefInfo, Integer> entry : missingParents.entrySet()) {
-				boolean solvedCurrentInconsistency = true;
-				
-				//try to load the default parent
-				if (entry.getKey().getDefaultValueDueInconsistency() != null) {
-					
-					Oid oid = Oid.fastCreate(tableConfiguration.getPrimaryKey().retrieveSimpleKey().getName(),
-					    entry.getKey().getDefaultValueDueInconsistency());
-					
-					EtlDatabaseObject parent = DatabaseObjectDAO
-					        .getByOid(entry.getKey().getRefObjectClass(tableConfiguration.getMainApp()), oid, conn);
-					
-					if (parent == null) {
-						solvedCurrentInconsistency = false;
-					} else {
-						this.changeParentValue(entry.getKey().getRefColumnAsClassAttName(), parent);
-						qtyInconsistence--;
-					}
-				} else {
-					solvedCurrentInconsistency = false;
-				}
-				
-				saveInconsistence(tableConfiguration, entry, solvedCurrentInconsistency,
-				    getRelatedSyncInfo().getRecordOriginLocationCode(), conn);
-			}
-		}
-		
-		if (qtyInconsistence == 0) {
-			loadDestParentInfo(tableConfiguration, getRelatedSyncInfo().getRecordOriginLocationCode(), conn);
-			
-			save(tableConfiguration, conn);
-			
-			this.getRelatedSyncInfo().markAsConsistent(tableConfiguration, conn);
-		} else {
-			removeDueInconsistency(tableConfiguration, missingParents, conn);
-			getRelatedSyncInfo().markAsFailedToMigrate(tableConfiguration, generateMissingInfo(missingParents), conn);
-		}*/
+	}
+	
+	@Override
+	public List<EtlDatabaseObject> getDestinationObjects() {
+		return this.destinationObjects;
+	}
+	
+	@Override
+	public void setDestinationObjects(List<EtlDatabaseObject> destinationObjects) {
+		this.destinationObjects = destinationObjects;
 	}
 	
 	@Override
@@ -636,87 +550,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	        throws ParentNotYetMigratedException, DBException {
 		
 		utilities.throwReviewMethodException();
-		
-		/*
-		if (tableInfo.getPrimaryKey().isCompositeKey()) {
-			throw new ForbiddenOperationException("The related table (" + tableInfo.getTableName()
-			        + ") has composite pk. You cannot performe the request action!");
-		}
-		
-		if (!tableInfo.getRelatedSyncConfiguration().isDataBaseMergeFromJSONProcess()
-		        && !tableInfo.getRelatedSyncConfiguration().isDataReconciliationProcess())
-			throw new ForbiddenOperationException("You can only load destination parent in a destination installation");
-		
-		if (!utilities.arrayHasElement(tableInfo.getParents()))
-			return;
-		
-		for (RefInfo refInfo : tableInfo.getParentRefInfo()) {
-			if (tableInfo.getSharePkWith() != null && tableInfo.getSharePkWith().equals(refInfo.getParentTableName())) {
-				continue;
-			}
-			
-			Integer parentId = getParentValue(refInfo.getSimpleRefMapping().getChildField().getNameAsClassAtt());
-			
-			if (parentId != null) {
-				EtlDatabaseObject parent;
-				
-				if (refInfo.getParentTableCof().isMetadata()) {
-					Oid oid = Oid.fastCreate(refInfo.getParentTableCof().getPrimaryKey().retrieveSimpleKey().getName(),
-					    parentId);
-					
-					parent = DatabaseObjectDAO.getByOid(refInfo.getSimpleRefMapping().getParentField().getName(), oid, conn);
-				} else {
-					boolean ignorable = refInfo.getSimpleRefMapping().isIgnorable()
-					        || refInfo.getSimpleRefMapping().getDefaultValueDueInconsistencyAsInt() > 0;
-					
-					parent = retrieveParentInDestination(parentId, recordOriginLocationCode,
-					    refInfo.getSimpleRefMapping().getParentField().getName(), ignorable, conn);
-				}
-				
-				if (parent == null) {
-					//Try to recover the parent from stage_area and check if this dstRecord doesnt exist on destination with same uuid
-					
-					Oid oid = Oid.fastCreate(
-					    refInfo.getRefTableConfiguration().getPrimaryKey().retrieveSimpleKey().getName(), parentId);
-					
-					EtlDatabaseObject parentFromSource = new GenericDatabaseObject(refInfo.getRefTableConfiguration());
-					parentFromSource.setObjectId(oid);
-					
-					parentFromSource.setRelatedSyncInfo(
-					    EtlStageRecordVO.generateFromSyncRecord(parentFromSource, recordOriginLocationCode, true));
-					
-					EtlStageRecordVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(
-					    refInfo.getRefTableConfiguration(), parentFromSource, recordOriginLocationCode, conn);
-					
-					parentFromSource = sourceInfo.convertToOpenMRSObject(refInfo.getRefTableConfiguration(), conn);
-					
-					EtlDatabaseObject parentFromDestionationSharingSameObjectId = DatabaseObjectDAO
-					        .getByOid(refInfo.getRefObjectClass(tableInfo.getMainApp()), oid, conn);
-					
-					boolean sameUuid = true;
-					
-					sameUuid = sameUuid && parentFromDestionationSharingSameObjectId != null;
-					sameUuid = sameUuid && parentFromDestionationSharingSameObjectId.getUuid() != null
-					        && parentFromSource.getUuid() != null;
-					sameUuid = sameUuid
-					        && parentFromSource.getUuid().equals(parentFromDestionationSharingSameObjectId.getUuid());
-					
-					if (sameUuid) {
-						parent = parentFromDestionationSharingSameObjectId;
-					}
-				}
-				
-				if (parent == null && refInfo.getDefaultValueDueInconsistency() > 0) {
-					Oid oid = Oid.fastCreate(
-					    refInfo.getRefTableConfiguration().getPrimaryKey().retrieveSimpleKey().getName(),
-					    refInfo.getDefaultValueDueInconsistency());
-					
-					parent = DatabaseObjectDAO.getByOid(refInfo.getRefObjectClass(tableInfo.getMainApp()), oid, conn);
-				}
-				
-				changeParentValue(refInfo.getRefColumnAsClassAttName(), parent);
-			}
-		}*/
 	}
 	
 	@Override
@@ -730,37 +563,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		
 		utilities.throwReviewMethodException();
 		
-		/*
-		if (syncTableInfo.isMetadata() || syncTableInfo.isRemoveForbidden())
-			throw new EtlExceptionImpl("This metadata [" + syncTableInfo.getTableName() + " = " + this.getObjectId()
-			        + ". is missing its some parents [" + generateMissingInfo(missingParents)
-			        + "] You must resolve this inconsistence manual") {
-				
-				private static final long serialVersionUID = 1L;
-			};
-		
-		this.remove(conn);
-		
-		for (RefInfo refInfo : syncTableInfo.getChildred()) {
-			if (!refInfo.getRefTableConfiguration().isConfigured())
-				continue;
-			
-			int qtyChildren = DatabaseObjectDAO.countAllOfOriginParentId(refInfo.getRefColumnName(),
-			    getRelatedSyncInfo().getRecordOriginId(), getRelatedSyncInfo().getRecordOriginLocationCode(),
-			    refInfo.getRefTableConfiguration(), conn);
-			
-			if (qtyChildren == 0) {
-				continue;
-			} else {
-				List<EtlDatabaseObject> children = DatabaseObjectDAO.getByOriginParentId(refInfo.getRefColumnName(),
-				    getRelatedSyncInfo().getRecordOriginId(), getRelatedSyncInfo().getRecordOriginLocationCode(),
-				    refInfo.getRefTableConfiguration(), conn);
-				
-				for (EtlDatabaseObject child : children) {
-					child.consolidateData(refInfo.getRefTableConfiguration(), conn);
-				}
-			}
-		}*/
 	}
 	
 	public void remove(Connection conn) throws DBException {
@@ -773,105 +575,6 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 		utilities.throwReviewMethodException();
 		
 		return null;
-		
-		/*
-		Map<RefInfo, Integer> missingParents = new HashMap<RefInfo, Integer>();
-		 
-		if (!utilities.arrayHasElement(tableInfo.getParents()))
-			return missingParents;
-		
-		for (RefInfo refInfo : tableInfo.getParents()) {
-			Integer parentId = null;
-			
-			try {
-				parentId = getParentValue(refInfo.getRefColumnAsClassAttName());
-			}
-			catch (Exception e2) {
-				e2.printStackTrace();
-			}
-			
-			try {
-				if (parentId != null) {
-					EtlDatabaseObject parent;
-					Oid oid = Oid.fastCreate(
-					    refInfo.getRefTableConfiguration().getPrimaryKey().retrieveSimpleKey().getName(), parentId);
-					
-					if (refInfo.getRefTableConfiguration().isMetadata()) {
-						parent = DatabaseObjectDAO.getByOid(refInfo.getRefTableConfiguration().getTableName(), oid, conn);
-					} else {
-						
-						if (tableInfo.getRelatedSyncConfiguration().isDataBaseMergeFromJSONProcess()) {
-							parent = retrieveParentInDestination(parentId,
-							    this.getRelatedSyncInfo().getRecordOriginLocationCode(), refInfo.getRefTableConfiguration(),
-							    refInfo.isIgnorable() || refInfo.getDefaultValueDueInconsistency() > 0, conn);
-							
-							if (parent == null) {
-								//Try to recover the parent from stage_area and check if this dstRecord doesnt exist on destination with same uuid
-								
-								EtlDatabaseObject parentFromSource = new GenericDatabaseObject(
-								        refInfo.getRefTableConfiguration());
-								parentFromSource.setObjectId(oid);
-								
-								parentFromSource.setRelatedSyncInfo(EtlStageRecordVO.generateFromSyncRecord(parentFromSource,
-								    getRelatedSyncInfo().getRecordOriginLocationCode(), true));
-								
-								EtlStageRecordVO sourceInfo = SyncImportInfoDAO.retrieveFromOpenMRSObject(
-								    refInfo.getRefTableConfiguration(), parentFromSource,
-								    getRelatedSyncInfo().getRecordOriginLocationCode(), conn);
-								
-								parentFromSource = sourceInfo.convertToOpenMRSObject(refInfo.getRefTableConfiguration(),
-								    conn);
-								
-								EtlDatabaseObject parentFromDestionationSharingSameObjectId = DatabaseObjectDAO
-								        .getByOid(refInfo.getRefObjectClass(tableInfo.getMainApp()), oid, conn);
-								
-								boolean sameUuid = true;
-								
-								sameUuid = sameUuid && parentFromDestionationSharingSameObjectId != null;
-								sameUuid = sameUuid && parentFromDestionationSharingSameObjectId.getUuid() != null
-								        && parentFromSource.getUuid() != null;
-								sameUuid = sameUuid && parentFromSource.getUuid()
-								        .equals(parentFromDestionationSharingSameObjectId.getUuid());
-								
-								if (sameUuid) {
-									parent = parentFromDestionationSharingSameObjectId;
-								}
-							}
-						} else {
-							parent = DatabaseObjectDAO.getByOid(refInfo.getRefObjectClass(tableInfo.getMainApp()), oid,
-							    conn);
-						}
-					}
-					
-					if (parent == null) {
-						missingParents.put(refInfo, parentId);
-					}
-				}
-				
-			}
-			catch (ParentNotYetMigratedException e) {
-				EtlDatabaseObject parent = utilities.createInstance(refInfo.getRefObjectClass(tableInfo.getMainApp()));
-				parent.setRelatedSyncInfo(EtlStageRecordVO.generateFromSyncRecord(parent,
-				    getRelatedSyncInfo().getRecordOriginLocationCode(), true));
-				
-				try {
-					SyncImportInfoDAO.retrieveFromOpenMRSObject(refInfo.getRefTableConfiguration(), parent,
-					    getRelatedSyncInfo().getRecordOriginLocationCode(), conn);
-				}
-				catch (DBException e1) {
-					e1.printStackTrace();
-				}
-				catch (ForbiddenOperationException e1) {
-					throw new ForbiddenOperationException("The parent '" + refInfo.getRefTableConfiguration().getTableName()
-					        + " = " + parentId + "' from '" + this.getRelatedSyncInfo().getRecordOriginLocationCode()
-					        + "' was not found in the main database nor in the stagging area. You must resolve this inconsistence manual!!!!!!");
-				}
-				
-				missingParents.put(refInfo, parentId);
-			}
-		}
-		
-		return missingParents;*/
 	}
 	
 	@Override
@@ -1004,12 +707,13 @@ public abstract class AbstractDatabaseObject extends BaseVO implements EtlDataba
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> getTransformationSrcObject() {
-		return this.avaliableSrcObjects;
+	public EtlInfo getEtlInfo() {
+		return this.etlInfo;
 	}
 	
 	@Override
-	public void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects) {
-		this.avaliableSrcObjects = avaliableSrcObjects;
+	public void setEtlInfo(EtlInfo info) {
+		this.etlInfo = info;
 	}
+	
 }

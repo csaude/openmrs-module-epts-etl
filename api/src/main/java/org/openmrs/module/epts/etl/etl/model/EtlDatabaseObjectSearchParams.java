@@ -13,24 +13,22 @@ import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
-import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.etl.controller.EtlController;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 
 public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDatabaseObject> {
 	
-	public EtlDatabaseObjectSearchParams(Engine<EtlDatabaseObject> engine,
-	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
-		super(engine, limits);
+	public EtlDatabaseObjectSearchParams(SrcConf srcConf, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
+		super(srcConf, limits);
 		
 		if (getSrcConf() != null && getSrcConf().hasPK()) {
 			setOrderByFields(getSrcConf().getPrimaryKey().parseFieldNamesToArray(getSrcConf().getTableAlias()));
@@ -39,7 +37,9 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord intervalExtremeRecord,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		
 		SrcConf srcConfig = getSrcConf();
 		
 		AuxQueryInfo auxQueryInfo = new AuxQueryInfo(new SearchClauses<EtlDatabaseObject>(this));
@@ -50,7 +50,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		if (utilities.listHasElement(srcConfig.getAuxExtractTable())) {
 			for (AuxExtractTable aux : srcConfig.getAuxExtractTable()) {
-				loadAllAuxExtractTable(auxQueryInfo, aux, srcConn);
+				loadAllAuxExtractTable(auxQueryInfo, aux, parentObject, auxDataSourceObjects, srcConn);
 			}
 			
 			if (!auxQueryInfo.getAdditionalLeftJoinFields().isEmpty()) {
@@ -60,9 +60,13 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		tryToAddLimits(intervalExtremeRecord, auxQueryInfo.getSearchClauses());
 		
-		tryToAddExtraConditionForExport(auxQueryInfo.getSearchClauses(), DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(auxQueryInfo.getSearchClauses(), parentObject, auxDataSourceObjects,
+		    DbmsType.determineFromConnection(srcConn));
 		
-		if (getRelatedEngine() != null && getRelatedEngine().getFinalCheckStatus().onGoing()) {
+		tryToAddExtraJoinExtraConditions(auxQueryInfo.getSearchClauses(), parentObject, auxDataSourceObjects,
+		    DbmsType.determineFromConnection(srcConn));
+		
+		if (getFinalCheckStatus().onGoing()) {
 			
 			if (DBUtilities.isSameDatabaseServer(srcConn, dstConn) && getConfig().hasDstWithJoinFieldsToSrc()) {
 				this.setExtraCondition(this.generateDestinationExclusionClause(srcConn, dstConn));
@@ -80,19 +84,21 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		return auxQueryInfo.getSearchClauses();
 	}
 	
-	private void loadAllAuxExtractTable(AuxQueryInfo queryInfo, MainJoiningEntity aux, Connection srcConn)
+	private void loadAllAuxExtractTable(AuxQueryInfo queryInfo, MainJoiningEntity aux, EtlDatabaseObject parentObject,
+	        List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn)
 	        throws ForbiddenOperationException, DBException {
 		
-		loadAuxExtractTable(queryInfo, aux.parseToJoinable(), srcConn);
+		loadAuxExtractTable(queryInfo, aux.parseToJoinable(), parentObject, auxDataSourceObjects, srcConn);
 		
 		if (aux.hasAuxExtractTable()) {
 			for (JoinableEntity jEntity : aux.getJoiningTable()) {
-				loadAuxExtractTable(queryInfo, jEntity, srcConn);
+				loadAuxExtractTable(queryInfo, jEntity, parentObject, auxDataSourceObjects, srcConn);
 			}
 		}
 	}
 	
-	private void loadAuxExtractTable(AuxQueryInfo queryInfo, JoinableEntity aux, Connection srcConn)
+	private void loadAuxExtractTable(AuxQueryInfo queryInfo, JoinableEntity aux, EtlDatabaseObject parentObject,
+	        List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn)
 	        throws ForbiddenOperationException, DBException {
 		SrcConf srcConfig = getSrcConf();
 		
@@ -109,7 +115,8 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 		
 		if (utilities.stringHasValue(extraJoinQuery)) {
 			PreparedQuery pQ = PreparedQuery.prepare(QueryDataSourceConfig.fastCreate(extraJoinQuery, getSrcConf()),
-			    getConfig().getRelatedEtlConf(), true, DbmsType.determineFromConnection(srcConn));
+			    getConfig().getRelatedEtlConf(), collectDataSourceObjects(parentObject, auxDataSourceObjects), true,
+			    DbmsType.determineFromConnection(srcConn));
 			
 			List<Object> paramsAsList = pQ.generateQueryParameters();
 			
@@ -156,13 +163,9 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	}
 	
 	@Override
-	public EtlController getRelatedController() {
-		return (EtlController) super.getRelatedController();
-	}
-	
-	@Override
-	public synchronized int countNotProcessedRecords(Connection conn) throws DBException {
-		return countAllRecords(conn);
+	public synchronized int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
+		return countAllRecords(controller, conn);
 	}
 	
 	public DatabaseObjectLoaderHelper getLoaderHealper() {
@@ -171,7 +174,7 @@ public class EtlDatabaseObjectSearchParams extends AbstractEtlSearchParams<EtlDa
 	
 	@Override
 	public AbstractEtlSearchParams<EtlDatabaseObject> cloneMe() {
-		EtlDatabaseObjectSearchParams cloned = new EtlDatabaseObjectSearchParams(getRelatedEngine(), null);
+		EtlDatabaseObjectSearchParams cloned = new EtlDatabaseObjectSearchParams(getSrcConf(), null);
 		
 		return cloned;
 	}

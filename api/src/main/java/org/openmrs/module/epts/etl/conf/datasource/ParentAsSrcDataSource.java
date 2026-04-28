@@ -5,13 +5,14 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.ParentTableImpl;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlAdditionalDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.etl.processor.EtlProcessor;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 
-public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditionalDataSource {
+public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditionalDataSource, EtlSrcConf {
 	
 	private SrcConf relatedSrcConf;
 	
@@ -35,19 +36,20 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 	
 	@Override
 	public EtlDatabaseObject loadRelatedSrcObject(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn) throws DBException {
+	        EtlDatabaseObject dstObject, List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn)
+	        throws DBException {
 		
 		return avaliableSrcObjects.get(0).getSharedPkObj();
 	}
 	
 	@Override
-	public boolean allowMultipleSrcObjectsForLoading() {
-		return false;
+	public Boolean allowMultipleSrcObjectsForLoading() {
+		return false_();
 	}
 	
 	@Override
-	public boolean isRequired() {
-		return true;
+	public Boolean isRequired() {
+		return true_();
 	}
 	
 	public static ParentAsSrcDataSource generateFromSrcConfSharedPkParent(SrcConf mainSrcConf, ParentTable parent,
@@ -56,7 +58,7 @@ public class ParentAsSrcDataSource extends ParentTableImpl implements EtlAdditio
 		
 		ds.setChildTableConf(parent.getChildTableConf());
 		
-		ds.clone(parent, null, conn);
+		ds.clone(parent, null, null, conn);
 		
 		ds.relatedSrcConf = mainSrcConf;
 		

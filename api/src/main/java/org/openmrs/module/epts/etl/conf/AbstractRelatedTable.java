@@ -18,7 +18,7 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 	
 	private List<RefMapping> refMapping;
 	
-	private boolean manualyConfigured;
+	private Boolean manualyConfigured;
 	
 	public AbstractRelatedTable() {
 	}
@@ -30,12 +30,12 @@ public abstract class AbstractRelatedTable extends AbstractTableConfiguration im
 	}
 	
 	@Override
-	public boolean isManualyConfigured() {
-		return manualyConfigured;
+	public Boolean isManualyConfigured() {
+		return isTrue(manualyConfigured);
 	}
 	
 	@Override
-	public void setManualyConfigured(boolean manualyConfigured) {
+	public void setManualyConfigured(Boolean manualyConfigured) {
 		this.manualyConfigured = manualyConfigured;
 	}
 	

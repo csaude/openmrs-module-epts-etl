@@ -1,6 +1,9 @@
-package org.openmrs.module.epts.etl.utilities.db.conn;
+package org.openmrs.module.epts.etl.conf.types;
 
 import java.sql.Connection;
+
+import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 
 public enum DbmsType {
 	

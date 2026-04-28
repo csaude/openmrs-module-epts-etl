@@ -5,10 +5,12 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openmrs.module.epts.etl.conf.AbstractBaseConfiguration;
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlItemConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlOperationConfig;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.conf.types.EtlDstType;
 import org.openmrs.module.epts.etl.conf.types.EtlOperationType;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
@@ -17,8 +19,7 @@ import org.openmrs.module.epts.etl.engine.EtlProgressMeter;
 import org.openmrs.module.epts.etl.engine.TaskProcessor;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
-import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
-import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.OperationProgressInfo;
 import org.openmrs.module.epts.etl.model.TableOperationProgressInfo;
@@ -42,7 +43,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * @author jpboane
  */
-public abstract class OperationController<T extends EtlDatabaseObject> implements Controller {
+public abstract class OperationController<T extends EtlDatabaseObject> extends AbstractBaseConfiguration implements Controller {
 	
 	protected EptsEtlLogger logger;
 	
@@ -82,12 +83,11 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		this.operationStatus = MonitoredOperation.STATUS_NOT_INITIALIZED;
 		
-		this.controllerId = (getDstType() + "_" + getOperationType().name().toLowerCase() + "_on_"
-		        + processController.getControllerId()).toLowerCase();
+		this.controllerId = operationConfig.generateOperationId();
 		
 		OpenConnection conn = null;
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			this.progressInfo = this.processController.initOperationProgressMeter(this, conn);
 			
@@ -97,8 +97,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 		
 	}
@@ -188,20 +187,17 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	void basicInitAllConfElements() throws DBException {
-		OpenConnection srcConn = openSrcConnection();
-		OpenConnection dstConn = tryToOpenDstConn();
+		OpenConnection srcConn = openSrcConnection(this);
+		OpenConnection dstConn = tryToOpenDstConn(this);
 		
 		try {
-			for (EtlItemConfiguration config : getProcessController().getConfiguration().getEtlItemConfiguration()) {
+			for (EtlItemConfiguration config : getProcessController().getEtlConf().getEtlItemConfiguration()) {
 				config.doMinimalTableInitialization(srcConn, dstConn);
 			}
 		}
 		finally {
-			srcConn.finalizeConnection();
-			
-			if (dstConn != null) {
-				dstConn.finalizeConnection();
-			}
+			finalizeConnection(srcConn, this);
+			finalizeConnection(dstConn, this);
 		}
 		
 	}
@@ -216,7 +212,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 			
 			logInfo("Working on testing item");
 		} else {
-			allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
+			allSync = getProcessController().getEtlConf().getEtlItemConfiguration();
 		}
 		
 		this.enginesActivititieMonitor = new ArrayList<Engine<T>>();
@@ -276,13 +272,15 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				logTrace("Opening connection for saving Progress Info");
 				
-				OpenConnection conn = getDefaultConnInfo().openConnection();
+				OpenConnection conn = openDefaultConn(this);
 				
 				try {
 					if (isResumable()) {
 						logTrace("Saving Progress Info....");
 						
-						progressInfo.save(conn);
+						if (progressInfo != null) {
+							progressInfo.save(conn);
+						}
 						
 						logTrace("Progress Info Saved!");
 						
@@ -296,12 +294,17 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 					throw new RuntimeException(e);
 				}
 				finally {
-					conn.finalizeConnection();
+					finalizeConnection(conn, this);
 				}
 				
 				this.enginesActivititieMonitor.add(engine);
 				
-				engine.run();
+				try {
+					engine.run();
+				}
+				catch (Exception e) {
+					new EtlExceptionImpl("Error occured on etl " + engine.getEngineId(), e);
+				}
 				
 				if (stopRequested() && engine.isStopped()) {
 					logInfo(("The operation '" + getOperationType().name().toLowerCase() + "' On Etl Configuration '"
@@ -378,7 +381,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				
 				Engine<T> engine = Engine.init(this, config, progressInfo);
 				
-				OpenConnection conn = getDefaultConnInfo().openConnection();
+				OpenConnection conn = openDefaultConn(this);
 				
 				try {
 					if (isResumable()) {
@@ -395,7 +398,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 					throw new RuntimeException(e);
 				}
 				finally {
-					conn.finalizeConnection();
+					conn.finalizeConnection(this);
 				}
 				
 				startAndAddToEnginesActivititieMonitor(engine);
@@ -413,7 +416,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 			
 			logInfo("Working on testing item");
 		} else {
-			List<EtlItemConfiguration> allSync = getProcessController().getConfiguration().getEtlItemConfiguration();
+			List<EtlItemConfiguration> allSync = getProcessController().getEtlConf().getEtlItemConfiguration();
 			
 			logDebug("Determine finalized operations...");
 			
@@ -642,7 +645,7 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		progressInfo.getProgressMeter().changeStatusToFinished();
 		
 		if (isResumable()) {
-			OpenConnection conn = getDefaultConnInfo().openConnection();
+			OpenConnection conn = openDefaultConn(this);
 			
 			try {
 				progressInfo.save(conn);
@@ -652,13 +655,13 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 				throw new RuntimeException(e);
 			}
 			finally {
-				conn.finalizeConnection();
+				conn.finalizeConnection(this);
 			}
 		}
 	}
 	
 	public EtlConfiguration getEtlConfiguration() {
-		return this.getProcessController().getConfiguration();
+		return this.getProcessController().getEtlConf();
 	}
 	
 	public List<EtlItemConfiguration> getEtlItemConfiguration() {
@@ -916,16 +919,16 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 	}
 	
 	@JsonIgnore
-	public DBConnectionInfo getDefaultConnInfo() {
-		return getProcessController().getDefaultConnInfo();
+	public OpenConnection openDefaultConn(BaseConfiguration opendFrom) {
+		return getProcessController().openDefaultConn(opendFrom);
 	}
 	
-	public OpenConnection openSrcConnection() throws DBException {
-		return getProcessController().openConnection();
+	public OpenConnection openSrcConnection(BaseConfiguration opendFrom) throws DBException {
+		return getProcessController().openConnection(opendFrom);
 	}
 	
-	public OpenConnection tryToOpenDstConn() throws DBException {
-		return getProcessController().tryToOpenDstConn();
+	public OpenConnection tryToOpenDstConn(BaseConfiguration opendFrom) throws DBException {
+		return getProcessController().tryToOpenDstConn(opendFrom);
 	}
 	
 	public void logWarn(String msg) {
@@ -978,6 +981,11 @@ public abstract class OperationController<T extends EtlDatabaseObject> implement
 		
 		getFinalizedItems().add(item);
 		
+	}
+	
+	@Override
+	public boolean isDisabled() {
+		return this.getOperationConfig().isDisabled();
 	}
 	
 }

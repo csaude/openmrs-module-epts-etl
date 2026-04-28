@@ -17,6 +17,7 @@ import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
+import org.openmrs.module.epts.etl.exceptions.MissingFieldException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
@@ -25,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
-	private DatabaseObjectConfiguration relatedConfiguration;
+	private EtlDatabaseObjectConfiguration relatedConfiguration;
 	
 	private GenericDatabaseObject sharedPkObj;
 	
@@ -34,19 +35,21 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	 * related to tables presents on {@link EtlDataSource#getAuxExtractTable()} will be placed on
 	 * this field.
 	 */
-	private List<GenericDatabaseObject> auxLoadObject;
+	private List<EtlDatabaseObject> auxLoadObject;
 	
 	private boolean loadedFromDb;
 	
 	public GenericDatabaseObject() {
 	}
 	
-	public List<GenericDatabaseObject> getAuxLoadObject() {
+	@Override
+	public List<EtlDatabaseObject> getAuxLoadObject() {
 		return auxLoadObject;
 	}
 	
-	public void setAuxLoadObject(List<GenericDatabaseObject> auxLoadObject) {
-		this.auxLoadObject = auxLoadObject;
+	@Override
+	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
+		this.auxLoadObject = auxLoadObjects;
 	}
 	
 	@Override
@@ -72,7 +75,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		this.sharedPkObj = (GenericDatabaseObject) sharedPkObj;
 	}
 	
-	public GenericDatabaseObject(DatabaseObjectConfiguration relatedConfiguration) {
+	public GenericDatabaseObject(EtlDatabaseObjectConfiguration relatedConfiguration) {
 		setRelatedConfiguration(relatedConfiguration);
 	}
 	
@@ -131,6 +134,10 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 							p.tryToGenerateTableAlias(conf.getRelatedEtlConf());
 						}
 						
+						if (!p.isFullLoaded()) {
+							p.fullLoad(conn);
+						}
+						
 						defaultParent = p.getDefaultObject(conn);
 					}
 					catch (Exception e) {
@@ -179,13 +186,11 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 			}
 		}
 		
-		String tableName = this.relatedConfiguration != null ? this.relatedConfiguration.getObjectName() : "Aknown Object";
-		
-		throw new ForbiddenOperationException("The field " + fieldName + " was not found on entity " + tableName);
+		throw new MissingFieldException(fieldName, this.getRelatedConfiguration());
 	}
 	
 	@Override
-	public void setRelatedConfiguration(DatabaseObjectConfiguration tableConfiguration) {
+	public void setRelatedConfiguration(EtlDatabaseObjectConfiguration tableConfiguration) {
 		this.relatedConfiguration = tableConfiguration;
 		
 		this.fields = this.getRelatedConfiguration().cloneFields(this);
@@ -203,7 +208,7 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 	
 	@Override
 	@JsonIgnore
-	public DatabaseObjectConfiguration getRelatedConfiguration() {
+	public EtlDatabaseObjectConfiguration getRelatedConfiguration() {
 		return this.relatedConfiguration;
 	}
 	
@@ -479,7 +484,13 @@ public class GenericDatabaseObject extends AbstractDatabaseObject {
 		
 		String tableName = this.relatedConfiguration != null ? this.relatedConfiguration.getObjectName() : "Aknown Object";
 		
-		return tableName + ": " + super.toString();
+		String tableNameAlias = "N/A";
+		
+		if (this.relatedConfiguration instanceof TableConfiguration) {
+			tableNameAlias = ((TableConfiguration) this.relatedConfiguration).getTableAlias();
+		}
+		
+		return tableName + "(" + tableNameAlias + "): " + super.toString();
 	}
 	
 	@Override

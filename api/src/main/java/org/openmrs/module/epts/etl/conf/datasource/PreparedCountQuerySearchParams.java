@@ -1,15 +1,17 @@
 package org.openmrs.module.epts.etl.conf.datasource;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.model.base.VOLoaderHelper;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 /**
  * This search params allow the count query in multi-thread in a {@link PreparedQuery}
@@ -45,12 +47,6 @@ public class PreparedCountQuerySearchParams extends AbstractEtlSearchParams<EtlD
 	}
 	
 	@Override
-	public int countNotProcessedRecords(Connection conn) throws DBException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-	
-	@Override
 	public String generateDestinationExclusionClause(Connection srcConn, Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
@@ -58,16 +54,17 @@ public class PreparedCountQuerySearchParams extends AbstractEtlSearchParams<EtlD
 	
 	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord intervalExtremeRecord,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
 		
 		searchClauses.addColumnToSelect("1");
 		
 		searchClauses.addToClauseFrom(
-		    DBUtilities.extractFromClauseOnSqlSelectQuery(this.getPreparedQuery().generatePreparedQuery()));
-		searchClauses
-		        .addToClauses(DBUtilities.extractWhereClauseInASelectQuery(this.getPreparedQuery().generatePreparedQuery()));
+		    SQLUtilities.extractFromClauseOnSqlSelectQuery(this.getPreparedQuery().generatePreparedQuery()));
+		searchClauses.addToClauses(
+		    SQLUtilities.extractWhereClauseInASelectQuery(this.getPreparedQuery().generatePreparedQuery()));
 		
 		TableConfiguration tabConf = this.getPreparedQuery().getCountFunctionInfo().getMainTable();
 		
@@ -80,6 +77,13 @@ public class PreparedCountQuerySearchParams extends AbstractEtlSearchParams<EtlD
 		searchClauses.addToParameters(intervalExtremeRecord.getMaxRecordId());
 		
 		return searchClauses;
+	}
+	
+	@Override
+	public int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 	
 }

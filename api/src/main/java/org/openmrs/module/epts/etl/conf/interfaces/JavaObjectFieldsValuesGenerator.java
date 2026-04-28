@@ -14,7 +14,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
 public interface JavaObjectFieldsValuesGenerator {
 	
 	Map<String, FieldTransformingInfo> generateObjectFields(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        ObjectDataSource dataSource, List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn, Connection dstConn)
-	        throws DBException, ForbiddenOperationException;
+	        EtlDatabaseObject dstObject, ObjectDataSource dataSource, List<EtlDatabaseObject> avaliableSrcObjects,
+	        Connection srcConn, Connection dstConn) throws DBException, ForbiddenOperationException;
 	
 }

@@ -1,11 +1,12 @@
 package org.openmrs.module.epts.etl.data.validation.missingrecords.model;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.DstConf;
 import org.openmrs.module.epts.etl.conf.datasource.SrcConf;
+import org.openmrs.module.epts.etl.conf.types.DbmsType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
-import org.openmrs.module.epts.etl.data.validation.missingrecords.controller.DetectMissingRecordsController;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.ThreadRecordIntervalsManager;
@@ -13,7 +14,6 @@ import org.openmrs.module.epts.etl.etl.model.EtlDatabaseObjectSearchParams;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.SearchClauses;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
-import org.openmrs.module.epts.etl.utilities.db.conn.DbmsType;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
 
 public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchParams {
@@ -23,20 +23,19 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 	public DetectMissingRecordsSearchParams(Engine<EtlDatabaseObject> relatedEngine,
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
 		
-		super(relatedEngine, limits);
+		super(relatedEngine.getSrcConf(), limits);
 		
 		this.excludedRecords = null;
 		
 		this.relatedDstConf = new DstConf();
 		this.relatedDstConf.setTableName(getSrcConf().getTableName());
 		this.relatedDstConf.setParentConf(relatedEngine.getEtlItemConfiguration());
-		this.relatedDstConf
-		        .setRelatedEtlConfig(relatedEngine.getEtlItemConfiguration().getRelatedEtlConf());
+		this.relatedDstConf.setRelatedEtlConfig(relatedEngine.getEtlItemConfiguration().getRelatedEtlConf());
 		
 		OpenConnection dstConn = null;
 		
 		try {
-			dstConn = getRelatedController().tryToOpenDstConn();
+			dstConn = relatedEngine.tryToOpenDstConn(this);
 			
 			this.relatedDstConf.fullLoad(dstConn);
 		}
@@ -44,20 +43,15 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (dstConn != null)
-				dstConn.finalizeConnection();
+			finalizeConnection(dstConn);
 		}
 		
 	}
 	
 	@Override
-	public DetectMissingRecordsController getRelatedController() {
-		return (DetectMissingRecordsController) super.getRelatedController();
-	}
-	
-	@Override
 	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord intervalExtremeRecord,
-	        Connection srcConn, Connection dstConn) throws DBException {
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
+	        Connection dstConn) throws DBException {
 		SrcConf srcConfig = getSrcConf();
 		
 		SearchClauses<EtlDatabaseObject> searchClauses = new SearchClauses<EtlDatabaseObject>(this);
@@ -90,7 +84,8 @@ public class DetectMissingRecordsSearchParams extends EtlDatabaseObjectSearchPar
 			searchClauses.addToClauseFrom(clauseFrom);
 		}
 		
-		tryToAddExtraConditionForExport(searchClauses, DbmsType.determineFromConnection(srcConn));
+		tryToAddExtraConditionForExport(searchClauses, parentObject, auxDataSourceObjects,
+		    DbmsType.determineFromConnection(srcConn));
 		
 		if (utilities.stringHasValue(getExtraCondition())) {
 			searchClauses.addToClauses(getExtraCondition());

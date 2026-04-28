@@ -3,8 +3,11 @@ package org.openmrs.module.epts.etl.conf.datasource;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openmrs.module.epts.etl.conf.Extension;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
 import org.openmrs.module.epts.etl.conf.interfaces.TransformableField;
+import org.openmrs.module.epts.etl.conf.types.EtlNullBehavior;
+import org.openmrs.module.epts.etl.conf.types.RelationshipResolutionStrategy;
+import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.etl.processor.transformer.EtlFieldTransformer;
 import org.openmrs.module.epts.etl.model.Field;
 
@@ -16,25 +19,50 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	private EtlFieldTransformer transformerInstance;
 	
-	private Extension extension;
-	
-	private boolean dataTypeLoaded;
+	private Boolean dataTypeLoaded;
 	
 	private Object defaultValue;
 	
-	private ObjectDataSource dataSource;
-	
 	private Object overrideTriggerValue;
 	
+	private String srcField;
+	
+	private FieldsMapping auxFieldMapping;
+	
+	private RelationshipResolutionStrategy relationshipResolutionStrategy;
+	
+	private EtlNullBehavior nullValueBehavior;
+	
+	private EtlDataSource parent;
+	
 	public DataSourceField() {
+		this.nullValueBehavior = EtlNullBehavior.ALLOW;
+		this.relationshipResolutionStrategy = RelationshipResolutionStrategy.RESOLVE;
 	}
 	
-	public void setDataSource(ObjectDataSource dataSource) {
-		this.dataSource = dataSource;
+	public static DataSourceField fastCreate(String name, Object value) {
+		DataSourceField ds = new DataSourceField();
+		
+		ds.setValue(value);
+		ds.setName(name);
+		
+		return ds;
 	}
 	
-	public ObjectDataSource getDataSource() {
-		return dataSource;
+	public RelationshipResolutionStrategy getRelationshipResolutionStrategy() {
+		return relationshipResolutionStrategy;
+	}
+	
+	public void setRelationshipResolutionStrategy(RelationshipResolutionStrategy relationshipResolutionStrategy) {
+		this.relationshipResolutionStrategy = relationshipResolutionStrategy;
+	}
+	
+	public EtlDataSource getParent() {
+		return parent;
+	}
+	
+	public void setParent(EtlDataSource parent) {
+		this.parent = parent;
 	}
 	
 	@Override
@@ -47,9 +75,18 @@ public class DataSourceField extends Field implements TransformableField {
 		this.overrideTriggerValue = overrideTriggerValue;
 	}
 	
+	public void setNullValueBehavior(EtlNullBehavior nullValueBehavior) {
+		this.nullValueBehavior = nullValueBehavior;
+	}
+	
+	@Override
+	public EtlNullBehavior nullValueBehavior() {
+		return this.nullValueBehavior;
+	}
+	
 	@Override
 	public String getDataSourceName() {
-		return this.getDataSource().getName();
+		return this.getParent().getName();
 	}
 	
 	@Override
@@ -78,20 +115,24 @@ public class DataSourceField extends Field implements TransformableField {
 		this.transformerInstance = transformerInstance;
 	}
 	
-	public Extension getExtension() {
-		return extension;
+	public Boolean isDataTypeLoaded() {
+		return dataTypeLoaded != null && dataTypeLoaded;
 	}
 	
-	public void setExtension(Extension extension) {
-		this.extension = extension;
-	}
-	
-	public boolean isDataTypeLoaded() {
-		return dataTypeLoaded;
-	}
-	
-	public void setDataTypeLoaded(boolean dataTypeLoaded) {
+	public void setDataTypeLoaded(Boolean dataTypeLoaded) {
 		this.dataTypeLoaded = dataTypeLoaded;
+	}
+	
+	public FieldsMapping getAuxFieldMapping() {
+		return auxFieldMapping;
+	}
+	
+	public void setAuxFieldMapping(FieldsMapping auxFieldMapping) {
+		this.auxFieldMapping = auxFieldMapping;
+	}
+	
+	public Boolean hasAuxFieldMapping() {
+		return this.auxFieldMapping != null;
 	}
 	
 	@Override
@@ -104,17 +145,21 @@ public class DataSourceField extends Field implements TransformableField {
 			this.setTransformerInstance(fDs.getTransformerInstance());
 			this.setExtension(fDs.getExtension());
 			this.setDataTypeLoaded(fDs.isDataTypeLoaded());
+			this.setSrcField(fDs.getSrcField());
+			this.setAuxFieldMapping(fDs.getAuxFieldMapping());
+			this.setNullValueBehavior(fDs.nullValueBehavior());
+			this.setRelationshipResolutionStrategy(fDs.getRelationshipResolutionStrategy());
 		}
 	}
 	
 	@Override
-	public String getValueToTransform() {
-		return this.getValue() != null ? this.getValue().toString() : null;
+	public Object getValueToTransform() {
+		return this.getValue();
 	}
 	
 	@Override
-	public boolean hasSrcField() {
-		return false;
+	public Boolean hasSrcField() {
+		return Boolean.FALSE;
 	}
 	
 	@Override
@@ -124,7 +169,11 @@ public class DataSourceField extends Field implements TransformableField {
 	
 	@Override
 	public String getSrcField() {
-		return this.getName();
+		return this.srcField;
+	}
+	
+	public void setSrcField(String srcField) {
+		this.srcField = srcField;
 	}
 	
 	public static List<DataSourceField> cloneAll(List<DataSourceField> toCloneFrom, ObjectDataSource toCloneTo) {
@@ -137,7 +186,7 @@ public class DataSourceField extends Field implements TransformableField {
 			DataSourceField clonedItem = new DataSourceField();
 			
 			clonedItem.copyFrom(dsF);
-			clonedItem.setDataSource(toCloneTo);
+			clonedItem.setParent(toCloneTo);
 			
 			clonedItems.add(clonedItem);
 		}
@@ -145,4 +194,13 @@ public class DataSourceField extends Field implements TransformableField {
 		return clonedItems;
 	}
 	
+	@Override
+	public RelationshipResolutionStrategy relationshipResolutionStrategy() {
+		return this.relationshipResolutionStrategy;
+	}
+	
+	@Override
+	public EtlDataSource getDataSource() {
+		return this.parent;
+	}
 }

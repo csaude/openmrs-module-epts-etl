@@ -3,6 +3,7 @@ package fgh.sp.openmrs_changed_records_action.eip;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionService;
@@ -25,8 +26,8 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 	public EipChangedRecordDetectedAction() {
 	}
 	
-	public OpenConnection openConnection() throws DBException {
-		return dbService.openConnection();
+	public OpenConnection openConnection(BaseConfiguration openedFrom) throws DBException {
+		return dbService.openConnection(openedFrom);
 	}
 	
 	@Override
@@ -51,7 +52,8 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openConnection();
+			
+			conn = openConnection(this);
 			
 			SenderRetryQueueItemDAO.insert(item, conn);
 			
@@ -62,7 +64,7 @@ public class EipChangedRecordDetectedAction implements DetectedRecordAction {
 		}
 		finally {
 			if (conn != null)
-				conn.finalizeConnection();
+				conn.finalizeConnection(this);
 		}
 	}
 	

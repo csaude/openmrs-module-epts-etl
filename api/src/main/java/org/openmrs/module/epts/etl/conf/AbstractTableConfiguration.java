@@ -9,21 +9,25 @@ import org.openmrs.module.epts.etl.conf.interfaces.ParentTable;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
 import org.openmrs.module.epts.etl.conf.types.AutoIncrementHandlingType;
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
+import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
+import org.openmrs.module.epts.etl.exceptions.EtlConfException;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.Field;
 import org.openmrs.module.epts.etl.model.pojo.generic.DatabaseObjectLoaderHelper;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
+import org.openmrs.module.epts.etl.utilities.db.conn.DBUtilities;
 import org.openmrs.module.epts.etl.utilities.db.conn.OpenConnection;
+import org.openmrs.module.epts.etl.utilities.db.conn.SQLUtilities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public abstract class AbstractTableConfiguration extends AbstractEtlDataConfiguration implements Comparable<AbstractTableConfiguration>, TableConfiguration {
 	
-	private List<String> ignorableFields;
-	
 	private String tableName;
+	
+	private List<String> ignorableFields;
 	
 	private String tableAlias;
 	
@@ -41,11 +45,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private String sharePkWith;
 	
-	private boolean metadata;
+	private Boolean metadata;
 	
-	protected boolean fullLoaded;
+	protected Boolean fullLoaded;
 	
-	private boolean removeForbidden;
+	private Boolean removeForbidden;
 	
 	/**
 	 * List the field to observe when sync by date (ex: date_created, date_update, etc)
@@ -72,11 +76,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	 */
 	private List<List<Field>> winningRecordFieldsInfo;
 	
-	private boolean autoIncrementId;
+	private Boolean autoIncrementId;
 	
-	private boolean disabled;
+	private Boolean disabled;
 	
-	private boolean mustLoadChildrenInfo;
+	private Boolean mustLoadChildrenInfo;
 	
 	private String extraConditionForExtract;
 	
@@ -86,35 +90,35 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	private String updateSql;
 	
-	private DatabaseObjectLoaderHelper loadHealper;
+	protected DatabaseObjectLoaderHelper loadHealper;
 	
-	private boolean allRelatedTablesFullLoaded;
+	private Boolean allRelatedTablesFullLoaded;
 	
 	private String schema;
 	
-	private boolean usingManualDefinedAlias;
+	private Boolean usingManualDefinedAlias;
 	
 	private String insertSQLQuestionMarksWithObjectId;
 	
 	private String insertSQLQuestionMarksWithoutObjectId;
 	
-	private boolean includePrimaryKeyOnInsert;
+	private Boolean includePrimaryKeyOnInsert;
 	
-	private boolean uniqueKeyInfoLoaded;
+	private Boolean uniqueKeyInfoLoaded;
 	
-	private boolean primaryKeyInfoLoaded;
+	private Boolean primaryKeyInfoLoaded;
 	
-	private boolean fieldsLoaded;
+	private Boolean fieldsLoaded;
 	
-	private boolean tableNameInfoLoaded;
+	private Boolean tableNameInfoLoaded;
 	
-	private boolean parentsLoaded;
+	private Boolean parentsLoaded;
 	
 	private ConflictResolutionType onConflict;
 	
-	private boolean useMysqlInsertIgnore;
+	private Boolean useMysqlInsertIgnore;
 	
-	private boolean ignoreMissingParameters;
+	private Boolean ignoreMissingParameters;
 	
 	private AutoIncrementHandlingType autoIncrementHandlingType;
 	
@@ -122,13 +126,57 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	public AbstractTableConfiguration() {
 		this.loadHealper = new DatabaseObjectLoaderHelper(this);
-		this.onConflict = ConflictResolutionType.MAKE_YOUR_DECISION;
 	}
 	
 	public AbstractTableConfiguration(String tableName) {
 		this();
 		
 		this.tableName = tableName;
+	}
+	
+	@Override
+	public void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
+		
+		TableConfiguration.super.tryToLoadSchemaInfo(schemaInfoSrc, conn);
+		
+		if (this.isTableNameInfoLoaded())
+			return;
+		
+		if (this.getSchema() == null) {
+			this.setSchema(DBUtilities.determineSchemaName(conn));
+		}
+		
+		Boolean exists = DBUtilities.isTableExists(this.getSchema(), this.getTableName(), conn);
+		
+		if (!exists)
+			throw new DatabaseResourceDoesNotExists(this.generateFullTableName(conn));
+		
+		this.setTableNameInfoLoaded(true);
+	}
+	
+	@Override
+	public void fullLoad(Connection conn) throws DBException {
+		this.tryToLoadDumpScriptContentToFieldAndValidate("extraConditionForExtract", this.retrieveNearestTemplate(), conn);
+		
+		TableConfiguration.super.fullLoad(conn);
+	}
+	
+	@Override
+	public void loadOwnElements(EtlDatabaseObject schemaInfo, Connection conn) throws DBException {
+		
+		if (hasExtraConditionForExtract()) {
+			if (!SQLUtilities.isValidSelectSqlQuery("select * from where " + this.getExtraConditionForExtract(), null)) {
+				throw new EtlConfException("Invalid extraConditionForExtract  \n" + this.getExtraConditionForExtract());
+			}
+		}
+		
+		if (this.loadHealper == null) {
+			this.loadHealper = new DatabaseObjectLoaderHelper(this);
+		}
+		if (this.onConflict == null) {
+			this.onConflict = ConflictResolutionType.MAKE_YOUR_DECISION;
+		}
 	}
 	
 	@Override
@@ -151,15 +199,15 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.autoIncrementHandlingType = autoIncrementHandlingType;
 	}
 	
-	public boolean isIgnoreMissingParameters() {
-		return ignoreMissingParameters;
+	public Boolean isIgnoreMissingParameters() {
+		return isTrue(ignoreMissingParameters);
 	}
 	
-	public boolean ignoreMissingParameters() {
-		return ignoreMissingParameters;
+	public Boolean ignoreMissingParameters() {
+		return isTrue(ignoreMissingParameters);
 	}
 	
-	public void setIgnoreMissingParameters(boolean ignoreMissingParameters) {
+	public void setIgnoreMissingParameters(Boolean ignoreMissingParameters) {
 		this.ignoreMissingParameters = ignoreMissingParameters;
 	}
 	
@@ -171,81 +219,81 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.manualMapPrimaryKeyOnField = manualMapPrimaryKeyOnField;
 	}
 	
-	public boolean isUseMysqlInsertIgnore() {
-		return useMysqlInsertIgnore;
+	public Boolean isUseMysqlInsertIgnore() {
+		return isTrue(useMysqlInsertIgnore);
 	}
 	
 	@Override
-	public boolean useMysqlInsertIgnore() {
+	public Boolean useMysqlInsertIgnore() {
 		return isUseMysqlInsertIgnore();
 	}
 	
-	public void setUseMysqlInsertIgnore(boolean useMysqlInsertIgnore) {
+	public void setUseMysqlInsertIgnore(Boolean useMysqlInsertIgnore) {
 		this.useMysqlInsertIgnore = useMysqlInsertIgnore;
 	}
 	
 	@Override
-	public boolean isParentsLoaded() {
-		return parentsLoaded;
+	public Boolean isParentsLoaded() {
+		return isTrue(parentsLoaded);
 	}
 	
 	@Override
-	public void setParentsLoaded(boolean parentsLoaded) {
+	public void setParentsLoaded(Boolean parentsLoaded) {
 		this.parentsLoaded = parentsLoaded;
 	}
 	
 	@Override
-	public boolean isFieldsLoaded() {
-		return fieldsLoaded;
+	public Boolean isFieldsLoaded() {
+		return isTrue(fieldsLoaded);
 	}
 	
 	@Override
-	public void setFieldsLoaded(boolean fieldsLoaded) {
+	public void setFieldsLoaded(Boolean fieldsLoaded) {
 		this.fieldsLoaded = fieldsLoaded;
 	}
 	
 	@Override
-	public boolean isTableNameInfoLoaded() {
-		return tableNameInfoLoaded;
+	public Boolean isTableNameInfoLoaded() {
+		return isTrue(tableNameInfoLoaded);
 	}
 	
 	@Override
-	public void setTableNameInfoLoaded(boolean tableNameInfoLoaded) {
+	public void setTableNameInfoLoaded(Boolean tableNameInfoLoaded) {
 		this.tableNameInfoLoaded = tableNameInfoLoaded;
 	}
 	
 	@Override
-	public boolean isPrimaryKeyInfoLoaded() {
-		return primaryKeyInfoLoaded;
+	public Boolean isPrimaryKeyInfoLoaded() {
+		return isTrue(primaryKeyInfoLoaded);
 	}
 	
 	@Override
-	public void setPrimaryKeyInfoLoaded(boolean primaryKeyInfoLoaded) {
+	public void setPrimaryKeyInfoLoaded(Boolean primaryKeyInfoLoaded) {
 		this.primaryKeyInfoLoaded = primaryKeyInfoLoaded;
 	}
 	
 	@Override
-	public boolean isUniqueKeyInfoLoaded() {
-		return uniqueKeyInfoLoaded;
+	public Boolean isUniqueKeyInfoLoaded() {
+		return isTrue(uniqueKeyInfoLoaded);
 	}
 	
 	@Override
-	public void setUniqueKeyInfoLoaded(boolean uniqueKeyInfoLoaded) {
+	public void setUniqueKeyInfoLoaded(Boolean uniqueKeyInfoLoaded) {
 		this.uniqueKeyInfoLoaded = uniqueKeyInfoLoaded;
 	}
 	
 	@Override
-	public boolean includePrimaryKeyOnInsert() {
-		return includePrimaryKeyOnInsert;
+	public Boolean includePrimaryKeyOnInsert() {
+		return isTrue(includePrimaryKeyOnInsert);
 	}
 	
 	@Override
-	public void setIncludePrimaryKeyOnInsert(boolean includePrimaryKeyOnInsert) {
+	public void setIncludePrimaryKeyOnInsert(Boolean includePrimaryKeyOnInsert) {
 		this.includePrimaryKeyOnInsert = includePrimaryKeyOnInsert;
 	}
 	
-	public boolean isIncludePrimaryKeyOnInsert() {
-		return includePrimaryKeyOnInsert;
+	public Boolean isIncludePrimaryKeyOnInsert() {
+		return isTrue(includePrimaryKeyOnInsert);
 	}
 	
 	@Override
@@ -268,13 +316,13 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.insertSQLQuestionMarksWithoutObjectId = insertSQLQuestionMarksWithoutObjectId;
 	}
 	
-	public void setUsingManualDefinedAlias(boolean usingManualDefinedAlias) {
+	public void setUsingManualDefinedAlias(Boolean usingManualDefinedAlias) {
 		this.usingManualDefinedAlias = usingManualDefinedAlias;
 	}
 	
 	@Override
-	public boolean isUsingManualDefinedAlias() {
-		return this.usingManualDefinedAlias;
+	public Boolean isUsingManualDefinedAlias() {
+		return isTrue(this.usingManualDefinedAlias);
 	}
 	
 	@Override
@@ -348,7 +396,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		OpenConnection conn = null;
 		
 		try {
-			conn = getRelatedConnInfo().openConnection();
+			conn = getRelatedConnInfo().openConnection(this);
 			
 			tryToManualLoadConfiguredPk(conn);
 			
@@ -360,8 +408,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 	}
 	
@@ -386,11 +433,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		}
 	}
 	
-	public boolean isAllRelatedTablesFullLoaded() {
-		return allRelatedTablesFullLoaded;
+	public Boolean isAllRelatedTablesFullLoaded() {
+		return isTrue(allRelatedTablesFullLoaded);
 	}
 	
-	public void setAllRelatedTablesFullLoaded(boolean allRelatedTablesFullLoaded) {
+	public void setAllRelatedTablesFullLoaded(Boolean allRelatedTablesFullLoaded) {
 		this.allRelatedTablesFullLoaded = allRelatedTablesFullLoaded;
 	}
 	
@@ -403,7 +450,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		return syncRecordClass;
 	}
 	
-	public void setFullLoaded(boolean fullLoaded) {
+	public void setFullLoaded(Boolean fullLoaded) {
 		this.fullLoaded = fullLoaded;
 	}
 	
@@ -442,10 +489,6 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		return this.loadHealper;
 	}
 	
-	public void setLoadHealper(DatabaseObjectLoaderHelper loadHealper) {
-		this.loadHealper = loadHealper;
-	}
-	
 	public String getInsertSQLWithObjectId() {
 		return insertSQLWithObjectId;
 	}
@@ -458,27 +501,29 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		return updateSql;
 	}
 	
+	@Override
 	public String getExtraConditionForExtract() {
 		return extraConditionForExtract;
 	}
 	
+	@Override
 	public void setExtraConditionForExtract(String extraConditionForExtract) {
 		this.extraConditionForExtract = extraConditionForExtract;
 	}
 	
-	public boolean isMustLoadChildrenInfo() {
-		return mustLoadChildrenInfo;
+	public Boolean isMustLoadChildrenInfo() {
+		return isTrue(mustLoadChildrenInfo);
 	}
 	
-	public void setMustLoadChildrenInfo(boolean mustLoadChildrenInfo) {
+	public void setMustLoadChildrenInfo(Boolean mustLoadChildrenInfo) {
 		this.mustLoadChildrenInfo = mustLoadChildrenInfo;
 	}
 	
-	public boolean isAutoIncrementId() {
-		return autoIncrementId;
+	public Boolean isAutoIncrementId() {
+		return isTrue(autoIncrementId);
 	}
 	
-	public void setAutoIncrementId(boolean autoIncrementId) {
+	public void setAutoIncrementId(Boolean autoIncrementId) {
 		this.autoIncrementId = autoIncrementId;
 	}
 	
@@ -490,7 +535,7 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.winningRecordFieldsInfo = winningRecordFieldsInfo;
 	}
 	
-	public boolean hasWinningRecordsInfo() {
+	public Boolean hasWinningRecordsInfo() {
 		return this.winningRecordFieldsInfo != null;
 	}
 	
@@ -532,11 +577,11 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.observationDateFields = observationDateFields;
 	}
 	
-	public boolean isRemoveForbidden() {
+	public Boolean isRemoveForbidden() {
 		return removeForbidden;
 	}
 	
-	public void setRemoveForbidden(boolean removeForbidden) {
+	public void setRemoveForbidden(Boolean removeForbidden) {
 		this.removeForbidden = removeForbidden;
 	}
 	
@@ -587,29 +632,30 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 		this.syncRecordClass = syncRecordClass;
 	}
 	
-	public boolean isMetadata() {
-		return metadata;
+	@Override
+	public Boolean isMetadata() {
+		return isTrue(metadata);
 	}
 	
-	public void setMetadata(boolean metadata) {
+	public void setMetadata(Boolean metadata) {
 		this.metadata = metadata;
 	}
 	
 	@JsonIgnore
-	public boolean isFullLoaded() {
-		return fullLoaded;
+	public Boolean isFullLoaded() {
+		return isTrue(fullLoaded);
 	}
 	
-	public boolean isDisabled() {
-		return disabled;
+	public Boolean isDisabled() {
+		return isTrue(disabled);
 	}
 	
-	public void setDisabled(boolean disabled) {
+	public void setDisabled(Boolean disabled) {
 		this.disabled = disabled;
 	}
 	
 	@Override
-	public boolean hasPK() {
+	public Boolean hasPK() {
 		return this.primaryKey != null;
 	}
 	
@@ -644,9 +690,8 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	}
 	
 	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
-		this.setIgnorableFields(utilities.tryToReplacePlaceholders(getIgnorableFields(), schemaInfoSrc));
-		
-		utilities.tryToReplacePlaceholders(getTableAlias(), schemaInfoSrc);
+		this.setIgnorableFields(utilities.tryToReplacePlaceholdersAll(getIgnorableFields(), schemaInfoSrc));
+		setTableAlias(utilities.tryToReplacePlaceholders(getTableAlias(), schemaInfoSrc));
 		
 		if (hasParents()) {
 			for (ParentTable p : this.getParents()) {
@@ -658,20 +703,13 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 			this.getPrimaryKey().tryToReplacePlaceholders(schemaInfoSrc);
 		}
 		
-		if (useSharedPKKey()) {
-			utilities.tryToReplacePlaceholders(this.getSharePkWith(), schemaInfoSrc);
-		}
+		setSharePkWith(utilities.tryToReplacePlaceholders(this.getSharePkWith(), schemaInfoSrc));
 		
-		if (hasObservationDateFields()) {
-			this.setObservationDateFields(
-			    utilities.tryToReplacePlaceholders(this.getObservationDateFields(), schemaInfoSrc));
-		}
+		this.setObservationDateFields(utilities.tryToReplacePlaceholders(this.getObservationDateFields(), schemaInfoSrc));
 		
 		if (hasUniqueKeys()) {
 			UniqueKeyInfo.tryToReplacePlaceholders(this.getUniqueKeys(), schemaInfoSrc);
 		}
-		
-		setManualMapPrimaryKeyOnField(utilities.tryToReplacePlaceholders(manualMapPrimaryKeyOnField, schemaInfoSrc));
 		
 		setExtraConditionForExtract(utilities.tryToReplacePlaceholders(getExtraConditionForExtract(), schemaInfoSrc));
 		
@@ -684,6 +722,13 @@ public abstract class AbstractTableConfiguration extends AbstractEtlDataConfigur
 	
 	public void setDefaultPreparedQuery(PreparedQuery defaultPreparedQuery) {
 		this.defaultPreparedQuery = defaultPreparedQuery;
+	}
+	
+	@Override
+	public void tryToLoadFromTemplate() {
+		super.tryToLoadFromTemplate();
+		
+		this.loadHealper.setTableConf(this);
 	}
 	
 	public abstract void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc);

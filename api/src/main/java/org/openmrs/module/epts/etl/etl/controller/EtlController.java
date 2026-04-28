@@ -58,7 +58,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			return engine.getSrcConf().getMinRecordId(engine, conn);
 		}
@@ -68,8 +68,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 	}
 	
@@ -78,7 +77,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 		OpenConnection conn = null;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			return engine.getSrcConf().getMaxRecordId(engine, conn);
 		}
@@ -88,8 +87,7 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn, this);
 		}
 	}
 	
@@ -106,7 +104,8 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 	public AbstractEtlSearchParams<EtlDatabaseObject> initMainSearchParams(
 	        ThreadRecordIntervalsManager<EtlDatabaseObject> intervalsMgt, Engine<EtlDatabaseObject> engine) {
 		
-		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new EtlDatabaseObjectSearchParams(engine, intervalsMgt);
+		AbstractEtlSearchParams<EtlDatabaseObject> searchParams = new EtlDatabaseObjectSearchParams(engine.getSrcConf(),
+		        intervalsMgt);
 		searchParams.setQtdRecordPerSelected(getQtyRecordsPerProcessing());
 		searchParams.setSyncStartDate(getEtlConfiguration().getStartDate());
 		
@@ -115,6 +114,11 @@ public class EtlController extends SiteOperationController<EtlDatabaseObject> {
 	
 	@Override
 	public void afterEtl(List<EtlDatabaseObject> objs, Connection srcConn, Connection dstConn) throws DBException {
+	}
+	
+	@Override
+	public boolean isDisabled() {
+		return false;
 	}
 	
 }

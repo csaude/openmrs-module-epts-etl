@@ -20,13 +20,32 @@ public class DefaultObjectFieldsValuesGenerator implements JavaObjectFieldsValue
 	
 	@Override
 	public Map<String, FieldTransformingInfo> generateObjectFields(EtlProcessor processor, EtlDatabaseObject srcObject,
-	        ObjectDataSource dataSource, List<EtlDatabaseObject> avaliableSrcObjects, Connection srcConn, Connection dstConn)
-	        throws DBException, ForbiddenOperationException {
+	        EtlDatabaseObject dstObject, ObjectDataSource dataSource, List<EtlDatabaseObject> avaliableSrcObjects,
+	        Connection srcConn, Connection dstConn) throws DBException, ForbiddenOperationException {
 		
 		Map<String, FieldTransformingInfo> map = new HashMap<>();
 		
 		for (DataSourceField field : dataSource.getObjectFields()) {
-			FieldTransformingInfo fieldInfo = field.getTransformerInstance().transform(processor, srcObject, null,
+			
+			if (field.hasAuxFieldMapping()) {
+				field.setValue(field.getAuxFieldMapping().getTransformerInstance().transform(processor, srcObject, dstObject,
+				    avaliableSrcObjects, field.getAuxFieldMapping(), srcConn, dstConn).getTransformedValue());
+				
+				try {
+					
+					if (field.getDefaultValue() != null) {
+						
+						if (field.getValue() == null || field.getValue().toString().isBlank()) {
+							field.setValue(field.getDefaultValue());
+						}
+					}
+				}
+				catch (NullPointerException e) {
+					field.setValue(field.getDefaultValue());
+				}
+			}
+			
+			FieldTransformingInfo fieldInfo = field.getTransformerInstance().transform(processor, srcObject, dstObject,
 			    avaliableSrcObjects, field, srcConn, dstConn);
 			
 			map.put(field.getName(), fieldInfo != null ? fieldInfo : null);

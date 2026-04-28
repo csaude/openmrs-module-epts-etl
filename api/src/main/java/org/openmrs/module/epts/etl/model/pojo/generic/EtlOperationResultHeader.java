@@ -6,8 +6,10 @@ import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.EtlConfigurationTableConf;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
+import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
 import org.openmrs.module.epts.etl.exceptions.EtlException;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.inconsistenceresolver.model.InconsistenceInfo;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
@@ -148,7 +150,7 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 	}
 	
-	public void addAllFromOtherResult_(EtlOperationResultHeader<T> otherResult) {
+	public void addAllFromOtherResult(EtlOperationResultHeader<T> otherResult) {
 		if (otherResult != null) {
 			if (otherResult.hasRecordsWithNoError()) {
 				addAllToRecordsWithNoError(otherResult.getRecordsWithNoError());
@@ -362,9 +364,21 @@ public class EtlOperationResultHeader<T extends EtlDatabaseObject> {
 		}
 	}
 	
-	public void throwDefaultExcetions() throws RuntimeException {
+	public void throwDefaultExcetions(Engine<T> engine) throws Exception {
 		if (hasFatalException()) {
-			throw new RuntimeException(getFatalException());
+			
+			String msg = "Error happened on etl '" + engine.getEngineId();
+			
+			if (getFatalException() instanceof EtlException) {
+				EtlException e = (EtlException) getFatalException();
+				
+				if (e.getEtlObject() != null) {
+					msg += " while processing object: " + e.getEtlObject();
+				}
+			}
+			
+			throw new EtlExceptionImpl(msg, getFatalException());
+			
 		}
 		
 		for (EtlOperationItemResult<T> o : getRecordsWithUnexpectedErrors()) {

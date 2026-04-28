@@ -1,8 +1,10 @@
 package org.openmrs.module.epts.etl.conf;
 
 import java.sql.Connection;
+import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.types.ConflictResolutionType;
+import org.openmrs.module.epts.etl.etl.model.stage.EtlStageAreaObject;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.pojo.generic.GenericDatabaseObject;
@@ -15,6 +17,8 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  */
 public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	
+	private List<EtlConfigurationTableConf> parentTables;
+	
 	public EtlConfigurationTableConf(String tableName, EtlConfiguration relatedConf) {
 		super.setTableName(tableName);
 		
@@ -22,11 +26,21 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 		setSchema(getSyncStageSchema());
 		
 		setOnConflict(ConflictResolutionType.KEEP_EXISTING);
+		
+		setSyncRecordClass(EtlStageAreaObject.class);
+	}
+	
+	public List<EtlConfigurationTableConf> getParentTables() {
+		return parentTables;
+	}
+	
+	public void setParentTables(List<EtlConfigurationTableConf> parentTables) {
+		this.parentTables = parentTables;
 	}
 	
 	@Override
-	public boolean isGeneric() {
-		return false;
+	public Boolean isGeneric() {
+		return false_();
 	}
 	
 	@Override
@@ -53,7 +67,7 @@ public class EtlConfigurationTableConf extends AbstractTableConfiguration {
 	}
 	
 	@Override
-	public void generateRecordClass(DBConnectionInfo app, boolean fullClass) {
+	public void generateRecordClass(DBConnectionInfo app, Boolean fullClass) {
 		// TODO Auto-generated method stub
 		
 	}

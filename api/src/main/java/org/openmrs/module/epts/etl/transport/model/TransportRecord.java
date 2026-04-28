@@ -20,6 +20,7 @@ import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.exceptions.ParentNotYetMigratedException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObjectUniqueKeyInfo;
+import org.openmrs.module.epts.etl.model.EtlInfo;
 import org.openmrs.module.epts.etl.model.base.BaseVO;
 import org.openmrs.module.epts.etl.model.pojo.generic.Oid;
 import org.openmrs.module.epts.etl.utilities.concurrent.TimeCountDown;
@@ -125,6 +126,7 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 		}
 	}
 	
+	@SuppressWarnings("null")
 	private static void copy(File source, File dest) throws IOException {
 		InputStream is = null;
 		OutputStream os = null;
@@ -274,12 +276,6 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 	public String getInsertSQLQuestionMarksWithoutObjectId() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-	
-	@Override
-	public boolean hasIgnoredParent() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 	
 	@Override
@@ -465,13 +461,26 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public EtlDatabaseObject getSrcRelatedObject() {
+	public List<EtlDatabaseObject> getDestinationObjects() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public void setSrcRelatedObject(EtlDatabaseObject srcRelatedObject) {
+	public void setDestinationObjects(List<EtlDatabaseObject> destinationObjects) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public List<EtlDatabaseObject> getAuxLoadObject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public void save(TableConfiguration syncTableInfo, ConflictResolutionType onConflict, Connection conn)
+	        throws DBException {
 		// TODO Auto-generated method stub
 		
 	}
@@ -483,28 +492,15 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public ConflictResolutionType getConflictResolutionType() {
+	public EtlInfo getEtlInfo() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	@Override
-	public void setConflictResolutionType(ConflictResolutionType conflictResolutionType) {
+	public void setEtlInfo(EtlInfo info) {
 		// TODO Auto-generated method stub
 		
-	}
-	
-	@Override
-	public void save(TableConfiguration syncTableInfo, ConflictResolutionType onConflict, Connection conn)
-	        throws DBException {
-		// TODO Auto-generated method stub
-		
-	}
-	
-	@Override
-	public List<? extends EtlDatabaseObject> getAuxLoadObject() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 	
 	@Override
@@ -514,13 +510,7 @@ public class TransportRecord extends BaseVO implements EtlDatabaseObject {
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> getTransformationSrcObject() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	@Override
-	public void setTransformationSrcObject(List<EtlDatabaseObject> avaliableSrcObjects) {
+	public void setAuxLoadObject(List<EtlDatabaseObject> auxLoadObjects) {
 		// TODO Auto-generated method stub
 		
 	}

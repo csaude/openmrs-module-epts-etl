@@ -7,8 +7,9 @@ import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 
 public class DBQuickExportSearchParams extends EtlDatabaseObjectSearchParams {
 	
-	public DBQuickExportSearchParams(Engine<EtlDatabaseObject> engine, ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
-		super(engine, limits);
+	public DBQuickExportSearchParams(Engine<EtlDatabaseObject> engine,
+	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
+		super(engine.getSrcConf(), limits);
 		
 		setOrderByFields(getSrcConf().getPrimaryKey().parseFieldNamesToArray());
 	}

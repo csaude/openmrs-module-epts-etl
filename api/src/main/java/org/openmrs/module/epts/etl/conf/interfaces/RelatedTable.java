@@ -15,11 +15,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface RelatedTable extends TableConfiguration {
 	
-	boolean isManualyConfigured();
+	Boolean isManualyConfigured();
 	
-	void setManualyConfigured(boolean manualyConfigured);
+	void setManualyConfigured(Boolean manualyConfigured);
 	
-	default boolean hasRefCode() {
+	default Boolean hasRefCode() {
 		return utilities.stringHasValue(getRefCode());
 	}
 	
@@ -51,7 +51,7 @@ public interface RelatedTable extends TableConfiguration {
 	
 	void setRefMapping(List<RefMapping> mapping);
 	
-	default boolean hasRelated() {
+	default Boolean hasRelated() {
 		return this.getRelatedTabConf() != null;
 	}
 	
@@ -71,11 +71,11 @@ public interface RelatedTable extends TableConfiguration {
 		return getSimpleRefMapping().getChildField().getNameAsClassAtt();
 	}
 	
-	default boolean isSimpleMapping() {
+	default Boolean isSimpleMapping() {
 		return utilities.arraySize(this.getRefMapping()) <= 1;
 	}
 	
-	default boolean isCompositeMapping() {
+	default Boolean isCompositeMapping() {
 		return utilities.arraySize(this.getRefMapping()) > 1;
 	}
 	
@@ -92,7 +92,7 @@ public interface RelatedTable extends TableConfiguration {
 	}
 	
 	@JsonIgnore
-	default boolean checkIfContainsRefMappingByChildName(String attName) {
+	default Boolean checkIfContainsRefMappingByChildName(String attName) {
 		try {
 			return getRefMappingByChildName(attName) != null;
 		}
@@ -175,7 +175,8 @@ public interface RelatedTable extends TableConfiguration {
 			Key k = new Key(map.getParentFieldName());
 			
 			k.setValue(obj.getFieldValue(map.getChildFieldName()));
-			
+			k.setDataType(map.getChildField().getDataType());
+			k.setTypeClass(map.getChildField().getTypeClass());
 			oid.addKey(k);
 		}
 		
@@ -223,7 +224,7 @@ public interface RelatedTable extends TableConfiguration {
 		return oid;
 	}
 	
-	default boolean hasMapping() {
+	default Boolean hasMapping() {
 		return utilities.listHasElement(this.getRefMapping());
 	}
 	

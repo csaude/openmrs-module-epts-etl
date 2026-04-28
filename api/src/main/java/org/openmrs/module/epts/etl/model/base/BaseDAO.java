@@ -165,7 +165,7 @@ public abstract class BaseDAO {
 			loadParamsToStatment(st, params, conn);
 			
 			logger.trace("Executing select: \n" + utilities.garantirXCaracteres(sql, 500));
-				
+			
 			st.executeQuery();
 			
 			rs = st.getResultSet();
@@ -257,19 +257,20 @@ public abstract class BaseDAO {
 	
 	public static void executeBatch(Connection conn, String... batches) throws DBException {
 		
-		try {
-			Statement st = conn.createStatement();
+		try (Statement st = conn.createStatement()) {
 			
 			for (String batch : batches) {
-				st.addBatch(batch);
+				if (batch != null && !batch.trim().isEmpty()) {
+					st.addBatch(batch);
+				}
 			}
 			
 			st.executeBatch();
-			
-			st.close();
 		}
 		catch (SQLException e) {
-			throw new DBException(e);
+			if (!e.getLocalizedMessage().contains("Duplicate key name")) {
+				throw new DBException("Error executing batch", e);
+			}
 		}
 	}
 	
@@ -315,8 +316,10 @@ public abstract class BaseDAO {
 		}
 		finally {
 			try {
-				st.close();
-				st = null;
+				if (st != null) {
+					st.close();
+					st = null;
+				}
 			}
 			catch (NullPointerException e) {
 				st = null;

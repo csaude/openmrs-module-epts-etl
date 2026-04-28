@@ -91,7 +91,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		int id = 0;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			if (isMissingRecordsDetector()) {
 				EtlStageRecordVO record = SyncImportInfoDAO.getFirstMissingRecordInDestination(engine.getSrcConf(), conn);
@@ -113,8 +113,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn);
 		}
 	}
 	
@@ -128,7 +127,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		int id = 0;
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			if (isMissingRecordsDetector()) {
 				EtlStageRecordVO record = SyncImportInfoDAO.getLastMissingRecordInDestination(engine.getSrcConf(), conn);
@@ -150,8 +149,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 			throw new RuntimeException(e);
 		}
 		finally {
-			if (conn != null)
-				conn.finalizeConnection();
+			finalizeConnection(conn);
 		}
 	}
 	
@@ -166,7 +164,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		String resourceType = DBUtilities.RESOURCE_TYPE_TABLE;
 		String tabName = "data_conciliation_info";
 		
-		OpenConnection conn = openSrcConnection();
+		OpenConnection conn = openSrcConnection(this);
 		
 		try {
 			
@@ -179,7 +177,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		}
 		finally {
 			conn.markAsSuccessifullyTerminated();
-			conn.finalizeConnection();
+			conn.finalizeConnection(this);
 		}
 	}
 	
@@ -199,7 +197,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		sql += ") ENGINE=InnoDB;\n";
 		
 		try {
-			conn = openSrcConnection();
+			conn = openSrcConnection(this);
 			
 			Statement st = conn.createStatement();
 			st.addBatch(sql);
@@ -216,7 +214,7 @@ public class CentralAndRemoteDataReconciliationController extends OperationContr
 		}
 		finally {
 			if (conn != null)
-				conn.finalizeConnection();
+				conn.finalizeConnection(this);
 		}
 	}
 	

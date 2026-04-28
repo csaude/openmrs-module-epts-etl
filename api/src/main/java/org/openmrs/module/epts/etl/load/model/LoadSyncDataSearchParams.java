@@ -11,6 +11,7 @@ import java.util.List;
 
 import javax.ws.rs.ForbiddenException;
 
+import org.openmrs.module.epts.etl.controller.OperationController;
 import org.openmrs.module.epts.etl.engine.AbstractEtlSearchParams;
 import org.openmrs.module.epts.etl.engine.Engine;
 import org.openmrs.module.epts.etl.engine.record_intervals_manager.IntervalExtremeRecord;
@@ -37,9 +38,11 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	
 	private String fileNamePathern;
 	
+	private Engine<EtlDatabaseObject> relatedEngine;
+	
 	public LoadSyncDataSearchParams(Engine<EtlDatabaseObject> engine,
 	    ThreadRecordIntervalsManager<EtlDatabaseObject> limits) {
-		super(engine, limits);
+		super(engine.getSrcConf(), limits);
 		
 		if (limits != null) {
 			this.firstFileName = getSrcConf().getTableName() + "_"
@@ -47,11 +50,12 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 			this.lastFileName = getSrcConf().getTableName() + "_"
 			        + utilities.garantirXCaracterOnNumber(limits.getCurrentLastRecordId(), 10) + ".json";
 		}
+		
+		this.relatedEngine = engine;
 	}
 	
-	@Override
 	public DataLoadController getRelatedController() {
-		return (DataLoadController) super.getRelatedController();
+		return (DataLoadController) relatedEngine.getController();
 	}
 	
 	private File getNextJSONFileToLoad() {
@@ -65,8 +69,8 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, Connection srcConn,
-	        Connection dstCOnn) throws DBException {
+	public List<EtlDatabaseObject> search(IntervalExtremeRecord intervalExtremeRecord, EtlDatabaseObject parentObject,
+	        List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn, Connection dstCOnn) throws DBException {
 		
 		this.currJSONSourceFile = getNextJSONFileToLoad();
 		
@@ -110,7 +114,8 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits, Connection srcConn,
+	public SearchClauses<EtlDatabaseObject> generateSearchClauses(IntervalExtremeRecord recordLimits,
+	        EtlDatabaseObject parentObject, List<EtlDatabaseObject> auxDataSourceObjects, Connection srcConn,
 	        Connection dstConn) throws DBException {
 		// TODO Auto-generated method stub
 		return null;
@@ -139,7 +144,7 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public int countAllRecords(Connection conn) throws DBException {
+	public int countAllRecords(OperationController<EtlDatabaseObject> controller, Connection conn) throws DBException {
 		
 		throw new ForbiddenException();
 		
@@ -155,7 +160,8 @@ public class LoadSyncDataSearchParams extends AbstractEtlSearchParams<EtlDatabas
 	}
 	
 	@Override
-	public int countNotProcessedRecords(Connection conn) throws DBException {
+	public int countNotProcessedRecords(OperationController<EtlDatabaseObject> controller, Connection conn)
+	        throws DBException {
 		try {
 			File[] files = getSyncDirectory().listFiles(new FilenameFilter() {
 				

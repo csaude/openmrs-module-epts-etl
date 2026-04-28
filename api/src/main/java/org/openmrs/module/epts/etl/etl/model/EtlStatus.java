@@ -1,6 +1,6 @@
 package org.openmrs.module.epts.etl.etl.model;
 
-public enum LoadStatus {
+public enum EtlStatus {
 	
 	/**
 	 * Undefined
@@ -47,19 +47,19 @@ public enum LoadStatus {
 		return this.equals(UNDEFINED);
 	}
 	
-	public boolean isLessThan(LoadStatus other) {
+	public boolean isLessThan(EtlStatus other) {
 		return this.compareTo(other) < 0;
 	}
 	
-	public boolean isLessOrEqualsThan(LoadStatus other) {
+	public boolean isLessOrEqualsThan(EtlStatus other) {
 		return this.compareTo(other) <= 0;
 	}
 	
-	public boolean isGreaterThan(LoadStatus other) {
+	public boolean isGreaterThan(EtlStatus other) {
 		return this.compareTo(other) > 0;
 	}
 	
-	public boolean isGreaterOrEqualsThan(LoadStatus other) {
+	public boolean isGreaterOrEqualsThan(EtlStatus other) {
 		return this.compareTo(other) >= 0;
 	}
 }

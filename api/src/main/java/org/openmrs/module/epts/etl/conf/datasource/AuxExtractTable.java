@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openmrs.module.epts.etl.conf.AbstractTableConfiguration;
-import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.EtlTemplateInfo;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.interfaces.EtlDataSource;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlSrcConf;
 import org.openmrs.module.epts.etl.conf.interfaces.JoinableEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.MainJoiningEntity;
 import org.openmrs.module.epts.etl.conf.interfaces.TableConfiguration;
@@ -14,6 +16,7 @@ import org.openmrs.module.epts.etl.conf.types.ConditionClauseScope;
 import org.openmrs.module.epts.etl.conf.types.JoinType;
 import org.openmrs.module.epts.etl.controller.conf.tablemapping.FieldsMapping;
 import org.openmrs.module.epts.etl.exceptions.DatabaseResourceDoesNotExists;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.db.conn.DBConnectionInfo;
@@ -23,7 +26,7 @@ import org.openmrs.module.epts.etl.utilities.db.conn.DBException;
  * Represents an auxiliary table for data extraction. A {@link AuxExtractTable} is used as an
  * auxiliary extraction table usually used to include additional extraction conditions
  */
-public class AuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, MainJoiningEntity, EtlDataSource {
+public class AuxExtractTable extends AbstractTableConfiguration implements JoinableEntity, MainJoiningEntity, EtlDataSource, EtlSrcConf {
 	
 	private List<FieldsMapping> joinFields;
 	
@@ -37,14 +40,24 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	 */
 	private JoinType joinType;
 	
-	private MainJoiningEntity mainExtractTable;
-	
 	private List<InnerAuxExtractTable> auxExtractTable;
 	
-	private boolean doNotUseAsDatasource;
+	private Boolean doNotUseAsDatasource;
 	
 	public AuxExtractTable() {
 		this.joinExtraConditionScope = ConditionClauseScope.JOIN_CLAUSE;
+	}
+	
+	@Override
+	public void init(EtlDataConfiguration relatedParent, EtlDatabaseObject etlSchemaObject, Connection srcConn,
+	        Connection dstConn) throws DBException {
+		super.init(relatedParent, etlSchemaObject, srcConn, dstConn);
+		
+		if (this.auxExtractTable != null) {
+			for (InnerAuxExtractTable aux : this.auxExtractTable) {
+				aux.init(this, etlSchemaObject, srcConn, dstConn);
+			}
+		}
 	}
 	
 	@Override
@@ -61,16 +74,16 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 		return auxExtractTable;
 	}
 	
-	public boolean isDoNotUseAsDatasource() {
-		return doNotUseAsDatasource;
+	public Boolean isDoNotUseAsDatasource() {
+		return isTrue(doNotUseAsDatasource);
 	}
 	
 	@Override
-	public boolean doNotUseAsDatasource() {
+	public Boolean doNotUseAsDatasource() {
 		return isDoNotUseAsDatasource();
 	}
 	
-	public void setDoNotUseAsDatasource(boolean doNotUseAsDatasource) {
+	public void setDoNotUseAsDatasource(Boolean doNotUseAsDatasource) {
 		this.doNotUseAsDatasource = doNotUseAsDatasource;
 	}
 	
@@ -107,12 +120,17 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	
 	@Override
 	public void setMainExtractTable(MainJoiningEntity mainExtractTable) {
-		this.mainExtractTable = mainExtractTable;
+		this.setParentConf(mainExtractTable);
+	}
+	
+	@Override
+	public MainJoiningEntity getParentConf() {
+		return (MainJoiningEntity) super.getParentConf();
 	}
 	
 	@Override
 	public MainJoiningEntity getMainExtractTable() {
-		return mainExtractTable;
+		return this.getParentConf();
 	}
 	
 	public String getJoinExtraCondition() {
@@ -132,23 +150,26 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public EtlConfiguration getRelatedEtlConf() {
-		return this.mainExtractTable != null ? this.mainExtractTable.getRelatedEtlConf() : null;
-	}
-	
-	@Override
 	public DBConnectionInfo getRelatedConnInfo() {
-		return this.mainExtractTable.getRelatedConnInfo();
+		return this.getMainExtractTable().getRelatedConnInfo();
 	}
 	
 	@Override
-	public boolean isGeneric() {
-		return false;
+	public void setParentConf(EtlDataConfiguration parentConf) {
+		if (parentConf instanceof MainJoiningEntity) {
+			super.setParentConf(parentConf);
+		} else
+			throw new EtlExceptionImpl("Only MainJoiningEntity are accepted as parent of an AuxExtractTable!");
+	}
+	
+	@Override
+	public Boolean isGeneric() {
+		return false_();
 	}
 	
 	@Override
 	public TableConfiguration getJoiningEntity() {
-		return (TableConfiguration) mainExtractTable;
+		return (TableConfiguration) this.getMainExtractTable();
 	}
 	
 	@Override
@@ -156,8 +177,8 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public boolean isMainJoiningEntity() {
-		return true;
+	public Boolean isMainJoiningEntity() {
+		return true_();
 	}
 	
 	@Override
@@ -166,8 +187,8 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public boolean isJoinable() {
-		return true;
+	public Boolean isJoinable() {
+		return true_();
 	}
 	
 	@Override
@@ -203,11 +224,11 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 		
 		this.setIgnoreMissingParameters(relatedMainExtractTable.ignoreMissingParameters());
 		
-		super.clone(toCloneFrom, schemaInfoSrc, conn);
+		super.clone(toCloneFrom, relatedMainExtractTable, schemaInfoSrc, conn);
 		
 		this.setParentConf(relatedMainExtractTable);
 		this.setIgnoreMissingParameters(relatedMainExtractTable.ignoreMissingParameters());
-		this.setJoinFields(FieldsMapping.cloneAll(toCloneFrom.getJoinFields()));
+		this.setJoinFields(FieldsMapping.cloneAll(toCloneFrom.getJoinFields(), conn));
 		this.setJoinExtraCondition(toCloneFrom.getJoinExtraCondition());
 		this.setJoinType(toCloneFrom.getJoinType());
 		this.setJoinExtraConditionScope(toCloneFrom.getJoinExtraConditionScope());
@@ -226,13 +247,14 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	}
 	
 	@Override
-	public void loadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
+	public void tryToLoadSchemaInfo(EtlDatabaseObject schemaInfoSrc, Connection conn)
 	        throws DBException, ForbiddenOperationException, DatabaseResourceDoesNotExists {
-		super.loadSchemaInfo(schemaInfoSrc, conn);
+		
+		super.tryToLoadSchemaInfo(schemaInfoSrc, conn);
 		
 		if (this.hasAuxExtractTable()) {
 			for (InnerAuxExtractTable tab : this.getAuxExtractTable()) {
-				tab.loadSchemaInfo(schemaInfoSrc, conn);
+				tab.tryToLoadSchemaInfo(schemaInfoSrc, conn);
 			}
 		}
 	}
@@ -248,6 +270,7 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 	@Override
 	public void tryToReplacePlaceholdersOnOwnElements(EtlDatabaseObject schemaInfoSrc) {
 		FieldsMapping.tryToReplacePlaceholders(getJoinFields(), schemaInfoSrc);
+		
 		setJoinExtraCondition(utilities.tryToReplacePlaceholders(getJoinExtraCondition(), schemaInfoSrc));
 		
 		InnerAuxExtractTable.tryToReplacePlaceholders(this.getAuxExtractTable(), schemaInfoSrc);
@@ -259,4 +282,8 @@ public class AuxExtractTable extends AbstractTableConfiguration implements Joina
 		return null;
 	}
 	
+	@Override
+	public EtlTemplateInfo retrieveNearestTemplate() {
+		return this.getTemplate() != null ? this.getTemplate() : getMainExtractTable().retrieveNearestTemplate();
+	}
 }

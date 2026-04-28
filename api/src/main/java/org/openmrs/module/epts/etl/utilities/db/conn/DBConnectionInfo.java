@@ -4,12 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import org.openmrs.module.epts.etl.conf.AbstractEtlDataConfiguration;
 import org.openmrs.module.epts.etl.conf.EtlConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.BaseConfiguration;
+import org.openmrs.module.epts.etl.conf.interfaces.EtlDataConfiguration;
+import org.openmrs.module.epts.etl.exceptions.EtlExceptionImpl;
 import org.openmrs.module.epts.etl.exceptions.ForbiddenOperationException;
 import org.openmrs.module.epts.etl.model.EtlDatabaseObject;
 import org.openmrs.module.epts.etl.utilities.CommonUtilities;
 
-public class DBConnectionInfo {
+public class DBConnectionInfo extends AbstractEtlDataConfiguration {
 	
 	public static CommonUtilities utilities = CommonUtilities.getInstance();
 	
@@ -31,7 +35,13 @@ public class DBConnectionInfo {
 	
 	private String databaseSchemaPath;
 	
+	private String dbHost;
+	
+	private Integer dbHostPort;
+	
 	private DBConnectionService dbService;
+	
+	private EtlConfiguration relatedEtlConf;
 	
 	public DBConnectionInfo() {
 	}
@@ -51,6 +61,14 @@ public class DBConnectionInfo {
 		this.schema = schema;
 	}
 	
+	public EtlConfiguration getRelatedEtlConf() {
+		return relatedEtlConf;
+	}
+	
+	public void setRelatedEtlConf(EtlConfiguration relatedEtlConf) {
+		this.relatedEtlConf = relatedEtlConf;
+	}
+	
 	public void finalize() {
 		if (dbService != null)
 			dbService.finalize();
@@ -63,14 +81,30 @@ public class DBConnectionInfo {
 		return this.dbService;
 	}
 	
-	public OpenConnection openConnection() throws DBException {
-		return getRelatedDBConnectionService().openConnection();
+	public OpenConnection openConnection(BaseConfiguration opendFrom) throws DBException {
+		return getRelatedDBConnectionService().openConnection(opendFrom);
 	}
 	
 	private synchronized void initRelatedDBConnectionService() {
 		if (dbService == null) {
 			dbService = DBConnectionService.init(this);
 		}
+	}
+	
+	public String getDbHost() {
+		return dbHost;
+	}
+	
+	public void setDbHost(String dbHost) {
+		this.dbHost = dbHost;
+	}
+	
+	public Integer getDbHostPort() {
+		return dbHostPort;
+	}
+	
+	public void setDbHostPort(Integer dbHostPort) {
+		this.dbHostPort = dbHostPort;
 	}
 	
 	public String getDatabaseSchemaPath() {
@@ -186,7 +220,7 @@ public class DBConnectionInfo {
 		throw new ForbiddenOperationException("Unrecognized dbms");
 	}
 	
-	private boolean isMySQLConnection() {
+	public boolean isMySQLConnection() {
 		return this.connectionURI.toUpperCase().contains("MYSQL");
 	}
 	
@@ -221,11 +255,84 @@ public class DBConnectionInfo {
 	}
 	
 	private String tryToLoadPlaceHolders(String str, EtlConfiguration schemaInfoSrc) {
-		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
+		return SQLUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
 	}
 	
 	private String tryToLoadPlaceHolders(String str, EtlDatabaseObject schemaInfoSrc) {
-		return DBUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
+		return SQLUtilities.tryToReplaceParamsInQuery(str, schemaInfoSrc);
+	}
+	
+	public boolean hasDatabaseSchemaPath() {
+		return utilities.stringHasValue(this.getDatabaseSchemaPath());
+	}
+	
+	public void tryToExtractHostInfoFromMysqlUri() {
+		String jdbcUrl = getConnectionURI();
+		
+		if (jdbcUrl == null || !jdbcUrl.startsWith("jdbc:mysql://")) {
+			throw new IllegalArgumentException("Invalid MySQL JDBC URL: " + jdbcUrl);
+		}
+		
+		String withoutPrefix = jdbcUrl.substring("jdbc:mysql://".length());
+		
+		int slashIndex = withoutPrefix.indexOf("/");
+		String hostPortPart = (slashIndex != -1) ? withoutPrefix.substring(0, slashIndex) : withoutPrefix;
+		
+		if (hostPortPart.contains(",")) {
+			hostPortPart = hostPortPart.split(",")[0];
+		}
+		
+		String host;
+		int port = 3306;
+		
+		if (hostPortPart.contains(":")) {
+			String[] parts = hostPortPart.split(":");
+			host = parts[0];
+			port = Integer.parseInt(parts[1]);
+		} else {
+			host = hostPortPart;
+		}
+		
+		this.setDbHost("localhost".equalsIgnoreCase(host) ? "127.0.0.1" : host);
+		this.setDbHostPort(port);
+	}
+	
+	public void restoreDump(EtlConfiguration etlConf) throws EtlExceptionImpl, DBException {
+		
+		String databaseName = this.determineSchema();
+		String databaseSchemaFullPath = etlConf.generateDatabaseSchemaFullPath(this);
+		
+		etlConf.logWarn("Database '" + databaseName + "' Does not exist but schema exists.");
+		
+		etlConf.logDebug("Database '" + databaseName + "' created!");
+		
+		try {
+			DBUtilities.createDb(this, this.determineSchema());
+			
+			DBUtilities.runScriptOnDbServer(this, databaseSchemaFullPath);
+		}
+		catch (Exception e) {
+			etlConf.logErr("An error occurred restoring dump: " + databaseSchemaFullPath);
+			
+			try {
+				DBUtilities.dropDB(this, this.determineSchema());
+			}
+			catch (Exception e1) {}
+			
+			throw new EtlExceptionImpl(e);
+		}
+	}
+
+	@Override
+	public EtlDataConfiguration getParentConf() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void tryToReplacePlaceholders(EtlDatabaseObject schemaInfoSrc) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }
